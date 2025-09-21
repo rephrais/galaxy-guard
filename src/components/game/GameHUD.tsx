@@ -60,8 +60,8 @@ export const GameHUD: React.FC<GameHUDProps> = ({ gameState, onPause, onRestart 
 
         {/* Ammunition */}
         <div className="hud-panel">
-          <div className="pixel-text text-xs text-neon-blue mb-1">AMMO</div>
-          <div className="pixel-text text-neon-blue">{gameState.spaceship.ammunition}</div>
+          <div className="pixel-text text-xs text-energy-bar mb-1">AMMO</div>
+          <div className="pixel-text text-energy-bar text-lg">{gameState.spaceship.ammunition}</div>
         </div>
 
         {/* Bombs */}
