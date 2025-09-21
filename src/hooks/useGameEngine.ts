@@ -32,6 +32,7 @@ export const useGameEngine = () => {
     level: 1,
     score: 0,
     lives: 3,
+    scrollOffset: 0,
     spaceship: {
       id: 'player',
       position: { x: 100, y: 300 },
@@ -45,7 +46,7 @@ export const useGameEngine = () => {
     },
     rockets: [],
     projectiles: [],
-    terrain: generateTerrain(DEFAULT_SETTINGS.width),
+    terrain: generateTerrain(DEFAULT_SETTINGS.width * 3), // Generate more terrain for scrolling
     explosions: [],
   });
 
@@ -92,6 +93,9 @@ export const useGameEngine = () => {
     setGameState(prevState => {
       const newState = { ...prevState };
       const now = Date.now();
+
+      // Update world scroll
+      newState.scrollOffset += settings.scrollSpeed;
 
       // Handle spaceship movement
       if (keysRef.current.has('ArrowUp')) {
@@ -156,22 +160,30 @@ export const useGameEngine = () => {
         keysRef.current.delete('KeyB'); // Prevent auto-bomb
       }
 
-      // Launch rockets from terrain
+      // Launch rockets from terrain (adjusted for scroll)
       if (now - lastRocketLaunchRef.current > settings.rocketLaunchFrequency) {
-        const launchPoint = newState.terrain[Math.floor(Math.random() * newState.terrain.length)];
-        const rocketId = `rocket-${Date.now()}-${Math.random()}`;
+        // Find terrain points that are visible on screen
+        const visibleTerrain = newState.terrain.filter(point => 
+          point.x >= newState.scrollOffset && 
+          point.x <= newState.scrollOffset + settings.width + 200
+        );
         
-        newState.rockets.push({
-          id: rocketId,
-          position: { x: launchPoint.x, y: launchPoint.y },
-          velocity: { x: 0, y: -settings.rocketSpeed },
-          size: { x: 8, y: 30 },
-          active: true,
-          launchTime: now,
-          explosionRadius: 50,
-        });
-        
-        lastRocketLaunchRef.current = now;
+        if (visibleTerrain.length > 0) {
+          const launchPoint = visibleTerrain[Math.floor(Math.random() * visibleTerrain.length)];
+          const rocketId = `rocket-${Date.now()}-${Math.random()}`;
+          
+          newState.rockets.push({
+            id: rocketId,
+            position: { x: launchPoint.x, y: launchPoint.y },
+            velocity: { x: 0, y: -settings.rocketSpeed },
+            size: { x: 8, y: 30 },
+            active: true,
+            launchTime: now,
+            explosionRadius: 50,
+          });
+          
+          lastRocketLaunchRef.current = now;
+        }
       }
 
       // Update projectiles
@@ -305,6 +317,7 @@ export const useGameEngine = () => {
       level: 1,
       score: 0,
       lives: 3,
+      scrollOffset: 0,
       spaceship: {
         id: 'player',
         position: { x: 100, y: 300 },
@@ -318,7 +331,7 @@ export const useGameEngine = () => {
       },
       rockets: [],
       projectiles: [],
-      terrain: generateTerrain(settings.width),
+      terrain: generateTerrain(settings.width * 3),
       explosions: [],
     });
     lastRocketLaunchRef.current = 0;

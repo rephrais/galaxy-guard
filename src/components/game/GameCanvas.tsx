@@ -20,40 +20,64 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
     ctx.fillStyle = '#000003';
     ctx.fillRect(0, 0, settings.width, settings.height);
 
-    // Draw starfield
+    // Draw parallax starfield
     ctx.fillStyle = '#ffffff';
-    for (let i = 0; i < 100; i++) {
-      const x = (i * 127) % settings.width;
-      const y = (i * 73) % settings.height;
-      const size = Math.random() * 2;
-      ctx.fillRect(x, y, size, size);
+    for (let layer = 0; layer < 3; layer++) {
+      const depth = layer + 1;
+      const parallaxOffset = (gameState.scrollOffset * 0.1) / depth;
+      
+      for (let i = 0; i < 50; i++) {
+        const x = ((i * 127) % (settings.width * 2) - parallaxOffset) % (settings.width + 100);
+        const y = (i * 73) % settings.height;
+        const size = Math.random() * (2 - layer * 0.3);
+        const alpha = 1 - layer * 0.3;
+        
+        ctx.globalAlpha = alpha;
+        ctx.fillRect(x, y, size, size);
+      }
     }
+    ctx.globalAlpha = 1;
 
-    // Draw terrain
+    // Draw terrain with parallax scrolling
     if (gameState.terrain.length > 0) {
       ctx.beginPath();
-      ctx.moveTo(gameState.terrain[0].x, gameState.terrain[0].y);
       
-      for (let i = 1; i < gameState.terrain.length; i++) {
-        ctx.lineTo(gameState.terrain[i].x, gameState.terrain[i].y);
+      // Find visible terrain points
+      const visibleTerrain = gameState.terrain.filter(point => 
+        point.x >= gameState.scrollOffset - 100 && 
+        point.x <= gameState.scrollOffset + settings.width + 100
+      );
+      
+      if (visibleTerrain.length > 0) {
+        // Adjust first point for screen coordinates
+        const firstPoint = {
+          x: visibleTerrain[0].x - gameState.scrollOffset,
+          y: visibleTerrain[0].y
+        };
+        ctx.moveTo(firstPoint.x, firstPoint.y);
+        
+        for (let i = 1; i < visibleTerrain.length; i++) {
+          const screenX = visibleTerrain[i].x - gameState.scrollOffset;
+          ctx.lineTo(screenX, visibleTerrain[i].y);
+        }
+        
+        ctx.lineTo(settings.width, settings.height);
+        ctx.lineTo(0, settings.height);
+        ctx.closePath();
+        
+        // Create terrain pattern
+        const gradient = ctx.createLinearGradient(0, 500, 0, settings.height);
+        gradient.addColorStop(0, '#ff6600');
+        gradient.addColorStop(0.5, '#0066ff');
+        gradient.addColorStop(1, '#ff0000');
+        
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        
+        ctx.strokeStyle = '#ffff00';
+        ctx.lineWidth = 2;
+        ctx.stroke();
       }
-      
-      ctx.lineTo(settings.width, settings.height);
-      ctx.lineTo(0, settings.height);
-      ctx.closePath();
-      
-      // Create terrain pattern
-      const gradient = ctx.createLinearGradient(0, 500, 0, settings.height);
-      gradient.addColorStop(0, '#ff6600');
-      gradient.addColorStop(0.5, '#0066ff');
-      gradient.addColorStop(1, '#ff0000');
-      
-      ctx.fillStyle = gradient;
-      ctx.fill();
-      
-      ctx.strokeStyle = '#ffff00';
-      ctx.lineWidth = 2;
-      ctx.stroke();
     }
 
     // Draw spaceship
@@ -79,46 +103,61 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       ctx.fillRect(position.x, position.y - 8, size.x * healthPercent, 4);
     }
 
-    // Draw rockets
+    // Draw rockets (adjusted for scroll)
     gameState.rockets.forEach(rocket => {
       if (!rocket.active) return;
+      
+      const screenX = rocket.position.x - gameState.scrollOffset;
+      
+      // Only draw if visible on screen
+      if (screenX < -rocket.size.x || screenX > settings.width) return;
       
       const { position, size } = rocket;
       
       // Rocket body
       ctx.fillStyle = '#ff0000';
-      ctx.fillRect(position.x, position.y, size.x, size.y);
+      ctx.fillRect(screenX, position.y, size.x, size.y);
       
       // Rocket tip
       ctx.fillStyle = '#ffff00';
-      ctx.fillRect(position.x + 2, position.y, size.x - 4, 8);
+      ctx.fillRect(screenX + 2, position.y, size.x - 4, 8);
       
       // Exhaust trail
       ctx.fillStyle = '#ff6600';
-      ctx.fillRect(position.x + 2, position.y + size.y, size.x - 4, 20);
+      ctx.fillRect(screenX + 2, position.y + size.y, size.x - 4, 20);
     });
 
-    // Draw projectiles
+    // Draw projectiles (adjusted for scroll)
     gameState.projectiles.forEach(projectile => {
       if (!projectile.active) return;
+      
+      const screenX = projectile.position.x - gameState.scrollOffset;
+      
+      // Only draw if visible on screen
+      if (screenX < -projectile.size.x || screenX > settings.width) return;
       
       const { position, size, type } = projectile;
       
       if (type === 'bullet') {
         ctx.fillStyle = '#00ff00';
-        ctx.fillRect(position.x, position.y, size.x, size.y);
+        ctx.fillRect(screenX, position.y, size.x, size.y);
       } else if (type === 'bomb') {
         ctx.fillStyle = '#ff00ff';
-        ctx.fillRect(position.x, position.y, size.x, size.y);
+        ctx.fillRect(screenX, position.y, size.x, size.y);
         
         // Bomb trail
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(position.x - 4, position.y + 2, 4, 4);
+        ctx.fillRect(screenX - 4, position.y + 2, 4, 4);
       }
     });
 
-    // Draw explosions
+    // Draw explosions (adjusted for scroll)
     gameState.explosions.forEach(explosion => {
+      const screenX = explosion.position.x - gameState.scrollOffset;
+      
+      // Only draw if visible on screen
+      if (screenX < -50 || screenX > settings.width + 50) return;
+      
       const { position, startTime } = explosion;
       const elapsed = Date.now() - startTime;
       const progress = elapsed / 500; // 500ms explosion duration
@@ -133,7 +172,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
         // Explosion rings
         for (let i = 0; i < 3; i++) {
           ctx.beginPath();
-          ctx.arc(position.x, position.y, radius + i * 5, 0, Math.PI * 2);
+          ctx.arc(screenX, position.y, radius + i * 5, 0, Math.PI * 2);
           ctx.strokeStyle = i === 0 ? '#ffff00' : i === 1 ? '#ff6600' : '#ff0000';
           ctx.lineWidth = 3;
           ctx.stroke();

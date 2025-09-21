@@ -40,6 +40,7 @@ export interface GameState {
   level: number;
   score: number;
   lives: number;
+  scrollOffset: number;
   spaceship: Spaceship;
   rockets: Rocket[];
   projectiles: Projectile[];
