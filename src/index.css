@@ -2,41 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Arcade Game Design System - Retro 8-bit/16-bit Style
+All colors MUST be HSL for perfect arcade aesthetic.
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Core Game Colors - Space Theme */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --space-black: 240 100% 3%;
+    --star-white: 0 0% 95%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Arcade Neon Colors */
+    --neon-yellow: 51 100% 50%;
+    --neon-blue: 220 100% 50%;
+    --neon-red: 0 100% 50%;
+    --neon-green: 120 100% 50%;
+    --neon-purple: 280 100% 50%;
+    --neon-cyan: 180 100% 50%;
+    --neon-orange: 30 100% 50%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    /* Game UI Colors */
+    --hud-background: 240 100% 3%;
+    --hud-border: 51 100% 50%;
+    --score-text: 51 100% 50%;
+    --health-bar: 120 100% 50%;
+    --energy-bar: 220 100% 50%;
+    --danger-red: 0 100% 50%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Terrain Colors */
+    --ground-primary: 30 100% 40%;
+    --ground-secondary: 220 100% 40%;
+    --ground-accent: 0 100% 40%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
+    /* Shadcn Overrides for Game UI */
+    --card: 240 100% 5%;
+    --card-foreground: 0 0% 100%;
+    --popover: 240 100% 5%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 51 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 220 100% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 240 100% 10%;
+    --muted-foreground: 0 0% 70%;
+    --accent: 280 100% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 50% 20%;
+    --input: 240 50% 15%;
+    --ring: 51 100% 50%;
+    --radius: 0rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -55,43 +73,7 @@ All colors MUST be HSL.
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
+  /* No dark mode override - arcade games are always dark space themed */
 }
 
 @layer base {
@@ -100,6 +82,116 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground overflow-hidden;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* Arcade Game Typography */
+  .arcade-font {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .pixel-text {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    image-rendering: pixelated;
+    text-shadow: 0 0 10px currentColor;
+  }
+
+  /* Game Canvas Styles */
+  .game-canvas {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+  }
+
+  /* Arcade Button Styles */
+  .arcade-button {
+    @apply px-6 py-3 rounded-none border-2 arcade-font;
+    @apply bg-transparent text-primary border-primary;
+    @apply hover:bg-primary hover:text-black;
+    @apply transition-all duration-200;
+    @apply active:scale-95;
+    text-shadow: 0 0 10px currentColor;
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+  }
+
+  .arcade-button:hover {
+    box-shadow: 0 0 30px hsl(var(--primary) / 0.6);
+  }
+
+  /* HUD Styles */
+  .hud-panel {
+    @apply bg-hud-background border-2 border-hud-border;
+    @apply p-4 arcade-font text-score-text;
+    background: linear-gradient(45deg, 
+      hsl(var(--hud-background)), 
+      hsl(var(--hud-background) / 0.9)
+    );
+    box-shadow: 
+      0 0 20px hsl(var(--hud-border) / 0.5),
+      inset 0 0 20px hsl(var(--hud-border) / 0.1);
+  }
+
+  /* Starfield Animation */
+  .starfield {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(2px 2px at 20px 30px, white, transparent),
+      radial-gradient(2px 2px at 40px 70px, white, transparent),
+      radial-gradient(1px 1px at 90px 40px, white, transparent),
+      radial-gradient(1px 1px at 130px 80px, white, transparent),
+      radial-gradient(2px 2px at 160px 30px, white, transparent);
+    background-repeat: repeat;
+    background-size: 200px 100px;
+    animation: starfield-scroll 20s linear infinite;
+  }
+
+  @keyframes starfield-scroll {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-200px);
+    }
+  }
+
+  /* Explosion Animation */
+  @keyframes explosion {
+    0% {
+      transform: scale(0);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.5);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(3);
+      opacity: 0;
+    }
+  }
+
+  .explosion {
+    animation: explosion 0.5s ease-out forwards;
+  }
+
+  /* Pulse Animation for Dangerous Elements */
+  @keyframes danger-pulse {
+    0%, 100% {
+      box-shadow: 0 0 5px hsl(var(--danger-red));
+    }
+    50% {
+      box-shadow: 0 0 25px hsl(var(--danger-red)), 0 0 35px hsl(var(--danger-red));
+    }
+  }
+
+  .danger-pulse {
+    animation: danger-pulse 1s ease-in-out infinite;
   }
 }
