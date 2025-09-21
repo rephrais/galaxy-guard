@@ -58,7 +58,7 @@ export const SpaceDefenderGame: React.FC = () => {
       };
       saveGame(saveData);
     }
-  }, [gameState.score, gameState.level, gameState.lives, gameState.isPlaying, settings, saveGame]);
+  }, [gameState.score, gameState.level, gameState.lives, gameState.isPlaying, settings]);
 
   // Handle game over
   useEffect(() => {

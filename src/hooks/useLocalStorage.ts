@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { SaveData, LeaderboardEntry } from '@/types/game';
 
 export const useLocalStorage = () => {
@@ -27,21 +27,21 @@ export const useLocalStorage = () => {
     }
   }, []);
 
-  const saveGame = (data: SaveData) => {
+  const saveGame = useCallback((data: SaveData) => {
     try {
       localStorage.setItem('spaceship-save-data', JSON.stringify(data));
       setSavedGame(data);
     } catch (error) {
       console.error('Failed to save game:', error);
     }
-  };
+  }, []);
 
-  const deleteSavedGame = () => {
+  const deleteSavedGame = useCallback(() => {
     localStorage.removeItem('spaceship-save-data');
     setSavedGame(null);
-  };
+  }, []);
 
-  const addToLeaderboard = (entry: LeaderboardEntry) => {
+  const addToLeaderboard = useCallback((entry: LeaderboardEntry) => {
     try {
       const newLeaderboard = [...leaderboard, entry]
         .sort((a, b) => b.score - a.score)
@@ -52,12 +52,12 @@ export const useLocalStorage = () => {
     } catch (error) {
       console.error('Failed to save to leaderboard:', error);
     }
-  };
+  }, [leaderboard]);
 
-  const clearLeaderboard = () => {
+  const clearLeaderboard = useCallback(() => {
     localStorage.removeItem('spaceship-leaderboard');
     setLeaderboard([]);
-  };
+  }, []);
 
   return {
     savedGame,
