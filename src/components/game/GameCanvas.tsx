@@ -115,22 +115,53 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
     fgGradient.addColorStop(1, '#000000');
     drawTerrainLayer(gameState.terrain.foreground, 1.5, fgGradient, '#2a2a3a', 0.8);
 
-    // Draw spaceship
+    // Draw spaceship  
     if (gameState.spaceship.active) {
       const { position, size } = gameState.spaceship;
+      const pixelSize = 2; // Scale up the pixel art
       
-      // Spaceship body
-      ctx.fillStyle = '#00ffff';
-      ctx.fillRect(position.x, position.y, size.x, size.y);
+      // Define the pixel art pattern matching the reference image
+      const spaceshipPattern = [
+        // Detailed pixel art spaceship (32x16)
+        '                                ',
+        '                                ',
+        '                    RRRR        ',
+        '                 RRROOOO        ',
+        '               RRROOOOOOO       ',
+        '             RRROOOOOOOOOO      ',
+        '           GRRROOOGGGOOOOOOB    ',
+        '         GRRROOOOGGGGOOOOOOBB   ',
+        '       GGRRROOOOGGGGGOOOOOOBBBB ',
+        '     GGRRRROOOOGGGGGGOOOOOOBBBBB',
+        '   GGRRRROOOOGGGGGGGGOOOOOOBBBB ',
+        ' GGRRRROOOOGGGGGGGGGGOOOOOOOBB  ',
+        'GRRROOOOGGGGGGGGGGGGGOOOOOOB    ',
+        '  RROOGGGGGGGGGGGGGGOOOOOO      ',
+        '    GGGGGGGGGGGGGGOOOO          ',
+        '      GGGGGGGGGGOO              '
+      ];
       
-      // Spaceship details
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(position.x + size.x - 8, position.y + 4, 8, 4);
-      ctx.fillRect(position.x + size.x - 8, position.y + size.y - 8, 8, 4);
+      // Color mapping for realistic spaceship colors
+      const colors: { [key: string]: string } = {
+        'G': '#666666', // Dark gray for cockpit/body
+        'O': '#ff8800', // Orange for main body
+        'R': '#ff4400', // Red-orange for wing tips  
+        'B': '#0099ff', // Blue for engines
+        ' ': 'transparent'
+      };
       
-      // Engine glow
-      ctx.fillStyle = '#ff6600';
-      ctx.fillRect(position.x - 6, position.y + 6, 6, 8);
+      // Draw the pixel art spaceship
+      for (let row = 0; row < spaceshipPattern.length; row++) {
+        for (let col = 0; col < spaceshipPattern[row].length; col++) {
+          const pixel = spaceshipPattern[row][col];
+          if (pixel !== ' ') {
+            ctx.fillStyle = colors[pixel];
+            const x = position.x + col * pixelSize;
+            const y = position.y + row * pixelSize;
+            ctx.fillRect(x, y, pixelSize, pixelSize);
+          }
+        }
+      }
       
       // Health indicator
       const healthPercent = gameState.spaceship.health / gameState.spaceship.maxHealth;
