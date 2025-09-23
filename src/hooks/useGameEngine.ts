@@ -218,8 +218,13 @@ export const useGameEngine = () => {
       // Check projectile-rocket collisions
       newState.projectiles.forEach(projectile => {
         newState.rockets.forEach(rocket => {
-          if (projectile.active && rocket.active && checkCollision(projectile, rocket)) {
-            // Create explosion
+          // Convert rocket to screen space for collision (spaceship/projectiles are in screen space)
+          const rocketScreen = {
+            ...rocket,
+            position: { ...rocket.position, x: rocket.position.x - newState.scrollOffset },
+          };
+          if (projectile.active && rocket.active && checkCollision(projectile, rocketScreen)) {
+            // Create explosion at world position
             newState.explosions.push({
               id: `explosion-${Date.now()}-${Math.random()}`,
               position: { x: rocket.position.x, y: rocket.position.y },
@@ -238,12 +243,17 @@ export const useGameEngine = () => {
 
       // Check spaceship-rocket collisions
       newState.rockets.forEach(rocket => {
-        if (rocket.active && checkCollision(newState.spaceship, rocket)) {
+        // Convert rocket to screen space for collision
+        const rocketScreen = {
+          ...rocket,
+          position: { ...rocket.position, x: rocket.position.x - newState.scrollOffset },
+        };
+        if (rocket.active && checkCollision(newState.spaceship, rocketScreen)) {
           // Damage spaceship
           newState.spaceship.health -= 25;
           rocket.active = false;
           
-          // Create explosion
+          // Create explosion at world position
           newState.explosions.push({
             id: `explosion-${Date.now()}-${Math.random()}`,
             position: { x: rocket.position.x, y: rocket.position.y },
