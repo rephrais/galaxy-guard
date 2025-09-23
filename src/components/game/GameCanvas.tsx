@@ -127,11 +127,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       ctx.fillRect(screenX + 2, position.y + size.y, size.x - 4, 20);
     });
 
-    // Draw projectiles (adjusted for scroll)
+    // Draw projectiles (no scroll adjustment - they move independently)
     gameState.projectiles.forEach(projectile => {
       if (!projectile.active) return;
       
-      const screenX = projectile.position.x - gameState.scrollOffset;
+      const screenX = projectile.position.x;
       
       // Only draw if visible on screen
       if (screenX < -projectile.size.x || screenX > settings.width) return;
