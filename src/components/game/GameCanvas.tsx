@@ -46,7 +46,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       strokeColor: string,
       alpha: number = 1
     ) => {
-      if (terrain.length === 0) return;
+      if (!terrain || terrain.length === 0) return;
       
       const parallaxOffset = gameState.scrollOffset * scrollMultiplier;
       const terrainWidth = terrain[terrain.length - 1].x - terrain[0].x;
