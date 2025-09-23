@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { GameState, GameSettings } from '@/types/game';
+import { GameState, GameSettings, TerrainPoint } from '@/types/game';
 
 interface GameCanvasProps {
   gameState: GameState;
@@ -38,47 +38,82 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
     }
     ctx.globalAlpha = 1;
 
-    // Draw terrain with parallax scrolling
-    if (gameState.terrain.length > 0) {
-      ctx.beginPath();
+    // Draw multi-layer terrain with parallax
+    const drawTerrainLayer = (
+      terrain: TerrainPoint[], 
+      scrollMultiplier: number, 
+      color: string | CanvasGradient, 
+      strokeColor: string,
+      alpha: number = 1
+    ) => {
+      if (terrain.length === 0) return;
       
-      // Find visible terrain points
-      const visibleTerrain = gameState.terrain.filter(point => 
-        point.x >= gameState.scrollOffset - 100 && 
-        point.x <= gameState.scrollOffset + settings.width + 100
-      );
+      const parallaxOffset = gameState.scrollOffset * scrollMultiplier;
+      const terrainWidth = terrain[terrain.length - 1].x - terrain[0].x;
       
-      if (visibleTerrain.length > 0) {
-        // Adjust first point for screen coordinates
-        const firstPoint = {
-          x: visibleTerrain[0].x - gameState.scrollOffset,
-          y: visibleTerrain[0].y
-        };
-        ctx.moveTo(firstPoint.x, firstPoint.y);
+      // Create looping terrain by drawing multiple segments
+      for (let segment = -1; segment <= 2; segment++) {
+        const segmentOffset = segment * terrainWidth;
+        const visibleTerrain = terrain.filter(point => {
+          const worldX = point.x + segmentOffset;
+          return worldX >= parallaxOffset - 200 && worldX <= parallaxOffset + settings.width + 200;
+        });
         
-        for (let i = 1; i < visibleTerrain.length; i++) {
-          const screenX = visibleTerrain[i].x - gameState.scrollOffset;
-          ctx.lineTo(screenX, visibleTerrain[i].y);
+        if (visibleTerrain.length > 0) {
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          
+          ctx.beginPath();
+          const startX = (visibleTerrain[0].x + segmentOffset) - parallaxOffset;
+          ctx.moveTo(startX, visibleTerrain[0].y);
+          
+          for (let i = 1; i < visibleTerrain.length; i++) {
+            const x = (visibleTerrain[i].x + segmentOffset) - parallaxOffset;
+            ctx.lineTo(x, visibleTerrain[i].y);
+          }
+          
+          // Complete the shape to bottom
+          ctx.lineTo(settings.width, settings.height);
+          ctx.lineTo(0, settings.height);
+          ctx.closePath();
+          
+          // Fill
+          ctx.fillStyle = color;
+          ctx.fill();
+          
+          // Stroke the terrain line only
+          ctx.beginPath();
+          ctx.moveTo(startX, visibleTerrain[0].y);
+          for (let i = 1; i < visibleTerrain.length; i++) {
+            const x = (visibleTerrain[i].x + segmentOffset) - parallaxOffset;
+            ctx.lineTo(x, visibleTerrain[i].y);
+          }
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          
+          ctx.restore();
         }
-        
-        ctx.lineTo(settings.width, settings.height);
-        ctx.lineTo(0, settings.height);
-        ctx.closePath();
-        
-        // Create terrain pattern
-        const gradient = ctx.createLinearGradient(0, 500, 0, settings.height);
-        gradient.addColorStop(0, '#ff6600');
-        gradient.addColorStop(0.5, '#0066ff');
-        gradient.addColorStop(1, '#ff0000');
-        
-        ctx.fillStyle = gradient;
-        ctx.fill();
-        
-        ctx.strokeStyle = '#ffff00';
-        ctx.lineWidth = 2;
-        ctx.stroke();
       }
-    }
+    };
+    
+    // Draw background terrain (slowest parallax)
+    const bgGradient = ctx.createLinearGradient(0, 250, 0, settings.height);
+    bgGradient.addColorStop(0, '#1a1a2e');
+    bgGradient.addColorStop(1, '#16213e');
+    drawTerrainLayer(gameState.terrain.background, 0.2, bgGradient, '#3a3a5c', 0.6);
+    
+    // Draw middle terrain (medium parallax, solid)
+    const midGradient = ctx.createLinearGradient(0, 400, 0, settings.height);
+    midGradient.addColorStop(0, '#2d2d44');
+    midGradient.addColorStop(1, '#1a1a2e');
+    drawTerrainLayer(gameState.terrain.middle, 1.0, midGradient, '#4a4a6a', 1.0);
+    
+    // Draw foreground terrain (fastest parallax)
+    const fgGradient = ctx.createLinearGradient(0, 500, 0, settings.height);
+    fgGradient.addColorStop(0, '#0f0f1a');
+    fgGradient.addColorStop(1, '#000000');
+    drawTerrainLayer(gameState.terrain.foreground, 1.5, fgGradient, '#2a2a3a', 0.8);
 
     // Draw spaceship
     if (gameState.spaceship.active) {

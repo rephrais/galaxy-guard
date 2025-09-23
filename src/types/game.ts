@@ -33,6 +33,12 @@ export interface TerrainPoint {
   y: number;
 }
 
+export interface TerrainLayers {
+  background: TerrainPoint[];
+  middle: TerrainPoint[];
+  foreground: TerrainPoint[];
+}
+
 export interface GameState {
   isPlaying: boolean;
   isPaused: boolean;
@@ -44,7 +50,7 @@ export interface GameState {
   spaceship: Spaceship;
   rockets: Rocket[];
   projectiles: Projectile[];
-  terrain: TerrainPoint[];
+  terrain: TerrainLayers;
   explosions: Array<{
     id: string;
     position: Vector2;

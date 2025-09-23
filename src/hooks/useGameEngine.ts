@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint } from '@/types/game';
+import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers } from '@/types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
   width: 1200,
@@ -11,17 +11,37 @@ const DEFAULT_SETTINGS: GameSettings = {
   rocketSpeed: 3,
 };
 
-const generateTerrain = (width: number): TerrainPoint[] => {
-  const terrain: TerrainPoint[] = [];
-  let height = 600;
+// Generate multi-layer terrain
+const generateTerrain = (width: number): TerrainLayers => {
+  const points = Math.floor(width / 30); // Denser points for smoother terrain
   
-  for (let x = 0; x < width * 2; x += 20) {
-    height += (Math.random() - 0.5) * 40;
-    height = Math.max(500, Math.min(700, height));
-    terrain.push({ x, y: height });
+  const background: TerrainPoint[] = [];
+  const middle: TerrainPoint[] = [];
+  const foreground: TerrainPoint[] = [];
+  
+  for (let i = 0; i < points; i++) {
+    const x = i * 30;
+    
+    // Background terrain (higher, visual only)
+    background.push({
+      x,
+      y: 300 + Math.sin(i * 0.05) * 30 + Math.random() * 20,
+    });
+    
+    // Middle terrain (solid, affects gameplay)
+    middle.push({
+      x,
+      y: 450 + Math.sin(i * 0.08) * 40 + Math.random() * 30,
+    });
+    
+    // Foreground terrain (lower, visual only)
+    foreground.push({
+      x,
+      y: 520 + Math.sin(i * 0.12) * 25 + Math.random() * 15,
+    });
   }
   
-  return terrain;
+  return { background, middle, foreground };
 };
 
 export const useGameEngine = () => {
@@ -46,7 +66,7 @@ export const useGameEngine = () => {
     },
     rockets: [],
     projectiles: [],
-    terrain: generateTerrain(DEFAULT_SETTINGS.width * 3), // Generate more terrain for scrolling
+    terrain: generateTerrain(DEFAULT_SETTINGS.width * 4), // Generate more terrain for scrolling
     explosions: [],
   });
 
@@ -160,10 +180,10 @@ export const useGameEngine = () => {
         keysRef.current.delete('KeyB'); // Prevent auto-bomb
       }
 
-      // Launch rockets from terrain (adjusted for scroll)
+      // Launch rockets from middle terrain (adjusted for scroll)
       if (now - lastRocketLaunchRef.current > settings.rocketLaunchFrequency) {
-        // Find terrain points that are visible on screen
-        const visibleTerrain = newState.terrain.filter(point => 
+        // Find middle terrain points that are visible on screen
+        const visibleTerrain = newState.terrain.middle.filter(point => 
           point.x >= newState.scrollOffset && 
           point.x <= newState.scrollOffset + settings.width + 200
         );
@@ -341,7 +361,7 @@ export const useGameEngine = () => {
       },
       rockets: [],
       projectiles: [],
-      terrain: generateTerrain(settings.width * 3),
+      terrain: generateTerrain(settings.width * 4),
       explosions: [],
     });
     lastRocketLaunchRef.current = 0;
