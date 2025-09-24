@@ -7,41 +7,47 @@ const DEFAULT_SETTINGS: GameSettings = {
   scrollSpeed: 2,
   spaceshipSpeed: 5,
   bulletSpeed: 8,
-  rocketLaunchFrequency: 2000, // milliseconds
-  rocketSpeed: 3,
+  rocketLaunchFrequency: 1200, // milliseconds - more frequent
+  rocketSpeed: 4,
 };
 
-// Generate multi-layer terrain
-const generateTerrain = (width: number): TerrainLayers => {
-  const points = Math.floor(width / 30); // Denser points for smoother terrain
+// Generate infinite terrain segments
+const generateTerrainSegment = (startX: number, segmentWidth: number = 1200): TerrainLayers => {
+  const points = Math.floor(segmentWidth / 30);
   
   const background: TerrainPoint[] = [];
   const middle: TerrainPoint[] = [];
   const foreground: TerrainPoint[] = [];
   
   for (let i = 0; i < points; i++) {
-    const x = i * 30;
+    const x = startX + i * 30;
+    const seedOffset = x * 0.001; // Use x position as seed for consistent terrain
     
     // Background terrain (higher, visual only)
     background.push({
       x,
-      y: 300 + Math.sin(i * 0.05) * 30 + Math.random() * 20,
+      y: 300 + Math.sin(seedOffset * 0.5) * 30 + Math.sin(seedOffset * 2) * 10,
     });
     
     // Middle terrain (solid, affects gameplay)
     middle.push({
       x,
-      y: 450 + Math.sin(i * 0.08) * 40 + Math.random() * 30,
+      y: 450 + Math.sin(seedOffset * 0.8) * 40 + Math.sin(seedOffset * 3) * 15,
     });
     
     // Foreground terrain (lower, visual only)
     foreground.push({
       x,
-      y: 520 + Math.sin(i * 0.12) * 25 + Math.random() * 15,
+      y: 520 + Math.sin(seedOffset * 1.2) * 25 + Math.sin(seedOffset * 4) * 10,
     });
   }
   
   return { background, middle, foreground };
+};
+
+// Initial terrain generation
+const generateInitialTerrain = (): TerrainLayers => {
+  return generateTerrainSegment(0, 3600); // Start with 3 segments
 };
 
 export const useGameEngine = () => {
@@ -66,7 +72,7 @@ export const useGameEngine = () => {
     },
     rockets: [],
     projectiles: [],
-    terrain: generateTerrain(DEFAULT_SETTINGS.width * 4), // Generate more terrain for scrolling
+    terrain: generateInitialTerrain(),
     explosions: [],
   });
 
@@ -114,8 +120,27 @@ export const useGameEngine = () => {
       const newState = { ...prevState };
       const now = Date.now();
 
-      // Update world scroll
-      newState.scrollOffset += settings.scrollSpeed;
+      // Update world scroll - speed increases with level
+      const currentScrollSpeed = settings.scrollSpeed + (newState.level - 1) * 0.5;
+      newState.scrollOffset += currentScrollSpeed;
+      
+      // Generate new terrain if needed (infinite scrolling)
+      const lastTerrainX = Math.max(
+        ...newState.terrain.middle.map(p => p.x)
+      );
+      
+      if (lastTerrainX < newState.scrollOffset + settings.width * 2) {
+        const newSegment = generateTerrainSegment(lastTerrainX, 1200);
+        newState.terrain.background.push(...newSegment.background);
+        newState.terrain.middle.push(...newSegment.middle);
+        newState.terrain.foreground.push(...newSegment.foreground);
+      }
+      
+      // Clean up old terrain points to prevent memory issues
+      const minX = newState.scrollOffset - settings.width;
+      newState.terrain.background = newState.terrain.background.filter(p => p.x > minX);
+      newState.terrain.middle = newState.terrain.middle.filter(p => p.x > minX);
+      newState.terrain.foreground = newState.terrain.foreground.filter(p => p.x > minX);
 
       // Handle spaceship movement
       if (keysRef.current.has('ArrowUp')) {
@@ -180,30 +205,32 @@ export const useGameEngine = () => {
         keysRef.current.delete('KeyB'); // Prevent auto-bomb
       }
 
-      // Launch rockets from middle terrain (adjusted for scroll)
-      if (now - lastRocketLaunchRef.current > settings.rocketLaunchFrequency) {
-        // Find middle terrain points that are visible on screen
-        const visibleTerrain = newState.terrain.middle.filter(point => 
-          point.x >= newState.scrollOffset && 
-          point.x <= newState.scrollOffset + settings.width + 200
-        );
+      // Launch rockets from middle terrain (adjusted for scroll and difficulty)
+      const rocketFreq = Math.max(400, settings.rocketLaunchFrequency - (newState.level - 1) * 100);
+      const maxRockets = 3 + Math.floor(newState.level / 2);
+      
+      if (now - lastRocketLaunchRef.current > rocketFreq && newState.rockets.length < maxRockets) {
+        // Launch from right side of screen area
+        const launchX = newState.scrollOffset + settings.width + Math.random() * 300;
+        const launchY = 400 + Math.random() * 200; // Random height in lower part
         
-        if (visibleTerrain.length > 0) {
-          const launchPoint = visibleTerrain[Math.floor(Math.random() * visibleTerrain.length)];
-          const rocketId = `rocket-${Date.now()}-${Math.random()}`;
-          
-          newState.rockets.push({
-            id: rocketId,
-            position: { x: launchPoint.x, y: launchPoint.y },
-            velocity: { x: 0, y: -settings.rocketSpeed },
-            size: { x: 8, y: 30 },
-            active: true,
-            launchTime: now,
-            explosionRadius: 50,
-          });
-          
-          lastRocketLaunchRef.current = now;
-        }
+        const rocketId = `rocket-${Date.now()}-${Math.random()}`;
+        const rocketSpeed = settings.rocketSpeed + (newState.level - 1) * 0.5; // Faster rockets at higher levels
+        
+        newState.rockets.push({
+          id: rocketId,
+          position: { x: launchX, y: launchY },
+          velocity: { 
+            x: -rocketSpeed * (0.5 + Math.random() * 0.5), // Move towards spaceship
+            y: -rocketSpeed * (0.3 + Math.random() * 0.4) // Upward arc
+          },
+          size: { x: 8, y: 30 },
+          active: true,
+          launchTime: now,
+          explosionRadius: 50,
+        });
+        
+        lastRocketLaunchRef.current = now;
       }
 
       // Update projectiles
@@ -225,10 +252,16 @@ export const useGameEngine = () => {
       newState.rockets = newState.rockets.filter(rocket => {
         if (!rocket.active) return false;
         
+        rocket.position.x += rocket.velocity.x;
         rocket.position.y += rocket.velocity.y;
         
-        // Remove if off screen
-        if (rocket.position.y < -rocket.size.y) {
+        // Add gravity effect
+        rocket.velocity.y += 0.1;
+        
+        // Remove if far off screen
+        if (rocket.position.y > settings.height + 100 || 
+            rocket.position.x < newState.scrollOffset - 200 ||
+            rocket.position.y < -100) {
           return false;
         }
         
@@ -255,8 +288,16 @@ export const useGameEngine = () => {
             projectile.active = false;
             rocket.active = false;
             
-            // Add score
+            // Add score and level progression
             newState.score += 100;
+            
+            // Level up every 1000 points
+            const newLevel = Math.floor(newState.score / 1000) + 1;
+            if (newLevel > newState.level) {
+              newState.level = newLevel;
+              newState.spaceship.ammunition += 20; // Bonus ammo on level up
+              newState.spaceship.bombs += 1; // Bonus bomb on level up
+            }
           }
         });
       });
@@ -361,7 +402,7 @@ export const useGameEngine = () => {
       },
       rockets: [],
       projectiles: [],
-      terrain: generateTerrain(settings.width * 4),
+      terrain: generateInitialTerrain(),
       explosions: [],
     });
     lastRocketLaunchRef.current = 0;
