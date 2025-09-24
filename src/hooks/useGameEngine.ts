@@ -67,7 +67,7 @@ export const useGameEngine = () => {
       active: true,
       health: 100,
       maxHealth: 100,
-      ammunition: 100,
+      ammunition: 1000,
       bombs: 5,
     },
     rockets: [],
@@ -163,9 +163,40 @@ export const useGameEngine = () => {
       newState.spaceship.position.x += newState.spaceship.velocity.x;
       newState.spaceship.position.y += newState.spaceship.velocity.y;
 
-      // Keep spaceship on screen
-      newState.spaceship.position.x = Math.max(0, Math.min(settings.width - newState.spaceship.size.x, newState.spaceship.position.x));
-      newState.spaceship.position.y = Math.max(0, Math.min(settings.height - newState.spaceship.size.y, newState.spaceship.position.y));
+      // Check edge collision - ship explodes if touching edges
+      const hitLeftEdge = newState.spaceship.position.x <= 0;
+      const hitRightEdge = newState.spaceship.position.x >= settings.width - newState.spaceship.size.x;
+      const hitTopEdge = newState.spaceship.position.y <= 0;
+      const hitBottomEdge = newState.spaceship.position.y >= settings.height - newState.spaceship.size.y;
+      
+      if (hitLeftEdge || hitRightEdge || hitTopEdge || hitBottomEdge) {
+        // Damage spaceship for hitting edges
+        newState.spaceship.health -= 50;
+        
+        // Create explosion at spaceship position
+        newState.explosions.push({
+          id: `explosion-${Date.now()}-${Math.random()}`,
+          position: { x: newState.spaceship.position.x + newState.scrollOffset, y: newState.spaceship.position.y },
+          startTime: now,
+        });
+        
+        if (newState.spaceship.health <= 0) {
+          newState.lives--;
+          if (newState.lives <= 0) {
+            newState.gameOver = true;
+          } else {
+            // Reset spaceship
+            newState.spaceship.health = newState.spaceship.maxHealth;
+            newState.spaceship.position = { x: 100, y: 300 };
+          }
+        } else {
+          // Push ship back from edge
+          if (hitLeftEdge) newState.spaceship.position.x = 1;
+          if (hitRightEdge) newState.spaceship.position.x = settings.width - newState.spaceship.size.x - 1;
+          if (hitTopEdge) newState.spaceship.position.y = 1;
+          if (hitBottomEdge) newState.spaceship.position.y = settings.height - newState.spaceship.size.y - 1;
+        }
+      }
 
       // Handle shooting
       if (keysRef.current.has('Space') && newState.spaceship.ammunition > 0) {
@@ -395,7 +426,7 @@ export const useGameEngine = () => {
         active: true,
         health: 100,
         maxHealth: 100,
-        ammunition: 100,
+        ammunition: 1000,
         bombs: 5,
       },
       rockets: [],
