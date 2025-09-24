@@ -52,24 +52,50 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       
       const parallaxOffset = gameState.scrollOffset * scrollMultiplier;
       
-      // Filter terrain points that are visible on screen
+      // Filter terrain points that are visible on screen with wider buffer
       const visibleTerrain = terrain.filter(point => {
         const screenX = point.x - parallaxOffset;
-        return screenX >= -200 && screenX <= settings.width + 200;
+        return screenX >= -400 && screenX <= settings.width + 400;
       });
       
-      if (visibleTerrain.length === 0) return;
+      // If no visible terrain, still draw a fallback to prevent blinking
+      if (visibleTerrain.length === 0) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = color;
+        ctx.fillRect(0, settings.height * 0.8, settings.width, settings.height * 0.2);
+        ctx.restore();
+        return;
+      }
       
       ctx.save();
       ctx.globalAlpha = alpha;
       
       ctx.beginPath();
-      const startX = visibleTerrain[0].x - parallaxOffset;
-      ctx.moveTo(startX, visibleTerrain[0].y);
       
+      // Ensure we start from the left edge of screen
+      const firstPoint = visibleTerrain[0];
+      const firstScreenX = firstPoint.x - parallaxOffset;
+      
+      if (firstScreenX > 0) {
+        // Extend line from left edge to first point
+        ctx.moveTo(0, firstPoint.y);
+        ctx.lineTo(firstScreenX, firstPoint.y);
+      } else {
+        ctx.moveTo(firstScreenX, firstPoint.y);
+      }
+      
+      // Draw the terrain line
       for (let i = 1; i < visibleTerrain.length; i++) {
         const x = visibleTerrain[i].x - parallaxOffset;
         ctx.lineTo(x, visibleTerrain[i].y);
+      }
+      
+      // Extend to right edge if needed
+      const lastPoint = visibleTerrain[visibleTerrain.length - 1];
+      const lastScreenX = lastPoint.x - parallaxOffset;
+      if (lastScreenX < settings.width) {
+        ctx.lineTo(settings.width, lastPoint.y);
       }
       
       // Complete the shape to bottom
@@ -83,11 +109,22 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       
       // Stroke the terrain line only
       ctx.beginPath();
-      ctx.moveTo(startX, visibleTerrain[0].y);
+      if (firstScreenX > 0) {
+        ctx.moveTo(0, firstPoint.y);
+        ctx.lineTo(firstScreenX, firstPoint.y);
+      } else {
+        ctx.moveTo(firstScreenX, firstPoint.y);
+      }
+      
       for (let i = 1; i < visibleTerrain.length; i++) {
         const x = visibleTerrain[i].x - parallaxOffset;
         ctx.lineTo(x, visibleTerrain[i].y);
       }
+      
+      if (lastScreenX < settings.width) {
+        ctx.lineTo(settings.width, lastPoint.y);
+      }
+      
       ctx.strokeStyle = strokeColor;
       ctx.lineWidth = 1;
       ctx.stroke();
@@ -95,11 +132,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       ctx.restore();
     };
     
-    // Draw background terrain (slowest parallax)
+    // Draw background terrain (minimal parallax for distant mountains)
     const bgGradient = ctx.createLinearGradient(0, 250, 0, settings.height);
     bgGradient.addColorStop(0, '#1a1a2e');
     bgGradient.addColorStop(1, '#16213e');
-    drawTerrainLayer(gameState.terrain.background, 0.2, bgGradient, '#3a3a5c', 0.6);
+    drawTerrainLayer(gameState.terrain.background, 0.05, bgGradient, '#3a3a5c', 0.6);
     
     // Draw middle terrain (medium parallax, solid)
     const midGradient = ctx.createLinearGradient(0, 400, 0, settings.height);
