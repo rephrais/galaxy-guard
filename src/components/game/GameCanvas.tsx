@@ -24,16 +24,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
     ctx.fillStyle = '#ffffff';
     for (let layer = 0; layer < 3; layer++) {
       const depth = layer + 1;
-      const parallaxOffset = (gameState.scrollOffset * 0.1) / depth;
+      const parallaxOffset = -(gameState.scrollOffset * 0.1) / depth; // Fixed: negative for left movement
       
       for (let i = 0; i < 50; i++) {
-        const x = ((i * 127) % (settings.width * 2) - parallaxOffset) % (settings.width + 100);
+        const x = ((i * 127) % (settings.width * 2) + parallaxOffset) % (settings.width + 100);
         const y = (i * 73) % settings.height;
         const size = Math.random() * (2 - layer * 0.3);
         const alpha = 1 - layer * 0.3;
         
         ctx.globalAlpha = alpha;
-        ctx.fillRect(x, y, size, size);
+        if (x >= 0 && x <= settings.width) {
+          ctx.fillRect(x, y, size, size);
+        }
       }
     }
     ctx.globalAlpha = 1;
@@ -49,52 +51,48 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       if (!terrain || terrain.length === 0) return;
       
       const parallaxOffset = gameState.scrollOffset * scrollMultiplier;
-      const terrainWidth = terrain[terrain.length - 1].x - terrain[0].x;
       
-      // Create looping terrain by drawing multiple segments
-      for (let segment = -1; segment <= 2; segment++) {
-        const segmentOffset = segment * terrainWidth;
-        const visibleTerrain = terrain.filter(point => {
-          const worldX = point.x + segmentOffset;
-          return worldX >= parallaxOffset - 200 && worldX <= parallaxOffset + settings.width + 200;
-        });
-        
-        if (visibleTerrain.length > 0) {
-          ctx.save();
-          ctx.globalAlpha = alpha;
-          
-          ctx.beginPath();
-          const startX = (visibleTerrain[0].x + segmentOffset) - parallaxOffset;
-          ctx.moveTo(startX, visibleTerrain[0].y);
-          
-          for (let i = 1; i < visibleTerrain.length; i++) {
-            const x = (visibleTerrain[i].x + segmentOffset) - parallaxOffset;
-            ctx.lineTo(x, visibleTerrain[i].y);
-          }
-          
-          // Complete the shape to bottom
-          ctx.lineTo(settings.width, settings.height);
-          ctx.lineTo(0, settings.height);
-          ctx.closePath();
-          
-          // Fill
-          ctx.fillStyle = color;
-          ctx.fill();
-          
-          // Stroke the terrain line only
-          ctx.beginPath();
-          ctx.moveTo(startX, visibleTerrain[0].y);
-          for (let i = 1; i < visibleTerrain.length; i++) {
-            const x = (visibleTerrain[i].x + segmentOffset) - parallaxOffset;
-            ctx.lineTo(x, visibleTerrain[i].y);
-          }
-          ctx.strokeStyle = strokeColor;
-          ctx.lineWidth = 1;
-          ctx.stroke();
-          
-          ctx.restore();
-        }
+      // Filter terrain points that are visible on screen
+      const visibleTerrain = terrain.filter(point => {
+        const screenX = point.x - parallaxOffset;
+        return screenX >= -200 && screenX <= settings.width + 200;
+      });
+      
+      if (visibleTerrain.length === 0) return;
+      
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      
+      ctx.beginPath();
+      const startX = visibleTerrain[0].x - parallaxOffset;
+      ctx.moveTo(startX, visibleTerrain[0].y);
+      
+      for (let i = 1; i < visibleTerrain.length; i++) {
+        const x = visibleTerrain[i].x - parallaxOffset;
+        ctx.lineTo(x, visibleTerrain[i].y);
       }
+      
+      // Complete the shape to bottom
+      ctx.lineTo(settings.width, settings.height);
+      ctx.lineTo(0, settings.height);
+      ctx.closePath();
+      
+      // Fill
+      ctx.fillStyle = color;
+      ctx.fill();
+      
+      // Stroke the terrain line only
+      ctx.beginPath();
+      ctx.moveTo(startX, visibleTerrain[0].y);
+      for (let i = 1; i < visibleTerrain.length; i++) {
+        const x = visibleTerrain[i].x - parallaxOffset;
+        ctx.lineTo(x, visibleTerrain[i].y);
+      }
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      ctx.restore();
     };
     
     // Draw background terrain (slowest parallax)
@@ -188,9 +186,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       ctx.fillStyle = '#ffff00';
       ctx.fillRect(screenX + 2, position.y, size.x - 4, 8);
       
-      // Exhaust trail
+      // Exhaust trail (should be at the bottom of rocket going up)
       ctx.fillStyle = '#ff6600';
-      ctx.fillRect(screenX + 2, position.y + size.y, size.x - 4, 20);
+      ctx.fillRect(screenX + 2, position.y + size.y, size.x - 4, 15);
     });
 
     // Draw projectiles (no scroll adjustment - they move independently)

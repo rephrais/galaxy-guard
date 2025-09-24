@@ -205,32 +205,34 @@ export const useGameEngine = () => {
         keysRef.current.delete('KeyB'); // Prevent auto-bomb
       }
 
-      // Launch rockets from middle terrain (adjusted for scroll and difficulty)
+      // Launch rockets from terrain (adjusted for scroll and difficulty)
       const rocketFreq = Math.max(400, settings.rocketLaunchFrequency - (newState.level - 1) * 100);
       const maxRockets = 3 + Math.floor(newState.level / 2);
       
       if (now - lastRocketLaunchRef.current > rocketFreq && newState.rockets.length < maxRockets) {
-        // Launch from right side of screen area
-        const launchX = newState.scrollOffset + settings.width + Math.random() * 300;
-        const launchY = 400 + Math.random() * 200; // Random height in lower part
+        // Find visible terrain points to launch from 
+        const visibleTerrain = newState.terrain.middle.filter(point => 
+          point.x >= newState.scrollOffset + settings.width * 0.7 && 
+          point.x <= newState.scrollOffset + settings.width * 1.5
+        );
         
-        const rocketId = `rocket-${Date.now()}-${Math.random()}`;
-        const rocketSpeed = settings.rocketSpeed + (newState.level - 1) * 0.5; // Faster rockets at higher levels
-        
-        newState.rockets.push({
-          id: rocketId,
-          position: { x: launchX, y: launchY },
-          velocity: { 
-            x: -rocketSpeed * (0.5 + Math.random() * 0.5), // Move towards spaceship
-            y: -rocketSpeed * (0.3 + Math.random() * 0.4) // Upward arc
-          },
-          size: { x: 8, y: 30 },
-          active: true,
-          launchTime: now,
-          explosionRadius: 50,
-        });
-        
-        lastRocketLaunchRef.current = now;
+        if (visibleTerrain.length > 0) {
+          const launchPoint = visibleTerrain[Math.floor(Math.random() * visibleTerrain.length)];
+          const rocketId = `rocket-${Date.now()}-${Math.random()}`;
+          const rocketSpeed = settings.rocketSpeed + (newState.level - 1) * 0.5;
+          
+          newState.rockets.push({
+            id: rocketId,
+            position: { x: launchPoint.x, y: launchPoint.y },
+            velocity: { x: 0, y: -rocketSpeed }, // Straight up
+            size: { x: 8, y: 30 },
+            active: true,
+            launchTime: now,
+            explosionRadius: 50,
+          });
+          
+          lastRocketLaunchRef.current = now;
+        }
       }
 
       // Update projectiles
@@ -255,13 +257,9 @@ export const useGameEngine = () => {
         rocket.position.x += rocket.velocity.x;
         rocket.position.y += rocket.velocity.y;
         
-        // Add gravity effect
-        rocket.velocity.y += 0.1;
-        
-        // Remove if far off screen
-        if (rocket.position.y > settings.height + 100 || 
-            rocket.position.x < newState.scrollOffset - 200 ||
-            rocket.position.y < -100) {
+        // Remove if off screen (going up and away)
+        if (rocket.position.y < -rocket.size.y || 
+            rocket.position.x < newState.scrollOffset - 200) {
           return false;
         }
         
