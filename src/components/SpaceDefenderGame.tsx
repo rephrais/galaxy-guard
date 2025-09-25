@@ -94,6 +94,8 @@ export const SpaceDefenderGame: React.FC = () => {
   const [prevRockets, setPrevRockets] = useState(gameState.rockets.length);
   const [prevProjectiles, setPrevProjectiles] = useState(gameState.projectiles.length);
   const [prevExplosions, setPrevExplosions] = useState(gameState.explosions.length);
+  const [prevHealth, setPrevHealth] = useState(gameState.spaceship.health);
+  const [prevLives, setPrevLives] = useState(gameState.lives);
 
   useEffect(() => {
     // Play shoot sound when projectiles are added
@@ -115,6 +117,24 @@ export const SpaceDefenderGame: React.FC = () => {
     }
     setPrevExplosions(gameState.explosions.length);
   }, [gameState.explosions.length, prevExplosions, sounds]);
+
+  useEffect(() => {
+    // Play hit sound when ship takes damage
+    if (gameState.spaceship.health < prevHealth) {
+      sounds.hit();
+    }
+    setPrevHealth(gameState.spaceship.health);
+  }, [gameState.spaceship.health, prevHealth, sounds]);
+
+  useEffect(() => {
+    // Play crash sound when ship loses a life (dies and respawns)
+    if (gameState.lives < prevLives) {
+      // Play both explosion and hit sound for dramatic effect
+      sounds.explosion();
+      setTimeout(() => sounds.hit(), 100);
+    }
+    setPrevLives(gameState.lives);
+  }, [gameState.lives, prevLives, sounds]);
 
   if (showStartMenu) {
     return (
