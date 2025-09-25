@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle } from '@/types/game';
+import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer } from '@/types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
   width: 1200,
@@ -97,6 +97,7 @@ export const useGameEngine = () => {
     },
     rockets: [],
     projectiles: [],
+    saucers: [],
     terrain: generateInitialTerrain(),
     explosions: [],
   });
@@ -104,6 +105,7 @@ export const useGameEngine = () => {
   const [settings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const gameLoopRef = useRef<number>();
   const lastRocketLaunchRef = useRef<number>(0);
+  const lastSaucerSpawnRef = useRef<number>(0);
   const keysRef = useRef<Set<string>>(new Set());
 
   // Input handling
@@ -315,6 +317,31 @@ export const useGameEngine = () => {
         }
       }
 
+      // Spawn saucers from the right side
+      const saucerFreq = Math.max(2000, 4000 - (newState.level - 1) * 200); // Less frequent than rockets
+      const maxSaucers = 2 + Math.floor(newState.level / 3);
+      
+      if (now - lastSaucerSpawnRef.current > saucerFreq && newState.saucers.length < maxSaucers) {
+        const saucerId = `saucer-${Date.now()}-${Math.random()}`;
+        const spawnY = 100 + Math.random() * (settings.height - 300); // Random Y position in upper area
+        const targetY = newState.spaceship.position.y + (Math.random() - 0.5) * 200; // Drift towards ship area
+        
+        newState.saucers.push({
+          id: saucerId,
+          position: { 
+            x: newState.scrollOffset + settings.width + 100, // Spawn off right edge 
+            y: spawnY 
+          },
+          velocity: { x: -1 - Math.random() * 0.5, y: 0 }, // Slow leftward movement
+          size: { x: 60, y: 25 }, // Ellipse dimensions
+          active: true,
+          targetY,
+          driftSpeed: 0.5 + Math.random() * 0.3
+        });
+        
+        lastSaucerSpawnRef.current = now;
+      }
+
       // Update projectiles
       newState.projectiles = newState.projectiles.filter(projectile => {
         if (!projectile.active) return false;
@@ -330,16 +357,20 @@ export const useGameEngine = () => {
         return true;
       });
 
-      // Update rockets
-      newState.rockets = newState.rockets.filter(rocket => {
-        if (!rocket.active) return false;
+      // Update saucers
+      newState.saucers = newState.saucers.filter(saucer => {
+        if (!saucer.active) return false;
         
-        rocket.position.x += rocket.velocity.x;
-        rocket.position.y += rocket.velocity.y;
+        saucer.position.x += saucer.velocity.x;
         
-        // Remove if off screen (going up and away)
-        if (rocket.position.y < -rocket.size.y || 
-            rocket.position.x < newState.scrollOffset - 200) {
+        // Drift towards target Y position
+        const yDiff = saucer.targetY - saucer.position.y;
+        if (Math.abs(yDiff) > 5) {
+          saucer.position.y += Math.sign(yDiff) * saucer.driftSpeed;
+        }
+        
+        // Remove if off screen (left edge)
+        if (saucer.position.x < newState.scrollOffset - 200) {
           return false;
         }
         
@@ -384,6 +415,33 @@ export const useGameEngine = () => {
         });
       });
 
+      // Check projectile-saucer collisions
+      newState.projectiles.forEach(projectile => {
+        newState.saucers.forEach(saucer => {
+          // Convert saucer to screen space for collision
+          const saucerScreen = {
+            ...saucer,
+            position: { ...saucer.position, x: saucer.position.x - newState.scrollOffset },
+          };
+          if (projectile.active && saucer.active && checkCollision(projectile, saucerScreen)) {
+            // Create explosion at world position
+            newState.explosions.push({
+              id: `explosion-${Date.now()}-${Math.random()}`,
+              position: { x: saucer.position.x, y: saucer.position.y },
+              startTime: now,
+              particles: generateExplosionParticles(saucer.position.x, saucer.position.y, 15)
+            });
+            
+            // Destroy both
+            projectile.active = false;
+            saucer.active = false;
+            
+            // Add score
+            newState.score += projectile.type === 'bomb' ? 300 : 200; // Good points for saucers
+          }
+        });
+      });
+
       // Check spaceship-rocket collisions
       newState.rockets.forEach(rocket => {
         // Convert rocket to screen space for collision
@@ -418,6 +476,39 @@ export const useGameEngine = () => {
         }
       });
 
+      // Check spaceship-saucer collisions
+      newState.saucers.forEach(saucer => {
+        // Convert saucer to screen space for collision
+        const saucerScreen = {
+          ...saucer,
+          position: { ...saucer.position, x: saucer.position.x - newState.scrollOffset },
+        };
+        if (saucer.active && checkCollision(newState.spaceship, saucerScreen)) {
+          // Damage spaceship
+          newState.spaceship.health -= 30;
+          saucer.active = false;
+          
+          // Create explosion at world position
+          newState.explosions.push({
+            id: `explosion-${Date.now()}-${Math.random()}`,
+            position: { x: saucer.position.x, y: saucer.position.y },
+            startTime: now,
+            particles: generateExplosionParticles(saucer.position.x, saucer.position.y, 18)
+          });
+          
+          if (newState.spaceship.health <= 0) {
+            newState.lives--;
+            if (newState.lives <= 0) {
+              newState.gameOver = true;
+            } else {
+              // Reset spaceship
+              newState.spaceship.health = newState.spaceship.maxHealth;
+              newState.spaceship.position = { x: 100, y: 300 };
+            }
+          }
+        }
+      });
+
       // Clean up explosions and update particles
       newState.explosions = newState.explosions.filter(explosion => {
         const elapsed = now - explosion.startTime;
@@ -438,6 +529,7 @@ export const useGameEngine = () => {
       // Filter out inactive objects
       newState.projectiles = newState.projectiles.filter(p => p.active);
       newState.rockets = newState.rockets.filter(r => r.active);
+      newState.saucers = newState.saucers.filter(s => s.active);
 
       return newState;
     });
@@ -498,10 +590,12 @@ export const useGameEngine = () => {
       },
       rockets: [],
       projectiles: [],
+      saucers: [],
       terrain: generateInitialTerrain(),
       explosions: [],
     });
     lastRocketLaunchRef.current = 0;
+    lastSaucerSpawnRef.current = 0;
   }, [settings.width]);
 
   return {

@@ -249,6 +249,54 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       }
     });
 
+    // Draw saucers (adjusted for scroll)
+    gameState.saucers.forEach(saucer => {
+      if (!saucer.active) return;
+      
+      const screenX = saucer.position.x - gameState.scrollOffset;
+      
+      // Only draw if visible on screen
+      if (screenX < -saucer.size.x || screenX > settings.width + 50) return;
+      
+      const { position, size } = saucer;
+      
+      // Draw ellipse saucer
+      ctx.save();
+      
+      // Main saucer body (ellipse)
+      ctx.beginPath();
+      ctx.ellipse(screenX + size.x / 2, position.y + size.y / 2, size.x / 2, size.y / 2, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#cccccc';
+      ctx.fill();
+      ctx.strokeStyle = '#888888';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Saucer dome (smaller ellipse on top)
+      ctx.beginPath();
+      ctx.ellipse(screenX + size.x / 2, position.y + size.y / 3, size.x / 3, size.y / 3, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#eeeeee';
+      ctx.fill();
+      ctx.strokeStyle = '#aaaaaa';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      // Lights around the saucer
+      const time = Date.now() * 0.005;
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI * 2 * i) / 6 + time;
+        const lightX = screenX + size.x / 2 + Math.cos(angle) * (size.x / 2.5);
+        const lightY = position.y + size.y / 2 + Math.sin(angle) * (size.y / 2.5);
+        
+        ctx.beginPath();
+        ctx.arc(lightX, lightY, 2, 0, Math.PI * 2);
+        ctx.fillStyle = i % 2 === 0 ? '#00ff00' : '#ff00ff';
+        ctx.fill();
+      }
+      
+      ctx.restore();
+    });
+
     // Draw projectiles (no scroll adjustment - they move independently)
     gameState.projectiles.forEach(projectile => {
       if (!projectile.active) return;

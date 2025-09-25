@@ -55,6 +55,11 @@ export interface Explosion {
   particles: ExplosionParticle[];
 }
 
+export interface Saucer extends GameObject {
+  targetY: number;
+  driftSpeed: number;
+}
+
 export interface GameState {
   isPlaying: boolean;
   isPaused: boolean;
@@ -66,6 +71,7 @@ export interface GameState {
   spaceship: Spaceship;
   rockets: Rocket[];
   projectiles: Projectile[];
+  saucers: Saucer[];
   terrain: TerrainLayers;
   explosions: Explosion[];
 }
