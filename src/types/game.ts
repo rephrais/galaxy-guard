@@ -39,6 +39,21 @@ export interface TerrainLayers {
   foreground: TerrainPoint[];
 }
 
+export interface ExplosionParticle {
+  position: Vector2;
+  velocity: Vector2;
+  size: number;
+  color: string;
+  life: number;
+}
+
+export interface Explosion {
+  id: string;
+  position: Vector2;
+  startTime: number;
+  particles: ExplosionParticle[];
+}
+
 export interface GameState {
   isPlaying: boolean;
   isPaused: boolean;
@@ -51,11 +66,7 @@ export interface GameState {
   rockets: Rocket[];
   projectiles: Projectile[];
   terrain: TerrainLayers;
-  explosions: Array<{
-    id: string;
-    position: Vector2;
-    startTime: number;
-  }>;
+  explosions: Explosion[];
 }
 
 export interface GameSettings {

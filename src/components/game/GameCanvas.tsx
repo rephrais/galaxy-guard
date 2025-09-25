@@ -252,34 +252,62 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       }
     });
 
-    // Draw explosions (adjusted for scroll)
+    // Draw explosions with particles (adjusted for scroll)
     gameState.explosions.forEach(explosion => {
       const screenX = explosion.position.x - gameState.scrollOffset;
       
       // Only draw if visible on screen
-      if (screenX < -50 || screenX > settings.width + 50) return;
+      if (screenX < -100 || screenX > settings.width + 100) return;
       
-      const { position, startTime } = explosion;
+      const { position, startTime, particles } = explosion;
       const elapsed = Date.now() - startTime;
-      const progress = elapsed / 500; // 500ms explosion duration
+      const progress = elapsed / 1000; // 1000ms explosion duration
       
       if (progress < 1) {
-        const radius = 25 * progress;
+        // Draw main explosion rings
+        const radius = 30 * progress;
         const opacity = 1 - progress;
         
         ctx.save();
-        ctx.globalAlpha = opacity;
+        ctx.globalAlpha = opacity * 0.8;
         
         // Explosion rings
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 4; i++) {
           ctx.beginPath();
-          ctx.arc(screenX, position.y, radius + i * 5, 0, Math.PI * 2);
-          ctx.strokeStyle = i === 0 ? '#ffff00' : i === 1 ? '#ff6600' : '#ff0000';
-          ctx.lineWidth = 3;
+          ctx.arc(screenX, position.y, radius + i * 8, 0, Math.PI * 2);
+          ctx.strokeStyle = i === 0 ? '#ffff00' : i === 1 ? '#ff6600' : i === 2 ? '#ff0000' : '#ffffff';
+          ctx.lineWidth = 4 - i;
           ctx.stroke();
         }
         
         ctx.restore();
+        
+        // Draw particles
+        particles.forEach(particle => {
+          const particleScreenX = particle.position.x - gameState.scrollOffset;
+          
+          // Only draw particles visible on screen
+          if (particleScreenX < -20 || particleScreenX > settings.width + 20) return;
+          
+          ctx.save();
+          ctx.globalAlpha = particle.life;
+          
+          // Draw particle as a small filled circle
+          ctx.beginPath();
+          ctx.arc(particleScreenX, particle.position.y, particle.size, 0, Math.PI * 2);
+          ctx.fillStyle = particle.color;
+          ctx.fill();
+          
+          // Add glow effect
+          ctx.shadowColor = particle.color;
+          ctx.shadowBlur = particle.size * 2;
+          ctx.beginPath();
+          ctx.arc(particleScreenX, particle.position.y, particle.size * 0.5, 0, Math.PI * 2);
+          ctx.fillStyle = particle.color;
+          ctx.fill();
+          
+          ctx.restore();
+        });
       }
     });
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers } from '@/types/game';
+import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle } from '@/types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
   width: 1200,
@@ -43,6 +43,31 @@ const generateTerrainSegment = (startX: number, segmentWidth: number = 1200): Te
   }
   
   return { background, middle, foreground };
+};
+
+// Generate explosion particles
+const generateExplosionParticles = (centerX: number, centerY: number, particleCount: number = 15): ExplosionParticle[] => {
+  const particles: ExplosionParticle[] = [];
+  
+  for (let i = 0; i < particleCount; i++) {
+    const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.5;
+    const speed = 2 + Math.random() * 4;
+    const size = 2 + Math.random() * 4;
+    const colors = ['#ffff00', '#ff6600', '#ff0000', '#ffffff', '#ffaa00'];
+    
+    particles.push({
+      position: { x: centerX, y: centerY },
+      velocity: {
+        x: Math.cos(angle) * speed,
+        y: Math.sin(angle) * speed
+      },
+      size,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      life: 1.0
+    });
+  }
+  
+  return particles;
 };
 
 // Initial terrain generation
@@ -178,6 +203,11 @@ export const useGameEngine = () => {
           id: `explosion-${Date.now()}-${Math.random()}`,
           position: { x: newState.spaceship.position.x + newState.scrollOffset, y: newState.spaceship.position.y },
           startTime: now,
+          particles: generateExplosionParticles(
+            newState.spaceship.position.x + newState.scrollOffset, 
+            newState.spaceship.position.y + newState.spaceship.size.y / 2,
+            20 // More particles for ship explosion
+          )
         });
         
         if (newState.spaceship.health <= 0) {
@@ -306,12 +336,13 @@ export const useGameEngine = () => {
             position: { ...rocket.position, x: rocket.position.x - newState.scrollOffset },
           };
           if (projectile.active && rocket.active && checkCollision(projectile, rocketScreen)) {
-            // Create explosion at world position
-            newState.explosions.push({
-              id: `explosion-${Date.now()}-${Math.random()}`,
-              position: { x: rocket.position.x, y: rocket.position.y },
-              startTime: now,
-            });
+          // Create explosion at world position
+          newState.explosions.push({
+            id: `explosion-${Date.now()}-${Math.random()}`,
+            position: { x: rocket.position.x, y: rocket.position.y },
+            startTime: now,
+            particles: generateExplosionParticles(rocket.position.x, rocket.position.y, 15)
+          });
             
             // Destroy both
             projectile.active = false;
@@ -343,12 +374,13 @@ export const useGameEngine = () => {
           newState.spaceship.health -= 25;
           rocket.active = false;
           
-          // Create explosion at world position
-          newState.explosions.push({
-            id: `explosion-${Date.now()}-${Math.random()}`,
-            position: { x: rocket.position.x, y: rocket.position.y },
-            startTime: now,
-          });
+            // Create explosion at world position
+            newState.explosions.push({
+              id: `explosion-${Date.now()}-${Math.random()}`,
+              position: { x: rocket.position.x, y: rocket.position.y },
+              startTime: now,
+              particles: generateExplosionParticles(rocket.position.x, rocket.position.y, 12)
+            });
           
           if (newState.spaceship.health <= 0) {
             newState.lives--;
@@ -363,10 +395,22 @@ export const useGameEngine = () => {
         }
       });
 
-      // Clean up explosions
-      newState.explosions = newState.explosions.filter(explosion => 
-        now - explosion.startTime < 500
-      );
+      // Clean up explosions and update particles
+      newState.explosions = newState.explosions.filter(explosion => {
+        const elapsed = now - explosion.startTime;
+        if (elapsed > 1000) return false; // Remove after 1 second
+        
+        // Update particles
+        explosion.particles = explosion.particles.filter(particle => {
+          particle.position.x += particle.velocity.x;
+          particle.position.y += particle.velocity.y;
+          particle.velocity.y += 0.1; // Gravity effect on particles
+          particle.life -= 0.02; // Fade particles
+          return particle.life > 0;
+        });
+        
+        return true;
+      });
 
       // Filter out inactive objects
       newState.projectiles = newState.projectiles.filter(p => p.active);
