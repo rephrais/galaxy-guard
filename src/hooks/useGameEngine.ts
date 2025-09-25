@@ -280,17 +280,36 @@ export const useGameEngine = () => {
         if (visibleTerrain.length > 0) {
           const launchPoint = visibleTerrain[Math.floor(Math.random() * visibleTerrain.length)];
           const rocketId = `rocket-${Date.now()}-${Math.random()}`;
-          const rocketSpeed = settings.rocketSpeed + (newState.level - 1) * 0.5;
           
-          newState.rockets.push({
-            id: rocketId,
-            position: { x: launchPoint.x, y: launchPoint.y },
-            velocity: { x: 0, y: -rocketSpeed }, // Straight up
-            size: { x: 8, y: 30 },
-            active: true,
-            launchTime: now,
-            explosionRadius: 50,
-          });
+          // Randomly choose rocket type (70% normal, 30% heavy)
+          const isHeavy = Math.random() < 0.3 + (newState.level - 1) * 0.05; // More heavy rockets at higher levels
+          
+          if (isHeavy) {
+            // Heavy rocket - bigger and slower
+            newState.rockets.push({
+              id: rocketId,
+              position: { x: launchPoint.x, y: launchPoint.y },
+              velocity: { x: 0, y: -2 }, // Slower speed
+              size: { x: 16, y: 50 }, // Bigger size
+              active: true,
+              launchTime: now,
+              explosionRadius: 80, // Bigger explosion
+              type: 'heavy'
+            });
+          } else {
+            // Normal rocket
+            const rocketSpeed = settings.rocketSpeed + (newState.level - 1) * 0.5;
+            newState.rockets.push({
+              id: rocketId,
+              position: { x: launchPoint.x, y: launchPoint.y },
+              velocity: { x: 0, y: -rocketSpeed },
+              size: { x: 8, y: 30 },
+              active: true,
+              launchTime: now,
+              explosionRadius: 50,
+              type: 'normal'
+            });
+          }
           
           lastRocketLaunchRef.current = now;
         }
@@ -349,7 +368,10 @@ export const useGameEngine = () => {
             rocket.active = false;
             
             // Add score and level progression
-            newState.score += 100;
+            newState.score += projectile.type === 'bomb' ? 150 : 100; // More points for bomb hits
+            if (rocket.type === 'heavy') {
+              newState.score += 100; // Bonus for destroying heavy rockets
+            }
             
             // Level up every 1000 points
             const newLevel = Math.floor(newState.score / 1000) + 1;
@@ -370,8 +392,9 @@ export const useGameEngine = () => {
           position: { ...rocket.position, x: rocket.position.x - newState.scrollOffset },
         };
         if (rocket.active && checkCollision(newState.spaceship, rocketScreen)) {
-          // Damage spaceship
-          newState.spaceship.health -= 25;
+          // Damage spaceship - heavy rockets do more damage
+          const damage = rocket.type === 'heavy' ? 50 : 25;
+          newState.spaceship.health -= damage;
           rocket.active = false;
           
             // Create explosion at world position

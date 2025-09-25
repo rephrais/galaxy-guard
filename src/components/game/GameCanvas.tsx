@@ -213,19 +213,40 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       // Only draw if visible on screen
       if (screenX < -rocket.size.x || screenX > settings.width) return;
       
-      const { position, size } = rocket;
+      const { position, size, type } = rocket;
       
-      // Rocket body
-      ctx.fillStyle = '#ff0000';
-      ctx.fillRect(screenX, position.y, size.x, size.y);
-      
-      // Rocket tip
-      ctx.fillStyle = '#ffff00';
-      ctx.fillRect(screenX + 2, position.y, size.x - 4, 8);
-      
-      // Exhaust trail (should be at the bottom of rocket going up)
-      ctx.fillStyle = '#ff6600';
-      ctx.fillRect(screenX + 2, position.y + size.y, size.x - 4, 15);
+      if (type === 'heavy') {
+        // Heavy rocket - larger with different colors
+        ctx.fillStyle = '#ff4444'; // Red body
+        ctx.fillRect(screenX, position.y, size.x, size.y);
+        
+        // Heavy rocket details
+        ctx.fillStyle = '#ffaa00'; // Orange tip
+        ctx.fillRect(screenX + 2, position.y, size.x - 4, 12);
+        
+        // Thicker exhaust trail
+        ctx.fillStyle = '#ffff00'; // Yellow exhaust
+        ctx.fillRect(screenX + 4, position.y + size.y, size.x - 8, 25);
+        ctx.fillStyle = '#ff6600'; // Orange exhaust
+        ctx.fillRect(screenX + 6, position.y + size.y + 15, size.x - 12, 20);
+        
+        // Side details
+        ctx.fillStyle = '#666666';
+        ctx.fillRect(screenX, position.y + 20, 4, 15);
+        ctx.fillRect(screenX + size.x - 4, position.y + 20, 4, 15);
+      } else {
+        // Normal rocket
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(screenX, position.y, size.x, size.y);
+        
+        // Rocket tip
+        ctx.fillStyle = '#ffff00';
+        ctx.fillRect(screenX + 2, position.y, size.x - 4, 8);
+        
+        // Exhaust trail (should be at the bottom of rocket going up)
+        ctx.fillStyle = '#ff6600';
+        ctx.fillRect(screenX + 2, position.y + size.y, size.x - 4, 15);
+      }
     });
 
     // Draw projectiles (no scroll adjustment - they move independently)

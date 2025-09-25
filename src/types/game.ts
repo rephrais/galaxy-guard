@@ -21,6 +21,7 @@ export interface Spaceship extends GameObject {
 export interface Rocket extends GameObject {
   launchTime: number;
   explosionRadius: number;
+  type: 'normal' | 'heavy';
 }
 
 export interface Projectile extends GameObject {
