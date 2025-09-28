@@ -365,6 +365,20 @@ export const useGameEngine = () => {
         return true;
       });
 
+      // Update rockets (move upward and cull off-screen)
+      newState.rockets = newState.rockets.filter(rocket => {
+        if (!rocket.active) return false;
+        
+        rocket.position.y += rocket.velocity.y;
+        
+        // Remove if rocket goes above the screen or far below
+        if (rocket.position.y + rocket.size.y < 0 || rocket.position.y > settings.height + 200) {
+          return false;
+        }
+        
+        return true;
+      });
+
       // Update saucers
       newState.saucers = newState.saucers.filter(saucer => {
         if (!saucer.active) return false;
