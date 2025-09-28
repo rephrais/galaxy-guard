@@ -318,6 +318,64 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
         // Bomb trail
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(screenX - 4, position.y + 2, 4, 4);
+      } else if (type === 'laser') {
+        // Draw alien laser - red/orange beam
+        ctx.fillStyle = '#ff3300';
+        ctx.fillRect(screenX - 1, position.y - size.y/2, size.x, size.y);
+        
+        // Add glow effect
+        ctx.fillStyle = '#ff6600';
+        ctx.fillRect(screenX, position.y - size.y/2 + 2, size.x - 2, size.y - 4);
+        
+        // Bright center
+        ctx.fillStyle = '#ffaa00';
+        ctx.fillRect(screenX + 1, position.y - size.y/2 + 4, 1, size.y - 8);
+      }
+    });
+
+    // Draw aliens (adjusted for scroll)
+    gameState.aliens.forEach(alien => {
+      if (!alien.active) return;
+      
+      const screenX = alien.position.x - gameState.scrollOffset;
+      
+      // Only draw if visible on screen
+      if (screenX < -alien.size.x || screenX > settings.width + 50) return;
+      
+      const { position, size, health } = alien;
+      
+      // Draw alien body (insect-like)
+      ctx.fillStyle = '#228822';
+      ctx.fillRect(screenX + 5, position.y, size.x - 10, size.y - 5);
+      
+      // Draw alien head
+      ctx.fillStyle = '#336633';
+      ctx.fillRect(screenX + 8, position.y - 8, size.x - 16, 12);
+      
+      // Draw eyes (red)
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(screenX + 10, position.y - 6, 3, 3);
+      ctx.fillRect(screenX + size.x - 13, position.y - 6, 3, 3);
+      
+      // Draw legs
+      ctx.fillStyle = '#114411';
+      for (let i = 0; i < 4; i++) {
+        const legX = screenX + 6 + i * 5;
+        ctx.fillRect(legX, position.y + size.y - 5, 2, 8);
+      }
+      
+      // Draw weapon (cannon)
+      ctx.fillStyle = '#444444';
+      ctx.fillRect(screenX + size.x / 2 - 2, position.y + 5, 4, 15);
+      
+      // Health bar above alien
+      if (health < alien.health) {
+        const maxHealth = 50 + Math.floor((gameState.level - 1) * 10);
+        const healthPercent = health / maxHealth;
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(screenX, position.y - 15, size.x, 3);
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(screenX, position.y - 15, size.x * healthPercent, 3);
       }
     });
 

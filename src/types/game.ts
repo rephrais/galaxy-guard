@@ -26,7 +26,7 @@ export interface Rocket extends GameObject {
 
 export interface Projectile extends GameObject {
   damage: number;
-  type: 'bullet' | 'bomb';
+  type: 'bullet' | 'bomb' | 'laser';
 }
 
 export interface TerrainPoint {
@@ -60,6 +60,12 @@ export interface Saucer extends GameObject {
   driftSpeed: number;
 }
 
+export interface Alien extends GameObject {
+  lastFireTime: number;
+  fireRate: number;
+  health: number;
+}
+
 export interface GameState {
   isPlaying: boolean;
   isPaused: boolean;
@@ -72,6 +78,7 @@ export interface GameState {
   rockets: Rocket[];
   projectiles: Projectile[];
   saucers: Saucer[];
+  aliens: Alien[];
   terrain: TerrainLayers;
   explosions: Explosion[];
 }

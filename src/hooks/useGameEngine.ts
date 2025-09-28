@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer } from '@/types/game';
+import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien } from '@/types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
   width: 1200,
@@ -98,6 +98,7 @@ export const useGameEngine = () => {
     rockets: [],
     projectiles: [],
     saucers: [],
+    aliens: [],
     terrain: generateInitialTerrain(),
     explosions: [],
   });
@@ -106,6 +107,7 @@ export const useGameEngine = () => {
   const gameLoopRef = useRef<number>();
   const lastRocketLaunchRef = useRef<number>(0);
   const lastSaucerSpawnRef = useRef<number>(0);
+  const lastAlienSpawnRef = useRef<number>(0);
   const keysRef = useRef<Set<string>>(new Set());
 
   // Input handling
@@ -350,6 +352,39 @@ export const useGameEngine = () => {
         lastSaucerSpawnRef.current = now;
       }
 
+      // Spawn aliens on terrain every 10 seconds
+      const alienSpawnFreq = 10000; // 10 seconds
+      const maxAliens = 3 + Math.floor(newState.level / 2);
+      
+      if (now - lastAlienSpawnRef.current > alienSpawnFreq && newState.aliens.length < maxAliens) {
+        // Find a terrain point to spawn alien on
+        const visibleTerrain = newState.terrain.middle.filter(point => 
+          point.x >= newState.scrollOffset + settings.width * 0.3 && 
+          point.x <= newState.scrollOffset + settings.width * 1.8
+        );
+        
+        if (visibleTerrain.length > 0) {
+          const spawnPoint = visibleTerrain[Math.floor(Math.random() * visibleTerrain.length)];
+          const alienId = `alien-${Date.now()}-${Math.random()}`;
+          
+          newState.aliens.push({
+            id: alienId,
+            position: { 
+              x: spawnPoint.x, 
+              y: spawnPoint.y - 40 // Above ground level
+            },
+            velocity: { x: 0, y: 0 },
+            size: { x: 30, y: 35 },
+            active: true,
+            lastFireTime: now,
+            fireRate: 1500 + Math.random() * 1000, // 1.5-2.5 seconds between shots
+            health: 50 + newState.level * 10
+          });
+          
+          lastAlienSpawnRef.current = now;
+        }
+      }
+
       // Update projectiles
       newState.projectiles = newState.projectiles.filter(projectile => {
         if (!projectile.active) return false;
@@ -393,6 +428,54 @@ export const useGameEngine = () => {
         
         // Remove if off screen (left edge)
         if (saucer.position.x < newState.scrollOffset - 200) {
+          return false;
+        }
+        
+        return true;
+      });
+
+      // Update aliens and make them fire lasers
+      newState.aliens = newState.aliens.filter(alien => {
+        if (!alien.active) return false;
+        
+        // Check if alien should fire at spaceship
+        if (now - alien.lastFireTime > alien.fireRate) {
+          // Calculate angle to spaceship (convert alien world position to screen position)
+          const alienScreenX = alien.position.x - newState.scrollOffset;
+          const dx = newState.spaceship.position.x + newState.spaceship.size.x / 2 - (alienScreenX + alien.size.x / 2);
+          const dy = newState.spaceship.position.y + newState.spaceship.size.y / 2 - (alien.position.y + alien.size.y / 2);
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // Only fire if spaceship is within range and visible
+          if (distance < 600 && alienScreenX > -100 && alienScreenX < settings.width + 100) {
+            const laserSpeed = 6;
+            const normalizedDx = dx / distance;
+            const normalizedDy = dy / distance;
+            
+            const laserId = `laser-${Date.now()}-${Math.random()}`;
+            newState.projectiles.push({
+              id: laserId,
+              position: { 
+                x: alienScreenX + alien.size.x / 2, 
+                y: alien.position.y + alien.size.y / 2 
+              },
+              velocity: { 
+                x: normalizedDx * laserSpeed, 
+                y: normalizedDy * laserSpeed 
+              },
+              size: { x: 3, y: 12 },
+              active: true,
+              damage: 15 + newState.level * 2,
+              type: 'laser'
+            });
+            
+            alien.lastFireTime = now;
+          }
+        }
+        
+        // Remove aliens that are too far off screen
+        const alienScreenX = alien.position.x - newState.scrollOffset;
+        if (alienScreenX < -300 || alienScreenX > settings.width + 300) {
           return false;
         }
         
@@ -461,7 +544,75 @@ export const useGameEngine = () => {
             // Add score
             newState.score += projectile.type === 'bomb' ? 300 : 200; // Good points for saucers
           }
+      });
+
+      // Check projectile-alien collisions
+      newState.projectiles.forEach(projectile => {
+        if (projectile.type === 'laser') return; // Alien lasers don't hit aliens
+        
+        newState.aliens.forEach(alien => {
+          // Convert alien to screen space for collision
+          const alienScreen = {
+            ...alien,
+            position: { ...alien.position, x: alien.position.x - newState.scrollOffset },
+          };
+          if (projectile.active && alien.active && checkCollision(projectile, alienScreen)) {
+            // Damage alien
+            alien.health -= projectile.damage;
+            projectile.active = false;
+            
+            if (alien.health <= 0) {
+              // Create explosion at world position
+              newState.explosions.push({
+                id: `explosion-${Date.now()}-${Math.random()}`,
+                position: { x: alien.position.x, y: alien.position.y },
+                startTime: now,
+                particles: generateExplosionParticles(alien.position.x, alien.position.y, 20)
+              });
+              
+              alien.active = false;
+              newState.score += projectile.type === 'bomb' ? 400 : 250; // Good points for aliens
+            }
+          }
         });
+      });
+
+      // Check laser-spaceship collisions
+      newState.projectiles.forEach(projectile => {
+        if (projectile.type !== 'laser') return; // Only check alien lasers
+        
+        if (projectile.active && checkCollision(projectile, newState.spaceship)) {
+          // Damage spaceship
+          newState.spaceship.health -= projectile.damage;
+          projectile.active = false;
+          
+          // Create small explosion at spaceship
+          newState.explosions.push({
+            id: `explosion-${Date.now()}-${Math.random()}`,
+            position: { 
+              x: newState.spaceship.position.x + newState.scrollOffset, 
+              y: newState.spaceship.position.y 
+            },
+            startTime: now,
+            particles: generateExplosionParticles(
+              newState.spaceship.position.x + newState.scrollOffset, 
+              newState.spaceship.position.y,
+              10
+            )
+          });
+          
+          if (newState.spaceship.health <= 0) {
+            newState.lives--;
+            if (newState.lives <= 0) {
+              newState.gameOver = true;
+            } else {
+              // Reset spaceship
+              newState.spaceship.health = newState.spaceship.maxHealth;
+              newState.spaceship.position = { x: 100, y: 300 };
+            }
+          }
+        }
+      });
       });
 
       // Check spaceship-rocket collisions
@@ -552,6 +703,7 @@ export const useGameEngine = () => {
       newState.projectiles = newState.projectiles.filter(p => p.active);
       newState.rockets = newState.rockets.filter(r => r.active);
       newState.saucers = newState.saucers.filter(s => s.active);
+      newState.aliens = newState.aliens.filter(a => a.active);
 
       return newState;
     });
@@ -578,6 +730,8 @@ export const useGameEngine = () => {
     // Reset refs when starting game
     lastRocketLaunchRef.current = Date.now();
     lastSaucerSpawnRef.current = Date.now();
+    lastAlienSpawnRef.current = Date.now();
+    lastAlienSpawnRef.current = Date.now();
     
     setGameState(prev => ({
       ...prev,
@@ -617,6 +771,7 @@ export const useGameEngine = () => {
       rockets: [],
       projectiles: [],
       saucers: [],
+      aliens: [],
       terrain: generateInitialTerrain(),
       explosions: [],
     });
