@@ -273,48 +273,56 @@ export const useGameEngine = () => {
       const maxRockets = 3 + Math.floor(newState.level / 2);
       
       if (now - lastRocketLaunchRef.current > rocketFreq && newState.rockets.length < maxRockets) {
-        // Find visible terrain points to launch from 
+        // Find visible terrain points to launch from - broader search range
         const visibleTerrain = newState.terrain.middle.filter(point => 
-          point.x >= newState.scrollOffset + settings.width * 0.7 && 
-          point.x <= newState.scrollOffset + settings.width * 1.5
+          point.x >= newState.scrollOffset + settings.width * 0.5 && 
+          point.x <= newState.scrollOffset + settings.width * 2.0
         );
         
+        // Fallback: if no visible terrain, create a launch point
+        let launchPoint;
         if (visibleTerrain.length > 0) {
-          const launchPoint = visibleTerrain[Math.floor(Math.random() * visibleTerrain.length)];
-          const rocketId = `rocket-${Date.now()}-${Math.random()}`;
-          
-          // Randomly choose rocket type (70% normal, 30% heavy)
-          const isHeavy = Math.random() < 0.3 + (newState.level - 1) * 0.05; // More heavy rockets at higher levels
-          
-          if (isHeavy) {
-            // Heavy rocket - bigger and slower
-            newState.rockets.push({
-              id: rocketId,
-              position: { x: launchPoint.x, y: launchPoint.y },
-              velocity: { x: 0, y: -2 }, // Slower speed
-              size: { x: 16, y: 50 }, // Bigger size
-              active: true,
-              launchTime: now,
-              explosionRadius: 80, // Bigger explosion
-              type: 'heavy'
-            });
-          } else {
-            // Normal rocket
-            const rocketSpeed = settings.rocketSpeed + (newState.level - 1) * 0.5;
-            newState.rockets.push({
-              id: rocketId,
-              position: { x: launchPoint.x, y: launchPoint.y },
-              velocity: { x: 0, y: -rocketSpeed },
-              size: { x: 8, y: 30 },
-              active: true,
-              launchTime: now,
-              explosionRadius: 50,
-              type: 'normal'
-            });
-          }
-          
-          lastRocketLaunchRef.current = now;
+          launchPoint = visibleTerrain[Math.floor(Math.random() * visibleTerrain.length)];
+        } else {
+          // Create emergency launch point
+          launchPoint = {
+            x: newState.scrollOffset + settings.width * 0.8 + Math.random() * settings.width * 0.4,
+            y: 450 + Math.random() * 50
+          };
         }
+        
+        const rocketId = `rocket-${Date.now()}-${Math.random()}`;
+        
+        // Randomly choose rocket type (70% normal, 30% heavy)
+        const isHeavy = Math.random() < 0.3 + (newState.level - 1) * 0.05; // More heavy rockets at higher levels
+        
+        if (isHeavy) {
+          // Heavy rocket - bigger and slower
+          newState.rockets.push({
+            id: rocketId,
+            position: { x: launchPoint.x, y: launchPoint.y },
+            velocity: { x: 0, y: -2 }, // Slower speed
+            size: { x: 16, y: 50 }, // Bigger size
+            active: true,
+            launchTime: now,
+            explosionRadius: 80, // Bigger explosion
+            type: 'heavy'
+          });
+        } else {
+          // Normal rocket
+          newState.rockets.push({
+            id: rocketId,
+            position: { x: launchPoint.x, y: launchPoint.y },
+            velocity: { x: 0, y: -settings.rocketSpeed },
+            size: { x: 8, y: 30 },
+            active: true,
+            launchTime: now,
+            explosionRadius: 40,
+            type: 'normal'
+          });
+        }
+        
+        lastRocketLaunchRef.current = now;
       }
 
       // Spawn saucers from the right side
@@ -553,6 +561,10 @@ export const useGameEngine = () => {
   }, [gameLoop]);
 
   const startGame = useCallback(() => {
+    // Reset refs when starting game
+    lastRocketLaunchRef.current = Date.now();
+    lastSaucerSpawnRef.current = Date.now();
+    
     setGameState(prev => ({
       ...prev,
       isPlaying: true,
@@ -594,9 +606,9 @@ export const useGameEngine = () => {
       terrain: generateInitialTerrain(),
       explosions: [],
     });
-    lastRocketLaunchRef.current = 0;
-    lastSaucerSpawnRef.current = 0;
-  }, [settings.width]);
+    lastRocketLaunchRef.current = Date.now();
+    lastSaucerSpawnRef.current = Date.now();
+  }, []);
 
   return {
     gameState,

@@ -37,7 +37,7 @@ export const SpaceDefenderGame: React.FC = () => {
   // Handle pause with keyboard
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.code === 'KeyP' && !showStartMenu) {
+      if ((e.code === 'KeyP' || e.code === 'Escape') && !showStartMenu) {
         pauseGame();
       }
     };
