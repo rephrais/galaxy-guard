@@ -43,16 +43,18 @@ export const useLocalStorage = () => {
 
   const addToLeaderboard = useCallback((entry: LeaderboardEntry) => {
     try {
-      const newLeaderboard = [...leaderboard, entry]
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 10); // Keep top 10
-      
-      localStorage.setItem('spaceship-leaderboard', JSON.stringify(newLeaderboard));
-      setLeaderboard(newLeaderboard);
+      setLeaderboard(prevLeaderboard => {
+        const newLeaderboard = [...prevLeaderboard, entry]
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 10); // Keep top 10
+        
+        localStorage.setItem('spaceship-leaderboard', JSON.stringify(newLeaderboard));
+        return newLeaderboard;
+      });
     } catch (error) {
       console.error('Failed to save to leaderboard:', error);
     }
-  }, [leaderboard]);
+  }, []);
 
   const clearLeaderboard = useCallback(() => {
     localStorage.removeItem('spaceship-leaderboard');

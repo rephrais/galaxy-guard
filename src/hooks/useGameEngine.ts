@@ -84,6 +84,7 @@ export const useGameEngine = () => {
     score: 0,
     lives: 3,
     scrollOffset: 0,
+    startTime: 0,
     spaceship: {
       id: 'player',
       position: { x: 100, y: 300 },
@@ -346,7 +347,9 @@ export const useGameEngine = () => {
           size: { x: 60, y: 25 }, // Ellipse dimensions
           active: true,
           targetY,
-          driftSpeed: 0.5 + Math.random() * 0.3
+          driftSpeed: 0.5 + Math.random() * 0.3,
+          lastFireTime: now,
+          fireRate: 2000 + Math.random() * 1000 // 2-3 seconds between shots
         });
         
         lastSaucerSpawnRef.current = now;
@@ -414,7 +417,7 @@ export const useGameEngine = () => {
         return true;
       });
 
-      // Update saucers
+      // Update saucers and make them shoot
       newState.saucers = newState.saucers.filter(saucer => {
         if (!saucer.active) return false;
         
@@ -424,6 +427,41 @@ export const useGameEngine = () => {
         const yDiff = saucer.targetY - saucer.position.y;
         if (Math.abs(yDiff) > 5) {
           saucer.position.y += Math.sign(yDiff) * saucer.driftSpeed;
+        }
+        
+        // Fire at spaceship
+        if (now - saucer.lastFireTime > saucer.fireRate) {
+          const saucerScreenX = saucer.position.x - newState.scrollOffset;
+          
+          // Only fire if saucer is visible on screen
+          if (saucerScreenX > -100 && saucerScreenX < settings.width + 100) {
+            const dx = newState.spaceship.position.x + newState.spaceship.size.x / 2 - (saucerScreenX + saucer.size.x / 2);
+            const dy = newState.spaceship.position.y + newState.spaceship.size.y / 2 - (saucer.position.y + saucer.size.y / 2);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            const laserSpeed = 7;
+            const normalizedDx = dx / distance;
+            const normalizedDy = dy / distance;
+            
+            const laserId = `saucer-laser-${Date.now()}-${Math.random()}`;
+            newState.projectiles.push({
+              id: laserId,
+              position: { 
+                x: saucerScreenX + saucer.size.x / 2, 
+                y: saucer.position.y + saucer.size.y / 2 
+              },
+              velocity: { 
+                x: normalizedDx * laserSpeed, 
+                y: normalizedDy * laserSpeed 
+              },
+              size: { x: 3, y: 12 },
+              active: true,
+              damage: 20 + newState.level * 2,
+              type: 'laser'
+            });
+            
+            saucer.lastFireTime = now;
+          }
         }
         
         // Remove if off screen (left edge)
@@ -731,13 +769,13 @@ export const useGameEngine = () => {
     lastRocketLaunchRef.current = Date.now();
     lastSaucerSpawnRef.current = Date.now();
     lastAlienSpawnRef.current = Date.now();
-    lastAlienSpawnRef.current = Date.now();
     
     setGameState(prev => ({
       ...prev,
       isPlaying: true,
       isPaused: false,
       gameOver: false,
+      startTime: Date.now(),
     }));
   }, []);
 
@@ -757,6 +795,7 @@ export const useGameEngine = () => {
       score: 0,
       lives: 3,
       scrollOffset: 0,
+      startTime: 0,
       spaceship: {
         id: 'player',
         position: { x: 100, y: 300 },

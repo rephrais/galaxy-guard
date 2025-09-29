@@ -147,12 +147,12 @@ export const SpaceDefenderGame: React.FC = () => {
   }
 
   return (
-    <div className="relative w-full h-screen bg-background overflow-hidden">
+    <div className="relative w-full h-screen bg-background overflow-hidden flex flex-col">
       {/* Background starfield */}
       <div className="starfield" />
       
       {/* Game Canvas */}
-      <div className="flex items-center justify-center w-full h-full">
+      <div className="flex items-center justify-center flex-1">
         <div className="relative">
           <GameCanvas gameState={gameState} settings={settings} />
         </div>
@@ -164,10 +164,19 @@ export const SpaceDefenderGame: React.FC = () => {
         onPause={pauseGame}
         onRestart={handleRestart}
       />
+      
+      {/* Controls Help Footer */}
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
+        <div className="hud-panel text-xs px-6 py-2">
+          <div className="pixel-text text-muted-foreground">
+            ARROWS: Move | SPACE: Shoot | B: Bomb | P/ESC: Pause
+          </div>
+        </div>
+      </div>
 
       {/* Debug Info (can be removed in final version) */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="absolute bottom-4 left-4 text-xs text-muted-foreground bg-black bg-opacity-50 p-2 rounded">
+        <div className="absolute bottom-16 left-4 text-xs text-muted-foreground bg-black bg-opacity-50 p-2 rounded">
           <div>Rockets: {gameState.rockets.length}</div>
           <div>Projectiles: {gameState.projectiles.length}</div>
           <div>Explosions: {gameState.explosions.length}</div>

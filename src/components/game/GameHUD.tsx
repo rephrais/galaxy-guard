@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameState } from '@/types/game';
 
 interface GameHUDProps {
@@ -9,6 +9,28 @@ interface GameHUDProps {
 
 export const GameHUD: React.FC<GameHUDProps> = ({ gameState, onPause, onRestart }) => {
   const healthPercent = (gameState.spaceship.health / gameState.spaceship.maxHealth) * 100;
+  const [elapsedTime, setElapsedTime] = useState(0);
+  
+  // Update elapsed time
+  useEffect(() => {
+    if (!gameState.isPlaying || gameState.isPaused || gameState.gameOver || gameState.startTime === 0) {
+      return;
+    }
+    
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+      setElapsedTime(elapsed);
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [gameState.isPlaying, gameState.isPaused, gameState.gameOver, gameState.startTime]);
+  
+  // Format time as MM:SS
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
   
   return (
     <div className="absolute top-0 left-0 w-full z-10 p-4">
@@ -23,6 +45,9 @@ export const GameHUD: React.FC<GameHUDProps> = ({ gameState, onPause, onRestart 
           </div>
           <div className="pixel-text text-neon-green">
             LIVES: {gameState.lives}
+          </div>
+          <div className="pixel-text text-neon-yellow">
+            TIME: {formatTime(elapsedTime)}
           </div>
         </div>
         
@@ -71,12 +96,6 @@ export const GameHUD: React.FC<GameHUDProps> = ({ gameState, onPause, onRestart 
         </div>
       </div>
 
-      {/* Controls Help */}
-      <div className="hud-panel text-xs">
-        <div className="pixel-text text-muted-foreground">
-          ARROWS: Move | SPACE: Shoot | B: Bomb | P: Pause
-        </div>
-      </div>
 
       {/* Game Over Overlay */}
       {gameState.gameOver && (

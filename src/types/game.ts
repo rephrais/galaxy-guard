@@ -58,6 +58,8 @@ export interface Explosion {
 export interface Saucer extends GameObject {
   targetY: number;
   driftSpeed: number;
+  lastFireTime: number;
+  fireRate: number;
 }
 
 export interface Alien extends GameObject {
@@ -74,6 +76,7 @@ export interface GameState {
   score: number;
   lives: number;
   scrollOffset: number;
+  startTime: number;
   spaceship: Spaceship;
   rockets: Rocket[];
   projectiles: Projectile[];
