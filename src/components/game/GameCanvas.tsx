@@ -136,55 +136,69 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
     const bgGradient = ctx.createLinearGradient(0, 250, 0, settings.height);
     bgGradient.addColorStop(0, '#1a1a2e');
     bgGradient.addColorStop(1, '#16213e');
-    drawTerrainLayer(gameState.terrain.background, 0.02, bgGradient, '#3a3a5c', 0.6);
+    drawTerrainLayer(gameState.terrain.background, 0.1, bgGradient, '#3a3a5c', 0.6);
     
     // Draw middle terrain (slow parallax)
     const midGradient = ctx.createLinearGradient(0, 400, 0, settings.height);
     midGradient.addColorStop(0, '#2d2d44');
     midGradient.addColorStop(1, '#1a1a2e');
-    drawTerrainLayer(gameState.terrain.middle, 0.5, midGradient, '#4a4a6a', 1.0);
+    drawTerrainLayer(gameState.terrain.middle, 0.7, midGradient, '#4a4a6a', 1.0);
     
     // Draw foreground terrain (fastest parallax)
     const fgGradient = ctx.createLinearGradient(0, 500, 0, settings.height);
     fgGradient.addColorStop(0, '#0f0f1a');
     fgGradient.addColorStop(1, '#000000');
-    drawTerrainLayer(gameState.terrain.foreground, 1.5, fgGradient, '#2a2a3a', 0.8);
+    drawTerrainLayer(gameState.terrain.foreground, 1.2, fgGradient, '#2a2a3a', 0.8);
     
-    // Draw trees on foreground terrain
+    // Draw trees on foreground terrain (slower than terrain)
     if (gameState.terrain.foreground && gameState.terrain.foreground.length > 0) {
-      const parallaxOffset = gameState.scrollOffset * 1.5;
-      const visibleTerrain = gameState.terrain.foreground.filter(point => {
-        const screenX = point.x - parallaxOffset;
-        return screenX >= -100 && screenX <= settings.width + 100;
-      });
+      const treeParallax = 0.4; // Much slower than foreground terrain
+      const parallaxOffset = gameState.scrollOffset * treeParallax;
       
-      // Draw a tree every ~80-120 pixels
-      for (let i = 0; i < visibleTerrain.length; i += Math.floor(Math.random() * 8 + 5)) {
-        const point = visibleTerrain[i];
-        const screenX = point.x - parallaxOffset;
-        const treeHeight = 20 + Math.random() * 15;
-        const treeWidth = 6;
+      // Generate consistent tree positions based on world x position
+      const visibleRange = {
+        start: Math.floor((gameState.scrollOffset - 200) / 100) * 100,
+        end: Math.ceil((gameState.scrollOffset + settings.width + 200) / 100) * 100
+      };
+      
+      for (let worldX = visibleRange.start; worldX <= visibleRange.end; worldX += 100) {
+        // Find nearest terrain point
+        const nearestTerrain = gameState.terrain.foreground.reduce((prev, curr) => {
+          return Math.abs(curr.x - worldX) < Math.abs(prev.x - worldX) ? curr : prev;
+        });
         
-        // Tree trunk
-        ctx.fillStyle = '#3a2a1a';
-        ctx.fillRect(screenX - treeWidth / 2, point.y - treeHeight, treeWidth, treeHeight);
-        
-        // Tree foliage (simple triangle)
-        ctx.fillStyle = '#1a3a1a';
-        ctx.beginPath();
-        ctx.moveTo(screenX, point.y - treeHeight - 15);
-        ctx.lineTo(screenX - 10, point.y - treeHeight + 5);
-        ctx.lineTo(screenX + 10, point.y - treeHeight + 5);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Second foliage layer
-        ctx.beginPath();
-        ctx.moveTo(screenX, point.y - treeHeight - 8);
-        ctx.lineTo(screenX - 8, point.y - treeHeight);
-        ctx.lineTo(screenX + 8, point.y - treeHeight);
-        ctx.closePath();
-        ctx.fill();
+        if (nearestTerrain) {
+          const screenX = worldX - parallaxOffset;
+          
+          // Only draw if visible
+          if (screenX >= -50 && screenX <= settings.width + 50) {
+            // Consistent pseudo-random values based on world position
+            const seed = Math.sin(worldX * 0.001) * 10000;
+            const treeHeight = 20 + (Math.abs(Math.sin(seed)) * 15);
+            const treeWidth = 6;
+            
+            // Tree trunk
+            ctx.fillStyle = '#3a2a1a';
+            ctx.fillRect(screenX - treeWidth / 2, nearestTerrain.y - treeHeight, treeWidth, treeHeight);
+            
+            // Tree foliage (simple triangle)
+            ctx.fillStyle = '#1a3a1a';
+            ctx.beginPath();
+            ctx.moveTo(screenX, nearestTerrain.y - treeHeight - 15);
+            ctx.lineTo(screenX - 10, nearestTerrain.y - treeHeight + 5);
+            ctx.lineTo(screenX + 10, nearestTerrain.y - treeHeight + 5);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Second foliage layer
+            ctx.beginPath();
+            ctx.moveTo(screenX, nearestTerrain.y - treeHeight - 8);
+            ctx.lineTo(screenX - 8, nearestTerrain.y - treeHeight);
+            ctx.lineTo(screenX + 8, nearestTerrain.y - treeHeight);
+            ctx.closePath();
+            ctx.fill();
+          }
+        }
       }
     }
 

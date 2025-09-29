@@ -558,8 +558,10 @@ export const useGameEngine = () => {
         });
       });
 
-      // Check projectile-saucer collisions
+      // Check projectile-saucer collisions (only player projectiles)
       newState.projectiles.forEach(projectile => {
+        if (projectile.type === 'laser') return; // Skip laser projectiles (fired by enemies)
+        
         newState.saucers.forEach(saucer => {
           // Convert saucer to screen space for collision
           const saucerScreen = {
@@ -582,6 +584,7 @@ export const useGameEngine = () => {
             // Add score
             newState.score += projectile.type === 'bomb' ? 300 : 200; // Good points for saucers
           }
+        });
       });
 
       // Check projectile-alien collisions
@@ -650,7 +653,6 @@ export const useGameEngine = () => {
             }
           }
         }
-      });
       });
 
       // Check spaceship-rocket collisions
