@@ -431,6 +431,77 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       }
     });
 
+    // Draw boss rockets (adjusted for scroll)
+    gameState.bossRockets.forEach(boss => {
+      if (!boss.active) return;
+      
+      const screenX = boss.position.x - gameState.scrollOffset;
+      
+      // Only draw if visible on screen
+      if (screenX < -boss.size.x || screenX > settings.width + 200) return;
+      
+      const { position, size, health, maxHealth } = boss;
+      
+      // Draw massive rocket body
+      ctx.save();
+      
+      // Main body - dark metallic
+      ctx.fillStyle = '#444444';
+      ctx.fillRect(screenX, position.y, size.x, size.y);
+      
+      // Nose cone - red/orange
+      ctx.fillStyle = '#ff4400';
+      ctx.beginPath();
+      ctx.moveTo(screenX, position.y + size.y / 2);
+      ctx.lineTo(screenX - 30, position.y + size.y / 2 - 15);
+      ctx.lineTo(screenX - 30, position.y + size.y / 2 + 15);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Engine exhausts (3 streams)
+      ctx.fillStyle = '#0099ff';
+      ctx.fillRect(screenX + size.x - 15, position.y + 10, 15, 15);
+      ctx.fillRect(screenX + size.x - 15, position.y + size.y / 2 - 7, 15, 15);
+      ctx.fillRect(screenX + size.x - 15, position.y + size.y - 25, 15, 15);
+      
+      // Engine flames
+      const time = Date.now() * 0.01;
+      const flameLength = 20 + Math.sin(time) * 10;
+      ctx.fillStyle = '#ffff00';
+      ctx.fillRect(screenX + size.x, position.y + 12, flameLength, 11);
+      ctx.fillRect(screenX + size.x, position.y + size.y / 2 - 5, flameLength, 11);
+      ctx.fillRect(screenX + size.x, position.y + size.y - 23, flameLength, 11);
+      
+      // Weapon ports (3 cannons)
+      ctx.fillStyle = '#222222';
+      for (let i = 0; i < 3; i++) {
+        const portY = position.y + 20 + i * 20;
+        ctx.fillRect(screenX + 10, portY, 20, 8);
+      }
+      
+      // Boss details - rivets and panels
+      ctx.fillStyle = '#666666';
+      for (let i = 0; i < 5; i++) {
+        ctx.fillRect(screenX + 20 + i * 18, position.y + 5, 4, 4);
+        ctx.fillRect(screenX + 20 + i * 18, position.y + size.y - 9, 4, 4);
+      }
+      
+      // Health bar above boss
+      const healthPercent = health / maxHealth;
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(screenX, position.y - 20, size.x, 8);
+      ctx.fillStyle = healthPercent > 0.5 ? '#00ff00' : healthPercent > 0.25 ? '#ffff00' : '#ff0000';
+      ctx.fillRect(screenX, position.y - 20, size.x * healthPercent, 8);
+      
+      // Health text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '12px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${health}/${maxHealth}`, screenX + size.x / 2, position.y - 25);
+      
+      ctx.restore();
+    });
+
     // Draw explosions with particles (adjusted for scroll)
     gameState.explosions.forEach(explosion => {
       const screenX = explosion.position.x - gameState.scrollOffset;

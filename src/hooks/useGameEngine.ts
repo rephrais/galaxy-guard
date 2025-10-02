@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien } from '@/types/game';
+import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket } from '@/types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
   width: 1200,
@@ -100,6 +100,7 @@ export const useGameEngine = () => {
     projectiles: [],
     saucers: [],
     aliens: [],
+    bossRockets: [],
     terrain: generateInitialTerrain(),
     explosions: [],
   });
@@ -109,6 +110,7 @@ export const useGameEngine = () => {
   const lastRocketLaunchRef = useRef<number>(0);
   const lastSaucerSpawnRef = useRef<number>(0);
   const lastAlienSpawnRef = useRef<number>(0);
+  const lastBossSpawnRef = useRef<number>(0);
   const keysRef = useRef<Set<string>>(new Set());
 
   // Input handling
@@ -388,6 +390,32 @@ export const useGameEngine = () => {
         }
       }
 
+      // Spawn boss rocket every 10 seconds
+      const bossSpawnFreq = 10000; // 10 seconds
+      const maxBosses = 1; // Only one boss at a time
+      
+      if (now - lastBossSpawnRef.current > bossSpawnFreq && newState.bossRockets.length < maxBosses) {
+        const bossId = `boss-${Date.now()}-${Math.random()}`;
+        const spawnY = settings.height / 2 + (Math.random() - 0.5) * 200; // Center-ish vertical position
+        
+        newState.bossRockets.push({
+          id: bossId,
+          position: { 
+            x: newState.scrollOffset + settings.width + 200, // Spawn off right edge 
+            y: spawnY 
+          },
+          velocity: { x: -0.5, y: 0 }, // Slow leftward movement
+          size: { x: 120, y: 80 }, // Massive size
+          active: true,
+          lastFireTime: now,
+          fireRate: 800, // Fire every 0.8 seconds
+          health: 20,
+          maxHealth: 20
+        });
+        
+        lastBossSpawnRef.current = now;
+      }
+
       // Update projectiles
       newState.projectiles = newState.projectiles.filter(projectile => {
         if (!projectile.active) return false;
@@ -520,6 +548,57 @@ export const useGameEngine = () => {
         return true;
       });
 
+      // Update boss rockets and make them shoot photons
+      newState.bossRockets = newState.bossRockets.filter(boss => {
+        if (!boss.active) return false;
+        
+        boss.position.x += boss.velocity.x;
+        
+        // Fire 3 streams of photons
+        if (now - boss.lastFireTime > boss.fireRate) {
+          const bossScreenX = boss.position.x - newState.scrollOffset;
+          
+          // Only fire if boss is visible on screen
+          if (bossScreenX > -200 && bossScreenX < settings.width + 200) {
+            const photonSpeed = 3; // Slow photons
+            
+            // Fire 3 photons in slightly random directions
+            for (let i = 0; i < 3; i++) {
+              const angleVariation = (Math.random() - 0.5) * 0.6; // Random spread
+              const dx = -1 + angleVariation; // Generally leftward
+              const dy = (Math.random() - 0.5) * 1.5; // Random vertical component
+              const magnitude = Math.sqrt(dx * dx + dy * dy);
+              
+              const photonId = `photon-${Date.now()}-${Math.random()}-${i}`;
+              newState.projectiles.push({
+                id: photonId,
+                position: { 
+                  x: bossScreenX + boss.size.x / 4, 
+                  y: boss.position.y + boss.size.y / 2 + (i - 1) * 20 // Spread vertically
+                },
+                velocity: { 
+                  x: (dx / magnitude) * photonSpeed, 
+                  y: (dy / magnitude) * photonSpeed 
+                },
+                size: { x: 6, y: 6 },
+                active: true,
+                damage: 30,
+                type: 'laser'
+              });
+            }
+            
+            boss.lastFireTime = now;
+          }
+        }
+        
+        // Remove if off screen (left edge)
+        if (boss.position.x < newState.scrollOffset - 300) {
+          return false;
+        }
+        
+        return true;
+      });
+
       // Check projectile-rocket collisions
       newState.projectiles.forEach(projectile => {
         newState.rockets.forEach(rocket => {
@@ -613,6 +692,49 @@ export const useGameEngine = () => {
               
               alien.active = false;
               newState.score += projectile.type === 'bomb' ? 400 : 250; // Good points for aliens
+            }
+          }
+        });
+      });
+
+      // Check projectile-boss collisions
+      newState.projectiles.forEach(projectile => {
+        if (projectile.type === 'laser') return; // Boss lasers don't hit boss
+        
+        newState.bossRockets.forEach(boss => {
+          // Convert boss to screen space for collision
+          const bossScreen = {
+            ...boss,
+            position: { ...boss.position, x: boss.position.x - newState.scrollOffset },
+          };
+          if (projectile.active && boss.active && checkCollision(projectile, bossScreen)) {
+            // Damage boss
+            boss.health -= 1; // Each hit reduces by 1 (needs 20 hits)
+            projectile.active = false;
+            
+            // Small explosion on hit
+            newState.explosions.push({
+              id: `explosion-${Date.now()}-${Math.random()}`,
+              position: { x: boss.position.x + (Math.random() - 0.5) * boss.size.x, y: boss.position.y + (Math.random() - 0.5) * boss.size.y },
+              startTime: now,
+              particles: generateExplosionParticles(
+                boss.position.x + (Math.random() - 0.5) * boss.size.x, 
+                boss.position.y + (Math.random() - 0.5) * boss.size.y, 
+                8
+              )
+            });
+            
+            if (boss.health <= 0) {
+              // Create massive explosion at world position
+              newState.explosions.push({
+                id: `explosion-${Date.now()}-${Math.random()}`,
+                position: { x: boss.position.x, y: boss.position.y },
+                startTime: now,
+                particles: generateExplosionParticles(boss.position.x, boss.position.y, 40)
+              });
+              
+              boss.active = false;
+              newState.score += 1000; // Huge points for destroying boss
             }
           }
         });
@@ -744,6 +866,7 @@ export const useGameEngine = () => {
       newState.rockets = newState.rockets.filter(r => r.active);
       newState.saucers = newState.saucers.filter(s => s.active);
       newState.aliens = newState.aliens.filter(a => a.active);
+      newState.bossRockets = newState.bossRockets.filter(b => b.active);
 
       return newState;
     });
@@ -771,6 +894,7 @@ export const useGameEngine = () => {
     lastRocketLaunchRef.current = Date.now();
     lastSaucerSpawnRef.current = Date.now();
     lastAlienSpawnRef.current = Date.now();
+    lastBossSpawnRef.current = Date.now();
     
     setGameState(prev => ({
       ...prev,
@@ -813,11 +937,13 @@ export const useGameEngine = () => {
       projectiles: [],
       saucers: [],
       aliens: [],
+      bossRockets: [],
       terrain: generateInitialTerrain(),
       explosions: [],
     });
     lastRocketLaunchRef.current = Date.now();
     lastSaucerSpawnRef.current = Date.now();
+    lastBossSpawnRef.current = Date.now();
   }, []);
 
   return {

@@ -68,6 +68,13 @@ export interface Alien extends GameObject {
   health: number;
 }
 
+export interface BossRocket extends GameObject {
+  lastFireTime: number;
+  fireRate: number;
+  health: number;
+  maxHealth: number;
+}
+
 export interface GameState {
   isPlaying: boolean;
   isPaused: boolean;
@@ -82,6 +89,7 @@ export interface GameState {
   projectiles: Projectile[];
   saucers: Saucer[];
   aliens: Alien[];
+  bossRockets: BossRocket[];
   terrain: TerrainLayers;
   explosions: Explosion[];
 }
