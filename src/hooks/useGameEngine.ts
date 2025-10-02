@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket } from '@/types/game';
+import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Tree } from '@/types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
   width: 1200,
@@ -103,6 +103,7 @@ export const useGameEngine = () => {
     bossRockets: [],
     terrain: generateInitialTerrain(),
     explosions: [],
+    trees: [],
   });
 
   const [settings] = useState<GameSettings>(DEFAULT_SETTINGS);
@@ -166,13 +167,25 @@ export const useGameEngine = () => {
         newState.terrain.background.push(...newSegment.background);
         newState.terrain.middle.push(...newSegment.middle);
         newState.terrain.foreground.push(...newSegment.foreground);
+        
+        // Generate trees on the foreground terrain
+        for (let x = lastTerrainX; x < lastTerrainX + 1200; x += 200 + Math.floor(Math.sin(x * 0.01) * 100)) {
+          const terrainY = newState.terrain.foreground.find(p => Math.abs(p.x - x) < 20)?.y || 650;
+          newState.trees.push({
+            x: x,
+            y: terrainY - 60, // Position tree above terrain
+            width: 40,
+            height: 80,
+          });
+        }
       }
       
-      // Clean up old terrain points to prevent memory issues
+      // Clean up old terrain points and trees to prevent memory issues
       const minX = newState.scrollOffset - settings.width;
       newState.terrain.background = newState.terrain.background.filter(p => p.x > minX);
       newState.terrain.middle = newState.terrain.middle.filter(p => p.x > minX);
       newState.terrain.foreground = newState.terrain.foreground.filter(p => p.x > minX);
+      newState.trees = newState.trees.filter(t => t.x > minX);
 
       // Handle spaceship movement
       if (keysRef.current.has('ArrowUp')) {
@@ -844,6 +857,36 @@ export const useGameEngine = () => {
         }
       });
 
+      // Check spaceship-tree collisions (instant death)
+      newState.trees.forEach(tree => {
+        const treeScreenX = tree.x - newState.scrollOffset;
+        const treeCollider = {
+          position: { x: treeScreenX, y: tree.y },
+          size: { x: tree.width, y: tree.height }
+        };
+        
+        if (checkCollision(newState.spaceship, treeCollider)) {
+          // Instant kill - lose a life
+          newState.lives--;
+          
+          // Create big explosion
+          newState.explosions.push({
+            id: `explosion-${Date.now()}-${Math.random()}`,
+            position: { x: tree.x, y: tree.y + tree.height / 2 },
+            startTime: now,
+            particles: generateExplosionParticles(tree.x, tree.y + tree.height / 2, 25)
+          });
+          
+          if (newState.lives <= 0) {
+            newState.gameOver = true;
+          } else {
+            // Reset spaceship
+            newState.spaceship.health = newState.spaceship.maxHealth;
+            newState.spaceship.position = { x: 100, y: 300 };
+          }
+        }
+      });
+
       // Clean up explosions and update particles
       newState.explosions = newState.explosions.filter(explosion => {
         const elapsed = now - explosion.startTime;
@@ -940,6 +983,7 @@ export const useGameEngine = () => {
       bossRockets: [],
       terrain: generateInitialTerrain(),
       explosions: [],
+      trees: [],
     });
     lastRocketLaunchRef.current = Date.now();
     lastSaucerSpawnRef.current = Date.now();

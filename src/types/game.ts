@@ -75,6 +75,13 @@ export interface BossRocket extends GameObject {
   maxHealth: number;
 }
 
+export interface Tree {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface GameState {
   isPlaying: boolean;
   isPaused: boolean;
@@ -92,6 +99,7 @@ export interface GameState {
   bossRockets: BossRocket[];
   terrain: TerrainLayers;
   explosions: Explosion[];
+  trees: Tree[];
 }
 
 export interface GameSettings {
