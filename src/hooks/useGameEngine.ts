@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Tree } from '@/types/game';
+import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Boss, Tree } from '@/types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
   width: 1200,
@@ -101,6 +101,7 @@ export const useGameEngine = () => {
     saucers: [],
     aliens: [],
     bossRockets: [],
+    boss: null,
     terrain: generateInitialTerrain(),
     explosions: [],
     trees: [],
@@ -112,6 +113,7 @@ export const useGameEngine = () => {
   const lastSaucerSpawnRef = useRef<number>(0);
   const lastAlienSpawnRef = useRef<number>(0);
   const lastBossSpawnRef = useRef<number>(0);
+  const bossSpawnedRef = useRef<boolean>(false);
   const keysRef = useRef<Set<string>>(new Set());
 
   // Input handling
@@ -429,6 +431,37 @@ export const useGameEngine = () => {
         lastBossSpawnRef.current = now;
       }
 
+      // Spawn BOSS at 1 minute mark
+      const gameTime = now - newState.startTime;
+      if (gameTime >= 60000 && !bossSpawnedRef.current && !newState.boss) {
+        bossSpawnedRef.current = true;
+        
+        // Create tentacles
+        const tentacles = [];
+        for (let i = 0; i < 6; i++) {
+          tentacles.push({
+            angle: (Math.PI * 2 * i) / 6,
+            length: 80 + Math.random() * 40
+          });
+        }
+        
+        newState.boss = {
+          id: 'mega-boss',
+          position: { 
+            x: newState.scrollOffset + settings.width + 50,
+            y: settings.height / 2 - 200
+          },
+          velocity: { x: -0.3, y: 0 },
+          size: { x: 250, y: 400 },
+          active: true,
+          lastFireTime: now,
+          fireRate: 1200,
+          health: 100,
+          maxHealth: 100,
+          tentacles
+        };
+      }
+
       // Update projectiles
       newState.projectiles = newState.projectiles.filter(projectile => {
         if (!projectile.active) return false;
@@ -612,6 +645,60 @@ export const useGameEngine = () => {
         return true;
       });
 
+      // Update MEGA BOSS
+      if (newState.boss && newState.boss.active) {
+        newState.boss.position.x += newState.boss.velocity.x;
+        
+        // Animate tentacles
+        const animTime = now * 0.003;
+        newState.boss.tentacles.forEach((tentacle, i) => {
+          tentacle.angle = (Math.PI * 2 * i) / 6 + Math.sin(animTime + i) * 0.3;
+        });
+        
+        // Fire 5 fireballs randomly
+        if (now - newState.boss.lastFireTime > newState.boss.fireRate) {
+          const bossScreenX = newState.boss.position.x - newState.scrollOffset;
+          
+          if (bossScreenX > -300 && bossScreenX < settings.width + 300) {
+            for (let i = 0; i < 5; i++) {
+              // Random angle towards left side
+              const angleToPlayer = Math.atan2(
+                newState.spaceship.position.y - newState.boss.position.y - newState.boss.size.y / 2,
+                newState.spaceship.position.x - bossScreenX - newState.boss.size.x / 2
+              );
+              const angleVariation = (Math.random() - 0.5) * 1.2;
+              const finalAngle = angleToPlayer + angleVariation;
+              
+              const fireballSpeed = 2 + Math.random() * 2;
+              
+              newState.projectiles.push({
+                id: `fireball-${Date.now()}-${Math.random()}-${i}`,
+                position: {
+                  x: bossScreenX + newState.boss.size.x / 2,
+                  y: newState.boss.position.y + newState.boss.size.y / 2 + (Math.random() - 0.5) * 100
+                },
+                velocity: {
+                  x: Math.cos(finalAngle) * fireballSpeed,
+                  y: Math.sin(finalAngle) * fireballSpeed
+                },
+                size: { x: 20, y: 20 },
+                active: true,
+                damage: 40,
+                type: 'fireball'
+              });
+            }
+            
+            newState.boss.lastFireTime = now;
+          }
+        }
+        
+        // Remove boss if off screen
+        if (newState.boss.position.x < newState.scrollOffset - 400) {
+          newState.boss.active = false;
+          newState.boss = null;
+        }
+      }
+
       // Check projectile-rocket collisions
       newState.projectiles.forEach(projectile => {
         newState.rockets.forEach(rocket => {
@@ -753,9 +840,64 @@ export const useGameEngine = () => {
         });
       });
 
-      // Check laser-spaceship collisions
+      // Check projectile-MEGA BOSS collisions
+      if (newState.boss && newState.boss.active) {
+        newState.projectiles.forEach(projectile => {
+          if (projectile.type === 'laser' || projectile.type === 'fireball') return;
+          
+          const bossScreen = {
+            ...newState.boss!,
+            position: { ...newState.boss!.position, x: newState.boss!.position.x - newState.scrollOffset },
+          };
+          
+          if (projectile.active && checkCollision(projectile, bossScreen)) {
+            newState.boss!.health -= 1;
+            projectile.active = false;
+            
+            // Hit explosion
+            newState.explosions.push({
+              id: `explosion-${Date.now()}-${Math.random()}`,
+              position: { 
+                x: newState.boss!.position.x + (Math.random() - 0.5) * newState.boss!.size.x, 
+                y: newState.boss!.position.y + (Math.random() - 0.5) * newState.boss!.size.y 
+              },
+              startTime: now,
+              particles: generateExplosionParticles(
+                newState.boss!.position.x + (Math.random() - 0.5) * newState.boss!.size.x,
+                newState.boss!.position.y + (Math.random() - 0.5) * newState.boss!.size.y,
+                12
+              )
+            });
+            
+            if (newState.boss!.health <= 0) {
+              // Massive boss destruction
+              for (let i = 0; i < 8; i++) {
+                newState.explosions.push({
+                  id: `explosion-${Date.now()}-${Math.random()}-${i}`,
+                  position: { 
+                    x: newState.boss!.position.x + (Math.random() - 0.5) * newState.boss!.size.x,
+                    y: newState.boss!.position.y + (Math.random() - 0.5) * newState.boss!.size.y
+                  },
+                  startTime: now + i * 100,
+                  particles: generateExplosionParticles(
+                    newState.boss!.position.x + (Math.random() - 0.5) * newState.boss!.size.x,
+                    newState.boss!.position.y + (Math.random() - 0.5) * newState.boss!.size.y,
+                    30
+                  )
+                });
+              }
+              
+              newState.boss.active = false;
+              newState.boss = null;
+              newState.score += 5000;
+            }
+          }
+        });
+      }
+
+      // Check laser/fireball-spaceship collisions
       newState.projectiles.forEach(projectile => {
-        if (projectile.type !== 'laser') return; // Only check alien lasers
+        if (projectile.type !== 'laser' && projectile.type !== 'fireball') return;
         
         if (projectile.active && checkCollision(projectile, newState.spaceship)) {
           // Damage spaceship
@@ -938,6 +1080,7 @@ export const useGameEngine = () => {
     lastSaucerSpawnRef.current = Date.now();
     lastAlienSpawnRef.current = Date.now();
     lastBossSpawnRef.current = Date.now();
+    bossSpawnedRef.current = false;
     
     setGameState(prev => ({
       ...prev,
@@ -981,6 +1124,7 @@ export const useGameEngine = () => {
       saucers: [],
       aliens: [],
       bossRockets: [],
+      boss: null,
       terrain: generateInitialTerrain(),
       explosions: [],
       trees: [],
@@ -988,6 +1132,7 @@ export const useGameEngine = () => {
     lastRocketLaunchRef.current = Date.now();
     lastSaucerSpawnRef.current = Date.now();
     lastBossSpawnRef.current = Date.now();
+    bossSpawnedRef.current = false;
   }, []);
 
   return {

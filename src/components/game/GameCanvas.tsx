@@ -373,6 +373,29 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
         // Bright center
         ctx.fillStyle = '#ffaa00';
         ctx.fillRect(screenX + 1, position.y - size.y/2 + 4, 1, size.y - 8);
+      } else if (type === 'fireball') {
+        // Draw boss fireball - glowing orange ball
+        ctx.save();
+        
+        // Outer glow
+        const gradient = ctx.createRadialGradient(screenX + size.x / 2, position.y + size.y / 2, 0, screenX + size.x / 2, position.y + size.y / 2, size.x);
+        gradient.addColorStop(0, '#ffff00');
+        gradient.addColorStop(0.3, '#ff6600');
+        gradient.addColorStop(0.7, '#ff3300');
+        gradient.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(screenX + size.x / 2, position.y + size.y / 2, size.x, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Core
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath();
+        ctx.arc(screenX + size.x / 2, position.y + size.y / 2, size.x / 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
       }
     });
 
@@ -492,6 +515,140 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       
       ctx.restore();
     });
+
+    // Draw MEGA BOSS
+    if (gameState.boss && gameState.boss.active) {
+      const screenX = gameState.boss.position.x - gameState.scrollOffset;
+      
+      if (screenX > -500 && screenX < settings.width + 100) {
+        const { position, size, health, maxHealth, tentacles } = gameState.boss;
+        
+        ctx.save();
+        
+        // Draw tentacles first (behind body)
+        tentacles.forEach((tentacle, i) => {
+          const baseX = screenX + size.x / 2;
+          const baseY = position.y + size.y / 2;
+          const endX = baseX + Math.cos(tentacle.angle) * tentacle.length;
+          const endY = baseY + Math.sin(tentacle.angle) * tentacle.length;
+          
+          // Tentacle gradient
+          const gradient = ctx.createLinearGradient(baseX, baseY, endX, endY);
+          gradient.addColorStop(0, '#2d5a2d');
+          gradient.addColorStop(1, '#1a3a1a');
+          
+          ctx.strokeStyle = gradient;
+          ctx.lineWidth = 15 - i * 1.5;
+          ctx.lineCap = 'round';
+          
+          // Draw wavy tentacle
+          ctx.beginPath();
+          ctx.moveTo(baseX, baseY);
+          
+          const segments = 5;
+          for (let j = 1; j <= segments; j++) {
+            const t = j / segments;
+            const x = baseX + (endX - baseX) * t;
+            const y = baseY + (endY - baseY) * t + Math.sin(Date.now() * 0.005 + i + j) * 10;
+            ctx.lineTo(x, y);
+          }
+          
+          ctx.stroke();
+          
+          // Tentacle tip
+          ctx.fillStyle = '#ff4400';
+          ctx.beginPath();
+          ctx.arc(endX, endY + Math.sin(Date.now() * 0.005 + i + segments) * 10, 8, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        
+        // Main robot body - massive mechanical structure
+        ctx.fillStyle = '#333333';
+        ctx.fillRect(screenX, position.y, size.x, size.y);
+        
+        // Robot head/cockpit
+        ctx.fillStyle = '#555555';
+        ctx.fillRect(screenX + size.x * 0.3, position.y + 20, size.x * 0.4, size.y * 0.25);
+        
+        // Eyes - glowing red
+        const eyeGlow = ctx.createRadialGradient(screenX + size.x * 0.4, position.y + 80, 0, screenX + size.x * 0.4, position.y + 80, 20);
+        eyeGlow.addColorStop(0, '#ff0000');
+        eyeGlow.addColorStop(1, 'transparent');
+        ctx.fillStyle = eyeGlow;
+        ctx.beginPath();
+        ctx.arc(screenX + size.x * 0.4, position.y + 80, 20, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = eyeGlow;
+        ctx.beginPath();
+        ctx.arc(screenX + size.x * 0.6, position.y + 80, 20, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Core eyes
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(screenX + size.x * 0.4 - 5, position.y + 75, 10, 10);
+        ctx.fillRect(screenX + size.x * 0.6 - 5, position.y + 75, 10, 10);
+        
+        // Armor plates
+        ctx.fillStyle = '#444444';
+        for (let i = 0; i < 4; i++) {
+          ctx.fillRect(screenX + 15, position.y + 150 + i * 60, size.x - 30, 40);
+        }
+        
+        // Weapon systems - multiple cannons
+        ctx.fillStyle = '#222222';
+        for (let i = 0; i < 5; i++) {
+          const cannonY = position.y + 150 + i * 50;
+          ctx.fillRect(screenX + 30, cannonY, 40, 15);
+          
+          // Cannon glow
+          ctx.fillStyle = '#ff6600';
+          ctx.fillRect(screenX + 70, cannonY + 5, 10, 5);
+        }
+        ctx.fillStyle = '#222222';
+        
+        // Energy core
+        const coreGradient = ctx.createRadialGradient(
+          screenX + size.x / 2, position.y + size.y * 0.6, 0,
+          screenX + size.x / 2, position.y + size.y * 0.6, 40
+        );
+        coreGradient.addColorStop(0, '#00ffff');
+        coreGradient.addColorStop(0.5, '#0088ff');
+        coreGradient.addColorStop(1, '#0044ff');
+        
+        ctx.fillStyle = coreGradient;
+        ctx.beginPath();
+        ctx.arc(screenX + size.x / 2, position.y + size.y * 0.6, 30 + Math.sin(Date.now() * 0.01) * 5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Rivets and details
+        ctx.fillStyle = '#666666';
+        for (let i = 0; i < 20; i++) {
+          for (let j = 0; j < 8; j++) {
+            ctx.fillRect(screenX + 10 + i * 12, position.y + 10 + j * 50, 3, 3);
+          }
+        }
+        
+        // Health bar above boss
+        const healthPercent = health / maxHealth;
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(screenX, position.y - 30, size.x, 15);
+        ctx.fillStyle = healthPercent > 0.5 ? '#00ff00' : healthPercent > 0.25 ? '#ffff00' : '#ff0000';
+        ctx.fillRect(screenX, position.y - 30, size.x * healthPercent, 15);
+        
+        // Boss title
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 20px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('MEGA BOSS', screenX + size.x / 2, position.y - 40);
+        
+        // Health text
+        ctx.font = '14px monospace';
+        ctx.fillText(`${health}/${maxHealth}`, screenX + size.x / 2, position.y - 15);
+        
+        ctx.restore();
+      }
+    }
 
     // Draw explosions with particles (adjusted for scroll)
     gameState.explosions.forEach(explosion => {
