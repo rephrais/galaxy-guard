@@ -431,35 +431,41 @@ export const useGameEngine = () => {
         lastBossSpawnRef.current = now;
       }
 
-      // Spawn BOSS at 1 minute mark
+      // Spawn BOSS every minute
       const gameTime = now - newState.startTime;
-      if (gameTime >= 60000 && !bossSpawnedRef.current && !newState.boss) {
-        bossSpawnedRef.current = true;
+      const currentMinute = Math.floor(gameTime / 60000);
+      
+      if (gameTime >= 60000 && currentMinute > 0 && !newState.boss) {
+        const lastSpawnedMinute = Math.floor((bossSpawnedRef.current ? 60000 : 0) / 60000);
         
-        // Create tentacles
-        const tentacles = [];
-        for (let i = 0; i < 6; i++) {
-          tentacles.push({
-            angle: (Math.PI * 2 * i) / 6,
-            length: 80 + Math.random() * 40
-          });
+        if (currentMinute > lastSpawnedMinute || !bossSpawnedRef.current) {
+          bossSpawnedRef.current = true;
+          
+          // Create tentacles
+          const tentacles = [];
+          for (let i = 0; i < 6; i++) {
+            tentacles.push({
+              angle: (Math.PI * 2 * i) / 6,
+              length: 80 + Math.random() * 40
+            });
+          }
+          
+          newState.boss = {
+            id: `mega-boss-${currentMinute}`,
+            position: { 
+              x: newState.scrollOffset + settings.width + 50,
+              y: settings.height / 2 - 200
+            },
+            velocity: { x: -0.3, y: 0 },
+            size: { x: 250, y: 400 },
+            active: true,
+            lastFireTime: now,
+            fireRate: 1200,
+            health: 100,
+            maxHealth: 100,
+            tentacles
+          };
         }
-        
-        newState.boss = {
-          id: 'mega-boss',
-          position: { 
-            x: newState.scrollOffset + settings.width + 50,
-            y: settings.height / 2 - 200
-          },
-          velocity: { x: -0.3, y: 0 },
-          size: { x: 250, y: 400 },
-          active: true,
-          lastFireTime: now,
-          fireRate: 1200,
-          health: 100,
-          maxHealth: 100,
-          tentacles
-        };
       }
 
       // Update projectiles
@@ -837,7 +843,8 @@ export const useGameEngine = () => {
               });
               
               boss.active = false;
-              newState.score += 1000; // Huge points for destroying boss
+              newState.score += 1000;
+              newState.spaceship.ammunition += 100; // 100 ammo bonus for destroying boss rocket
             }
           }
         });
@@ -893,6 +900,8 @@ export const useGameEngine = () => {
               newState.boss.active = false;
               newState.boss = null;
               newState.score += 5000;
+              newState.spaceship.ammunition += 1000; // 1000 ammo bonus for destroying mega boss
+              bossSpawnedRef.current = false; // Allow next boss to spawn
             }
           }
         });

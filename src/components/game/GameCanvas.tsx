@@ -521,9 +521,21 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       const screenX = gameState.boss.position.x - gameState.scrollOffset;
       
       if (screenX > -500 && screenX < settings.width + 100) {
-        const { position, size, health, maxHealth, tentacles } = gameState.boss;
+        const { position, size, health, maxHealth, tentacles, id } = gameState.boss;
         
         ctx.save();
+        
+        // Determine boss color based on ID (different color each minute)
+        const bossNumber = parseInt(id.split('-').pop() || '1');
+        const bossColors = [
+          { body: '#333333', tentacle: '#2d5a2d', tentacleDark: '#1a3a1a', accent: '#00ff00' }, // Green
+          { body: '#442222', tentacle: '#5a2d2d', tentacleDark: '#3a1a1a', accent: '#ff0000' }, // Red
+          { body: '#222244', tentacle: '#2d2d5a', tentacleDark: '#1a1a3a', accent: '#0000ff' }, // Blue
+          { body: '#443322', tentacle: '#5a4d2d', tentacleDark: '#3a2a1a', accent: '#ffaa00' }, // Orange
+          { body: '#442244', tentacle: '#5a2d5a', tentacleDark: '#3a1a3a', accent: '#ff00ff' }, // Purple
+          { body: '#224444', tentacle: '#2d5a5a', tentacleDark: '#1a3a3a', accent: '#00ffff' }, // Cyan
+        ];
+        const colorScheme = bossColors[(bossNumber - 1) % bossColors.length];
         
         // Draw tentacles first (behind body)
         tentacles.forEach((tentacle, i) => {
@@ -534,8 +546,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
           
           // Tentacle gradient
           const gradient = ctx.createLinearGradient(baseX, baseY, endX, endY);
-          gradient.addColorStop(0, '#2d5a2d');
-          gradient.addColorStop(1, '#1a3a1a');
+          gradient.addColorStop(0, colorScheme.tentacle);
+          gradient.addColorStop(1, colorScheme.tentacleDark);
           
           ctx.strokeStyle = gradient;
           ctx.lineWidth = 15 - i * 1.5;
@@ -563,7 +575,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
         });
         
         // Main robot body - massive mechanical structure
-        ctx.fillStyle = '#333333';
+        ctx.fillStyle = colorScheme.body;
         ctx.fillRect(screenX, position.y, size.x, size.y);
         
         // Robot head/cockpit
@@ -607,14 +619,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
         }
         ctx.fillStyle = '#222222';
         
-        // Energy core
+        // Energy core with boss color
         const coreGradient = ctx.createRadialGradient(
           screenX + size.x / 2, position.y + size.y * 0.6, 0,
           screenX + size.x / 2, position.y + size.y * 0.6, 40
         );
-        coreGradient.addColorStop(0, '#00ffff');
-        coreGradient.addColorStop(0.5, '#0088ff');
-        coreGradient.addColorStop(1, '#0044ff');
+        coreGradient.addColorStop(0, colorScheme.accent);
+        coreGradient.addColorStop(0.5, colorScheme.tentacle);
+        coreGradient.addColorStop(1, colorScheme.tentacleDark);
         
         ctx.fillStyle = coreGradient;
         ctx.beginPath();
