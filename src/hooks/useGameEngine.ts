@@ -647,7 +647,18 @@ export const useGameEngine = () => {
 
       // Update MEGA BOSS
       if (newState.boss && newState.boss.active) {
-        newState.boss.position.x += newState.boss.velocity.x;
+        const bossScreenX = newState.boss.position.x - newState.scrollOffset;
+        
+        // Stop boss at right edge of screen and keep it there
+        const targetScreenX = settings.width - newState.boss.size.x - 50;
+        
+        if (bossScreenX > targetScreenX) {
+          // Move boss leftward until it reaches target position
+          newState.boss.position.x += newState.boss.velocity.x;
+        } else {
+          // Boss has reached position, match scroll speed to stay in place
+          newState.boss.position.x += currentScrollSpeed;
+        }
         
         // Animate tentacles
         const animTime = now * 0.003;
@@ -657,45 +668,37 @@ export const useGameEngine = () => {
         
         // Fire 5 fireballs randomly
         if (now - newState.boss.lastFireTime > newState.boss.fireRate) {
-          const bossScreenX = newState.boss.position.x - newState.scrollOffset;
+          const currentBossScreenX = newState.boss.position.x - newState.scrollOffset;
           
-          if (bossScreenX > -300 && bossScreenX < settings.width + 300) {
-            for (let i = 0; i < 5; i++) {
-              // Random angle towards left side
-              const angleToPlayer = Math.atan2(
-                newState.spaceship.position.y - newState.boss.position.y - newState.boss.size.y / 2,
-                newState.spaceship.position.x - bossScreenX - newState.boss.size.x / 2
-              );
-              const angleVariation = (Math.random() - 0.5) * 1.2;
-              const finalAngle = angleToPlayer + angleVariation;
-              
-              const fireballSpeed = 2 + Math.random() * 2;
-              
-              newState.projectiles.push({
-                id: `fireball-${Date.now()}-${Math.random()}-${i}`,
-                position: {
-                  x: bossScreenX + newState.boss.size.x / 2,
-                  y: newState.boss.position.y + newState.boss.size.y / 2 + (Math.random() - 0.5) * 100
-                },
-                velocity: {
-                  x: Math.cos(finalAngle) * fireballSpeed,
-                  y: Math.sin(finalAngle) * fireballSpeed
-                },
-                size: { x: 20, y: 20 },
-                active: true,
-                damage: 40,
-                type: 'fireball'
-              });
-            }
+          for (let i = 0; i < 5; i++) {
+            // Random angle towards left side
+            const angleToPlayer = Math.atan2(
+              newState.spaceship.position.y - newState.boss.position.y - newState.boss.size.y / 2,
+              newState.spaceship.position.x - currentBossScreenX - newState.boss.size.x / 2
+            );
+            const angleVariation = (Math.random() - 0.5) * 1.2;
+            const finalAngle = angleToPlayer + angleVariation;
             
-            newState.boss.lastFireTime = now;
+            const fireballSpeed = 2 + Math.random() * 2;
+            
+            newState.projectiles.push({
+              id: `fireball-${Date.now()}-${Math.random()}-${i}`,
+              position: {
+                x: currentBossScreenX + newState.boss.size.x / 2,
+                y: newState.boss.position.y + newState.boss.size.y / 2 + (Math.random() - 0.5) * 100
+              },
+              velocity: {
+                x: Math.cos(finalAngle) * fireballSpeed,
+                y: Math.sin(finalAngle) * fireballSpeed
+              },
+              size: { x: 20, y: 20 },
+              active: true,
+              damage: 40,
+              type: 'fireball'
+            });
           }
-        }
-        
-        // Remove boss if off screen
-        if (newState.boss.position.x < newState.scrollOffset - 400) {
-          newState.boss.active = false;
-          newState.boss = null;
+          
+          newState.boss.lastFireTime = now;
         }
       }
 
