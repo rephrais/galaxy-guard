@@ -5,6 +5,11 @@ const Changelog = () => {
   return (
     <div className="fixed inset-0 bg-background flex items-center justify-center overflow-y-auto">
       <div className="starfield" />
+      <div className="aurora">
+        <div className="aurora-layer-1" />
+        <div className="aurora-layer-2" />
+        <div className="aurora-layer-3" />
+      </div>
       
       {/* Colorful corner decorations */}
       <div className="absolute top-0 left-0 w-32 h-32 border-l-4 border-t-4 border-neon-cyan opacity-50" />

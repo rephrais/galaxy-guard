@@ -60,6 +60,11 @@ export const StartMenu: React.FC<StartMenuProps> = ({
     return (
       <div className="fixed inset-0 bg-background flex items-center justify-center z-50">
         <div className="starfield" />
+        <div className="aurora">
+          <div className="aurora-layer-1" />
+          <div className="aurora-layer-2" />
+          <div className="aurora-layer-3" />
+        </div>
         {renderAnimatedSpaceships()}
         <div className="hud-panel max-w-2xl w-full mx-4 relative z-10">
           <div className="pixel-text text-4xl text-center color-splash mb-8">
@@ -118,6 +123,11 @@ export const StartMenu: React.FC<StartMenuProps> = ({
     return (
       <div className="fixed inset-0 bg-background flex items-center justify-center z-50">
         <div className="starfield" />
+        <div className="aurora">
+          <div className="aurora-layer-1" />
+          <div className="aurora-layer-2" />
+          <div className="aurora-layer-3" />
+        </div>
         {renderAnimatedSpaceships()}
         <div className="hud-panel max-w-2xl w-full mx-4 relative z-10">
           <div className="pixel-text text-4xl text-center color-splash mb-8">
@@ -177,6 +187,11 @@ export const StartMenu: React.FC<StartMenuProps> = ({
   return (
     <div className="fixed inset-0 bg-background flex items-center justify-center z-50 overflow-hidden">
       <div className="starfield" />
+      <div className="aurora">
+        <div className="aurora-layer-1" />
+        <div className="aurora-layer-2" />
+        <div className="aurora-layer-3" />
+      </div>
       {renderAnimatedSpaceships()}
       
       {/* Colorful corner decorations */}
