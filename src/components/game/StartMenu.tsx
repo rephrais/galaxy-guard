@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { LeaderboardEntry, SaveData } from '@/types/game';
 import { Volume2, VolumeX, Music } from 'lucide-react';
 
@@ -279,7 +280,7 @@ export const StartMenu: React.FC<StartMenuProps> = ({
 
         {/* Footer Credits */}
         <div className="pixel-text text-xs text-muted-foreground">
-          © 2025 RETRO ARCADE • INSERT COIN TO PLAY
+          Created with ❤️ by AJ Batac (@ajbatac) - v1.0.0 (<Link to="/changelog" className="text-neon-cyan hover:text-neon-yellow transition-colors">changelog</Link>)
         </div>
       </div>
     </div>
