@@ -195,6 +195,8 @@ export const StartMenu: React.FC<StartMenuProps> = ({
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
               filter: 'drop-shadow(0 0 10px white) drop-shadow(0 0 20px white) drop-shadow(0 0 40px rgba(255, 255, 255, 0.8))',
+              WebkitTextStroke: '3px black',
+              paintOrder: 'stroke fill',
             }}
           >
             SPACE OFFENDER
