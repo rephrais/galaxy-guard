@@ -187,7 +187,16 @@ export const StartMenu: React.FC<StartMenuProps> = ({
       <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
         {/* Game Title */}
         <div className="mb-8">
-          <div className="pixel-text text-7xl md:text-8xl retro-glow color-splash mb-4">
+          <div 
+            className="pixel-text text-7xl md:text-8xl mb-4"
+            style={{
+              background: 'linear-gradient(180deg, hsl(120, 100%, 50%) 0%, hsl(51, 100%, 50%) 50%, hsl(120, 100%, 50%) 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              filter: 'drop-shadow(0 0 10px white) drop-shadow(0 0 20px white) drop-shadow(0 0 40px rgba(255, 255, 255, 0.8))',
+            }}
+          >
             SPACE OFFENDER
           </div>
           <div className="pixel-text text-xl md:text-2xl text-neon-cyan">
