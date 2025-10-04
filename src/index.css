@@ -194,4 +194,45 @@ All colors MUST be HSL for perfect arcade aesthetic.
   .danger-pulse {
     animation: danger-pulse 1s ease-in-out infinite;
   }
+
+  /* Retro Color Splash Animations */
+  @keyframes color-splash {
+    0%, 100% { color: hsl(var(--neon-yellow)); }
+    20% { color: hsl(var(--neon-cyan)); }
+    40% { color: hsl(var(--neon-purple)); }
+    60% { color: hsl(var(--neon-green)); }
+    80% { color: hsl(var(--neon-orange)); }
+  }
+
+  .color-splash {
+    animation: color-splash 3s ease-in-out infinite;
+  }
+
+  @keyframes spaceship-float {
+    0%, 100% { transform: translateX(-100%) translateY(0px); }
+    50% { transform: translateX(120vw) translateY(-30px); }
+  }
+
+  .spaceship-float {
+    animation: spaceship-float 15s linear infinite;
+  }
+
+  @keyframes retro-glow {
+    0%, 100% { 
+      text-shadow: 
+        0 0 10px currentColor,
+        0 0 20px currentColor,
+        0 0 30px currentColor;
+    }
+    50% { 
+      text-shadow: 
+        0 0 20px currentColor,
+        0 0 40px currentColor,
+        0 0 60px currentColor;
+    }
+  }
+
+  .retro-glow {
+    animation: retro-glow 2s ease-in-out infinite;
+  }
 }
