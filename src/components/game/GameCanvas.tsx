@@ -396,6 +396,43 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
         // Bright center
         ctx.fillStyle = '#ffaa00';
         ctx.fillRect(screenX + 1, position.y - size.y/2 + 4, 1, size.y - 8);
+      } else if (type === 'fire') {
+        // Draw flaming fire projectile
+        ctx.save();
+        
+        // Outer flame
+        const fireGradient = ctx.createRadialGradient(screenX + size.x / 2, position.y + size.y / 2, 0, screenX + size.x / 2, position.y + size.y / 2, size.x);
+        fireGradient.addColorStop(0, '#ffff00');
+        fireGradient.addColorStop(0.4, '#ff6600');
+        fireGradient.addColorStop(0.7, '#ff3300');
+        fireGradient.addColorStop(1, '#ff0000');
+        
+        ctx.fillStyle = fireGradient;
+        ctx.beginPath();
+        ctx.arc(screenX + size.x / 2, position.y + size.y / 2, size.x / 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Inner core
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(screenX + size.x / 2, position.y + size.y / 2, size.x / 4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Flickering particles
+        const time = Date.now() * 0.01;
+        for (let i = 0; i < 3; i++) {
+          const angle = time + i * Math.PI * 0.66;
+          const dist = 5 + Math.sin(time * 2 + i) * 3;
+          const px = screenX + size.x / 2 + Math.cos(angle) * dist;
+          const py = position.y + size.y / 2 + Math.sin(angle) * dist;
+          
+          ctx.fillStyle = '#ff6600';
+          ctx.beginPath();
+          ctx.arc(px, py, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        ctx.restore();
       } else if (type === 'fireball') {
         // Draw boss fireball - glowing orange ball
         ctx.save();
@@ -468,7 +505,62 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       }
     });
 
-    // Draw boss rockets (adjusted for scroll)
+    // Draw crawling aliens (adjusted for scroll)
+    gameState.crawlingAliens.forEach(crawlingAlien => {
+      if (!crawlingAlien.active) return;
+      
+      const screenX = crawlingAlien.position.x - gameState.scrollOffset;
+      
+      // Only draw if visible on screen
+      if (screenX < -crawlingAlien.size.x || screenX > settings.width + 50) return;
+      
+      const { position, size, health } = crawlingAlien;
+      
+      // Draw spider-like crawling alien body
+      ctx.fillStyle = '#cc4400';
+      ctx.fillRect(screenX + 5, position.y + 5, size.x - 10, size.y - 10);
+      
+      // Draw head with mandibles
+      ctx.fillStyle = '#ff5500';
+      ctx.fillRect(screenX, position.y, 10, 8);
+      
+      // Draw eyes (glowing red)
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(screenX + 2, position.y + 2, 2, 2);
+      ctx.fillRect(screenX + 6, position.y + 2, 2, 2);
+      
+      // Draw multiple legs (spider-like)
+      ctx.fillStyle = '#883300';
+      for (let i = 0; i < 6; i++) {
+        const legX = screenX + 5 + i * 4;
+        const legYOffset = i % 2 === 0 ? 0 : 3;
+        // Upper leg
+        ctx.fillRect(legX, position.y + size.y - 5 + legYOffset, 2, 5);
+        // Lower leg
+        ctx.fillRect(legX - 1, position.y + size.y + legYOffset, 1, 4);
+      }
+      
+      // Draw fire cannon on back
+      ctx.fillStyle = '#666666';
+      ctx.fillRect(screenX + size.x / 2 - 3, position.y, 6, 8);
+      
+      // Flame tip
+      const time = Date.now() * 0.01;
+      const flameSize = 2 + Math.sin(time * 3) * 1;
+      ctx.fillStyle = '#ff6600';
+      ctx.fillRect(screenX + size.x / 2 - 1, position.y - flameSize, 2, flameSize);
+      
+      // Health bar above crawling alien
+      if (health < 60 + gameState.level * 15) {
+        const maxHealth = 60 + gameState.level * 15;
+        const healthPercent = health / maxHealth;
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(screenX, position.y - 10, size.x, 3);
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(screenX, position.y - 10, size.x * healthPercent, 3);
+      }
+    });
+
     gameState.bossRockets.forEach(boss => {
       if (!boss.active) return;
       

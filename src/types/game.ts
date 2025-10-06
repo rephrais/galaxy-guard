@@ -26,7 +26,7 @@ export interface Rocket extends GameObject {
 
 export interface Projectile extends GameObject {
   damage: number;
-  type: 'bullet' | 'bomb' | 'laser' | 'fireball';
+  type: 'bullet' | 'bomb' | 'laser' | 'fireball' | 'fire';
 }
 
 export interface TerrainPoint {
@@ -68,6 +68,14 @@ export interface Alien extends GameObject {
   health: number;
 }
 
+export interface CrawlingAlien extends GameObject {
+  lastFireTime: number;
+  fireRate: number;
+  health: number;
+  targetX: number;
+  moveSpeed: number;
+}
+
 export interface BossRocket extends GameObject {
   lastFireTime: number;
   fireRate: number;
@@ -104,6 +112,7 @@ export interface GameState {
   projectiles: Projectile[];
   saucers: Saucer[];
   aliens: Alien[];
+  crawlingAliens: CrawlingAlien[];
   bossRockets: BossRocket[];
   boss: Boss | null;
   terrain: TerrainLayers;

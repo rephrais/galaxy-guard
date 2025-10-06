@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Boss, Tree } from '@/types/game';
+import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Boss, Tree, CrawlingAlien } from '@/types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
   width: 1200,
@@ -99,6 +99,7 @@ export const useGameEngine = () => {
     projectiles: [],
     saucers: [],
     aliens: [],
+    crawlingAliens: [],
     bossRockets: [],
     boss: null,
     terrain: generateInitialTerrain(),
@@ -111,6 +112,7 @@ export const useGameEngine = () => {
   const lastRocketLaunchRef = useRef<number>(0);
   const lastSaucerSpawnRef = useRef<number>(0);
   const lastAlienSpawnRef = useRef<number>(0);
+  const lastCrawlingAlienSpawnRef = useRef<number>(0);
   const lastBossSpawnRef = useRef<number>(0);
   const bossSpawnedRef = useRef<boolean>(false);
   const keysRef = useRef<Set<string>>(new Set());
@@ -404,7 +406,41 @@ export const useGameEngine = () => {
         }
       }
 
-      // Spawn boss rocket every 10 seconds
+      // Spawn crawling aliens on foreground terrain every 8 seconds
+      const crawlingAlienSpawnFreq = 8000;
+      const maxCrawlingAliens = 2 + Math.floor(newState.level / 3);
+      
+      if (now - lastCrawlingAlienSpawnRef.current > crawlingAlienSpawnFreq && newState.crawlingAliens.length < maxCrawlingAliens) {
+        // Find a foreground terrain point to spawn crawling alien on
+        const visibleTerrain = newState.terrain.foreground.filter(point => 
+          point.x >= newState.scrollOffset + settings.width * 0.5 && 
+          point.x <= newState.scrollOffset + settings.width * 1.5
+        );
+        
+        if (visibleTerrain.length > 0) {
+          const spawnPoint = visibleTerrain[Math.floor(Math.random() * visibleTerrain.length)];
+          const crawlingAlienId = `crawling-alien-${Date.now()}-${Math.random()}`;
+          
+          newState.crawlingAliens.push({
+            id: crawlingAlienId,
+            position: { 
+              x: spawnPoint.x, 
+              y: spawnPoint.y - 25
+            },
+            velocity: { x: 0, y: 0 },
+            size: { x: 35, y: 20 },
+            active: true,
+            lastFireTime: now,
+            fireRate: 2000 + Math.random() * 1000,
+            health: 60 + newState.level * 15,
+            targetX: newState.spaceship.position.x + newState.scrollOffset,
+            moveSpeed: 0.8 + Math.random() * 0.4
+          });
+          
+          lastCrawlingAlienSpawnRef.current = now;
+        }
+      }
+
       const bossSpawnFreq = 10000; // 10 seconds
       const maxBosses = 1; // Only one boss at a time
       
@@ -593,6 +629,74 @@ export const useGameEngine = () => {
         // Remove aliens that are too far off screen
         const alienScreenX = alien.position.x - newState.scrollOffset;
         if (alienScreenX < -300 || alienScreenX > settings.width + 300) {
+          return false;
+        }
+        
+        return true;
+      });
+
+      // Update crawling aliens - they crawl on terrain and shoot fire
+      newState.crawlingAliens = newState.crawlingAliens.filter(crawlingAlien => {
+        if (!crawlingAlien.active) return false;
+        
+        // Find the terrain point beneath the alien
+        const nearestTerrainPoint = newState.terrain.foreground.reduce((closest, point) => {
+          const distToCurrent = Math.abs(point.x - crawlingAlien.position.x);
+          const distToClosest = Math.abs(closest.x - crawlingAlien.position.x);
+          return distToCurrent < distToClosest ? point : closest;
+        }, newState.terrain.foreground[0]);
+        
+        // Update target to spaceship position
+        crawlingAlien.targetX = newState.spaceship.position.x + newState.scrollOffset;
+        
+        // Move towards spaceship (crawl on terrain)
+        const dx = crawlingAlien.targetX - crawlingAlien.position.x;
+        if (Math.abs(dx) > 10) {
+          crawlingAlien.position.x += Math.sign(dx) * crawlingAlien.moveSpeed;
+        }
+        
+        // Keep alien on terrain
+        if (nearestTerrainPoint) {
+          crawlingAlien.position.y = nearestTerrainPoint.y - 25;
+        }
+        
+        // Check if alien should fire at spaceship
+        if (now - crawlingAlien.lastFireTime > crawlingAlien.fireRate) {
+          const crawlingAlienScreenX = crawlingAlien.position.x - newState.scrollOffset;
+          const dx = newState.spaceship.position.x + newState.spaceship.size.x / 2 - (crawlingAlienScreenX + crawlingAlien.size.x / 2);
+          const dy = newState.spaceship.position.y + newState.spaceship.size.y / 2 - (crawlingAlien.position.y + crawlingAlien.size.y / 2);
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // Fire flaming fire projectiles if in range and visible
+          if (distance < 700 && crawlingAlienScreenX > -100 && crawlingAlienScreenX < settings.width + 100) {
+            const fireSpeed = 4;
+            const normalizedDx = dx / distance;
+            const normalizedDy = dy / distance;
+            
+            const fireId = `fire-${Date.now()}-${Math.random()}`;
+            newState.projectiles.push({
+              id: fireId,
+              position: { 
+                x: crawlingAlienScreenX + crawlingAlien.size.x / 2, 
+                y: crawlingAlien.position.y + 5
+              },
+              velocity: { 
+                x: normalizedDx * fireSpeed, 
+                y: normalizedDy * fireSpeed 
+              },
+              size: { x: 15, y: 15 },
+              active: true,
+              damage: 50, // 50% of spaceship's life
+              type: 'fire'
+            });
+            
+            crawlingAlien.lastFireTime = now;
+          }
+        }
+        
+        // Remove crawling aliens that are too far off screen
+        const crawlingAlienScreenX = crawlingAlien.position.x - newState.scrollOffset;
+        if (crawlingAlienScreenX < -400 || crawlingAlienScreenX > settings.width + 400) {
           return false;
         }
         
@@ -805,7 +909,35 @@ export const useGameEngine = () => {
         });
       });
 
-      // Check projectile-boss collisions
+      // Check projectile-crawling alien collisions
+      newState.projectiles.forEach(projectile => {
+        if (projectile.type === 'fire') return; // Fire doesn't hit crawling aliens
+        
+        newState.crawlingAliens.forEach(crawlingAlien => {
+          const crawlingAlienScreen = {
+            ...crawlingAlien,
+            position: { ...crawlingAlien.position, x: crawlingAlien.position.x - newState.scrollOffset },
+          };
+          if (projectile.active && crawlingAlien.active && checkCollision(projectile, crawlingAlienScreen)) {
+            crawlingAlien.health -= projectile.damage;
+            projectile.active = false;
+            
+            if (crawlingAlien.health <= 0) {
+              newState.explosions.push({
+                id: `explosion-${Date.now()}-${Math.random()}`,
+                position: { x: crawlingAlien.position.x, y: crawlingAlien.position.y },
+                startTime: now,
+                particles: generateExplosionParticles(crawlingAlien.position.x, crawlingAlien.position.y, 20)
+              });
+              
+              crawlingAlien.active = false;
+              newState.score += projectile.type === 'bomb' ? 450 : 300;
+              newState.spaceship.ammunition += 10; // Ammo reward
+            }
+          }
+        });
+      });
+
       newState.projectiles.forEach(projectile => {
         if (projectile.type === 'laser') return; // Boss lasers don't hit boss
         
@@ -906,9 +1038,9 @@ export const useGameEngine = () => {
         });
       }
 
-      // Check laser/fireball-spaceship collisions
+      // Check laser/fireball/fire-spaceship collisions
       newState.projectiles.forEach(projectile => {
-        if (projectile.type !== 'laser' && projectile.type !== 'fireball') return;
+        if (projectile.type !== 'laser' && projectile.type !== 'fireball' && projectile.type !== 'fire') return;
         
         if (projectile.active && checkCollision(projectile, newState.spaceship)) {
           // Damage spaceship
@@ -1134,6 +1266,7 @@ export const useGameEngine = () => {
       projectiles: [],
       saucers: [],
       aliens: [],
+      crawlingAliens: [],
       bossRockets: [],
       boss: null,
       terrain: generateInitialTerrain(),
