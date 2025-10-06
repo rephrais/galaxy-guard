@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { GameState, GameSettings, TerrainPoint } from '@/types/game';
 
 interface GameCanvasProps {
@@ -6,8 +6,32 @@ interface GameCanvasProps {
   settings: GameSettings;
 }
 
+interface Star {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  alpha: number;
+}
+
 export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [stars] = useState<Star[]>(() => {
+    // Initialize 200 random stars
+    const starArray: Star[] = [];
+    for (let i = 0; i < 200; i++) {
+      starArray.push({
+        x: Math.random() * settings.width,
+        y: Math.random() * settings.height,
+        vx: (Math.random() - 0.5) * 0.15, // Super slow random X velocity
+        vy: (Math.random() - 0.5) * 0.15, // Super slow random Y velocity
+        size: 0.5 + Math.random() * 1.5,
+        alpha: 0.3 + Math.random() * 0.7
+      });
+    }
+    return starArray;
+  });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -20,25 +44,23 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
     ctx.fillStyle = '#000003';
     ctx.fillRect(0, 0, settings.width, settings.height);
 
-    // Draw optimized parallax starfield
-    ctx.fillStyle = '#ffffff';
-    for (let layer = 0; layer < 3; layer++) {
-      const depth = layer + 1;
-      const parallaxOffset = -(gameState.scrollOffset * 0.1) / depth;
+    // Draw randomly moving stars
+    stars.forEach(star => {
+      // Update star position
+      star.x += star.vx;
+      star.y += star.vy;
       
-      // Reduced to 80 stars per layer for performance
-      for (let i = 0; i < 80; i++) {
-        const x = ((i * 127) % (settings.width * 2) + parallaxOffset) % (settings.width + 100);
-        const y = (i * 73) % settings.height;
-        const size = 1 + layer * 0.5;
-        const alpha = 1 - layer * 0.3;
-        
-        ctx.globalAlpha = alpha;
-        if (x >= 0 && x <= settings.width) {
-          ctx.fillRect(x, y, size, size);
-        }
-      }
-    }
+      // Wrap around edges
+      if (star.x < 0) star.x = settings.width;
+      if (star.x > settings.width) star.x = 0;
+      if (star.y < 0) star.y = settings.height;
+      if (star.y > settings.height) star.y = 0;
+      
+      // Draw star
+      ctx.globalAlpha = star.alpha;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(star.x, star.y, star.size, star.size);
+    });
     ctx.globalAlpha = 1;
 
     // Draw multi-layer terrain with parallax
