@@ -45,15 +45,14 @@ const generateTerrainSegment = (startX: number, segmentWidth: number = 1200): Te
   return { background, middle, foreground };
 };
 
-// Generate explosion particles
-const generateExplosionParticles = (centerX: number, centerY: number, particleCount: number = 15): ExplosionParticle[] => {
+// Optimized explosion particles - fewer particles for better performance
+const generateExplosionParticles = (centerX: number, centerY: number, particleCount: number = 10): ExplosionParticle[] => {
   const particles: ExplosionParticle[] = [];
+  const colors = ['#ffff00', '#ff6600', '#ff0000', '#ffffff', '#ffaa00'];
   
   for (let i = 0; i < particleCount; i++) {
-    const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.5;
-    const speed = 2 + Math.random() * 4;
-    const size = 2 + Math.random() * 4;
-    const colors = ['#ffff00', '#ff6600', '#ff0000', '#ffffff', '#ffaa00'];
+    const angle = (Math.PI * 2 * i) / particleCount;
+    const speed = 2 + Math.random() * 3;
     
     particles.push({
       position: { x: centerX, y: centerY },
@@ -61,8 +60,8 @@ const generateExplosionParticles = (centerX: number, centerY: number, particleCo
         x: Math.cos(angle) * speed,
         y: Math.sin(angle) * speed
       },
-      size,
-      color: colors[Math.floor(Math.random() * colors.length)],
+      size: 3,
+      color: colors[i % colors.length],
       life: 1.0
     });
   }
@@ -182,8 +181,8 @@ export const useGameEngine = () => {
         }
       }
       
-      // Clean up old terrain points and trees to prevent memory issues
-      const minX = newState.scrollOffset - settings.width;
+      // More aggressive cleanup for better performance
+      const minX = newState.scrollOffset - settings.width * 0.5;
       newState.terrain.background = newState.terrain.background.filter(p => p.x > minX);
       newState.terrain.middle = newState.terrain.middle.filter(p => p.x > minX);
       newState.terrain.foreground = newState.terrain.foreground.filter(p => p.x > minX);

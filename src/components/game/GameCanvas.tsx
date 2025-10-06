@@ -20,16 +20,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
     ctx.fillStyle = '#000003';
     ctx.fillRect(0, 0, settings.width, settings.height);
 
-    // Draw parallax starfield with more stars
+    // Draw optimized parallax starfield
     ctx.fillStyle = '#ffffff';
     for (let layer = 0; layer < 3; layer++) {
       const depth = layer + 1;
-      const parallaxOffset = -(gameState.scrollOffset * 0.1) / depth; // Fixed: negative for left movement
+      const parallaxOffset = -(gameState.scrollOffset * 0.1) / depth;
       
-      for (let i = 0; i < 150; i++) {
+      // Reduced to 80 stars per layer for performance
+      for (let i = 0; i < 80; i++) {
         const x = ((i * 127) % (settings.width * 2) + parallaxOffset) % (settings.width + 100);
         const y = (i * 73) % settings.height;
-        const size = Math.random() * (2 - layer * 0.3);
+        const size = 1 + layer * 0.5;
         const alpha = 1 - layer * 0.3;
         
         ctx.globalAlpha = alpha;
