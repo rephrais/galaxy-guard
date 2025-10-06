@@ -81,7 +81,7 @@ export const useGameEngine = () => {
     gameOver: false,
     level: 1,
     score: 0,
-    lives: 3,
+    lives: 5,
     scrollOffset: 0,
     startTime: 0,
     spaceship: {
