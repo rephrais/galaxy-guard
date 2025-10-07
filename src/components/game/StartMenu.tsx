@@ -210,8 +210,8 @@ export const StartMenu: React.FC<StartMenuProps> = ({
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
-              filter: 'drop-shadow(0 0 10px white) drop-shadow(0 0 20px white) drop-shadow(0 0 40px rgba(255, 255, 255, 0.8))',
-              WebkitTextStroke: '3px black',
+              filter: 'drop-shadow(4px 4px 0px black) drop-shadow(8px 8px 0px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 10px white) drop-shadow(0 0 20px white) drop-shadow(0 0 40px rgba(255, 255, 255, 0.8))',
+              WebkitTextStroke: '6px black',
               paintOrder: 'stroke fill',
             }}
           >
