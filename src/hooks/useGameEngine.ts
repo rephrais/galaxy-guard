@@ -190,18 +190,18 @@ export const useGameEngine = () => {
       newState.terrain.foreground = newState.terrain.foreground.filter(p => p.x > minX);
       newState.trees = newState.trees.filter(t => t.x > minX);
 
-      // Handle spaceship movement
-      if (keysRef.current.has('ArrowUp')) {
+      // Handle spaceship movement (Arrow keys or WASD)
+      if (keysRef.current.has('ArrowUp') || keysRef.current.has('KeyW')) {
         newState.spaceship.velocity.y = -settings.spaceshipSpeed;
-      } else if (keysRef.current.has('ArrowDown')) {
+      } else if (keysRef.current.has('ArrowDown') || keysRef.current.has('KeyS')) {
         newState.spaceship.velocity.y = settings.spaceshipSpeed;
       } else {
         newState.spaceship.velocity.y = 0;
       }
 
-      if (keysRef.current.has('ArrowLeft')) {
+      if (keysRef.current.has('ArrowLeft') || keysRef.current.has('KeyA')) {
         newState.spaceship.velocity.x = -settings.spaceshipSpeed;
-      } else if (keysRef.current.has('ArrowRight')) {
+      } else if (keysRef.current.has('ArrowRight') || keysRef.current.has('KeyD')) {
         newState.spaceship.velocity.x = settings.spaceshipSpeed;
       } else {
         newState.spaceship.velocity.x = 0;
