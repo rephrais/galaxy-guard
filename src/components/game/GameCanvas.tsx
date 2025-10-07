@@ -181,10 +181,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
     });
     
     // Draw flames at intervals along the terrain
-    const flameSpacing = 25; // Space between potential flames
     const time = Date.now() * 0.005; // For animation
     
-    for (let i = 0; i < visibleForeground.length; i += Math.floor(flameSpacing / 30)) {
+    for (let i = 0; i < visibleForeground.length; i += 3) {
       const point = visibleForeground[i];
       const screenX = point.x - parallaxOffset;
       
