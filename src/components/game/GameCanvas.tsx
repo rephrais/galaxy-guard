@@ -173,6 +173,100 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
     fgGradient.addColorStop(1, '#000000');
     drawTerrainLayer(gameState.terrain.foreground, 1.2, fgGradient, '#2a2a3a', 0.8);
     
+    // Draw flames along foreground terrain
+    const parallaxOffset = gameState.scrollOffset * 1.2;
+    const visibleForeground = gameState.terrain.foreground.filter(point => {
+      const screenX = point.x - parallaxOffset;
+      return screenX >= -50 && screenX <= settings.width + 50;
+    });
+    
+    // Draw flames at intervals along the terrain
+    const flameSpacing = 25; // Space between potential flames
+    const time = Date.now() * 0.005; // For animation
+    
+    for (let i = 0; i < visibleForeground.length; i += Math.floor(flameSpacing / 30)) {
+      const point = visibleForeground[i];
+      const screenX = point.x - parallaxOffset;
+      
+      // Randomly vary flame appearance (use position as seed for consistency)
+      const seed = Math.sin(point.x * 0.1);
+      if (seed < 0.3) continue; // Skip some positions for variety
+      
+      // Determine flame size based on seed
+      const sizeVariant = Math.abs(Math.sin(point.x * 0.05));
+      let flameHeight;
+      if (sizeVariant < 0.33) {
+        flameHeight = 8 + Math.sin(time + point.x * 0.1) * 2; // Small
+      } else if (sizeVariant < 0.66) {
+        flameHeight = 15 + Math.sin(time + point.x * 0.1) * 3; // Medium
+      } else {
+        flameHeight = 25 + Math.sin(time + point.x * 0.1) * 5; // Tall
+      }
+      
+      const flameWidth = flameHeight * 0.4;
+      const flameY = point.y - flameHeight;
+      
+      // Draw flame with gradient
+      ctx.save();
+      
+      // Flickering animation offset
+      const flicker = Math.sin(time * 2 + point.x * 0.2) * 2;
+      
+      // Outer flame (red-orange)
+      ctx.beginPath();
+      ctx.moveTo(screenX, point.y);
+      ctx.quadraticCurveTo(
+        screenX - flameWidth / 2 + flicker, 
+        flameY + flameHeight * 0.5, 
+        screenX + Math.sin(time * 3 + point.x) * 2, 
+        flameY
+      );
+      ctx.quadraticCurveTo(
+        screenX + flameWidth / 2 - flicker, 
+        flameY + flameHeight * 0.5, 
+        screenX, 
+        point.y
+      );
+      ctx.closePath();
+      
+      const flameGradient = ctx.createLinearGradient(screenX, point.y, screenX, flameY);
+      flameGradient.addColorStop(0, '#ff3300');
+      flameGradient.addColorStop(0.5, '#ff6600');
+      flameGradient.addColorStop(1, '#ffff00');
+      ctx.fillStyle = flameGradient;
+      ctx.fill();
+      
+      // Inner flame (bright yellow-white)
+      const innerHeight = flameHeight * 0.6;
+      const innerWidth = flameWidth * 0.5;
+      const innerY = point.y - innerHeight;
+      
+      ctx.beginPath();
+      ctx.moveTo(screenX, point.y);
+      ctx.quadraticCurveTo(
+        screenX - innerWidth / 2, 
+        innerY + innerHeight * 0.5, 
+        screenX, 
+        innerY
+      );
+      ctx.quadraticCurveTo(
+        screenX + innerWidth / 2, 
+        innerY + innerHeight * 0.5, 
+        screenX, 
+        point.y
+      );
+      ctx.closePath();
+      
+      const innerGradient = ctx.createLinearGradient(screenX, point.y, screenX, innerY);
+      innerGradient.addColorStop(0, '#ff6600');
+      innerGradient.addColorStop(0.5, '#ffaa00');
+      innerGradient.addColorStop(1, '#ffffff');
+      ctx.fillStyle = innerGradient;
+      ctx.fill();
+      
+      ctx.restore();
+    }
+    
     // Draw big obstacle trees from game state
     gameState.trees.forEach(tree => {
       const screenX = tree.x - gameState.scrollOffset;
