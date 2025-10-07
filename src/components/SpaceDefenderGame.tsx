@@ -7,9 +7,115 @@ import { GameHUD } from '@/components/game/GameHUD';
 import { StartMenu } from '@/components/game/StartMenu';
 import { SaveData } from '@/types/game';
 
+const TAUNTS = [
+  "It's a good day to die!",
+  "Wololo!",
+  "Correctus!",
+  "Charge!",
+  "Light some fire!",
+  "You must construct additional pylons!",
+  "All your base are belong to us!",
+  "Get over here!",
+  "Finish him!",
+  "The cake is a lie!",
+  "War never changes!",
+  "Fatality!",
+  "Toasty!",
+  "Hadoken!",
+  "Show me your moves!",
+  "I need healing!",
+  "Enemy spotted!",
+  "Fire in the hole!",
+  "Headshot!",
+  "Double kill!",
+  "Triple kill!",
+  "Killtacular!",
+  "Killimanjaro!",
+  "Killing spree!",
+  "Rampage!",
+  "Unstoppable!",
+  "Godlike!",
+  "Stay frosty!",
+  "Tango down!",
+  "Fox 2!",
+  "Going vertical!",
+  "Splash one!",
+  "Good effect on target!",
+  "Target destroyed!",
+  "Nice shot!",
+  "Smooth moves!",
+  "Impressive!",
+  "Fantastic!",
+  "Magnificent!",
+  "Outstanding!",
+  "Legendary!",
+  "Epic!",
+  "Insane!",
+  "Ludicrous!",
+  "Prepare for trouble!",
+  "Make it double!",
+  "Gotta go fast!",
+  "Do a barrel roll!",
+  "It's super effective!",
+  "Critical hit!",
+  "BOOM! Headshot!",
+  "Leroy Jenkins!",
+  "Need backup!",
+  "Reloading!",
+  "Grenade out!",
+  "Rocket incoming!",
+  "Take cover!",
+  "Man down!",
+  "Medic!",
+  "Affirmative!",
+  "Negative!",
+  "Roger that!",
+  "Copy that!",
+  "I'm on it!",
+  "Moving out!",
+  "In position!",
+  "Hold the line!",
+  "Push forward!",
+  "Fall back!",
+  "Flanking!",
+  "They're everywhere!",
+  "Multiple contacts!",
+  "Watch your six!",
+  "Incoming!",
+  "Get some!",
+  "Payback time!",
+  "Revenge!",
+  "That's gotta hurt!",
+  "Ouch!",
+  "Close one!",
+  "Lucky shot!",
+  "Pure skill!",
+  "Can't touch this!",
+  "Too easy!",
+  "Bring it on!",
+  "Is that all you got?",
+  "Come get some!",
+  "You want some?",
+  "Not today!",
+  "Denied!",
+  "Blocked!",
+  "Dodged!",
+  "Nope!",
+  "Better luck next time!",
+  "Try harder!",
+  "Git gud!",
+  "Respawn in 3... 2... 1...",
+  "Rekt!",
+  "Pwned!",
+  "Owned!",
+  "Dominated!",
+  "Humiliation!",
+];
+
 export const SpaceDefenderGame: React.FC = () => {
   const [showStartMenu, setShowStartMenu] = useState(true);
   const [playerName, setPlayerName] = useState('PLAYER');
+  const [currentTaunt, setCurrentTaunt] = useState(TAUNTS[Math.floor(Math.random() * TAUNTS.length)]);
   
   const { gameState, settings, startGame, pauseGame, resetGame } = useGameEngine();
   const { 
@@ -33,6 +139,19 @@ export const SpaceDefenderGame: React.FC = () => {
     resetGame();
     setShowStartMenu(true);
   }, [resetGame]);
+
+  // Rotate taunts during gameplay
+  useEffect(() => {
+    if (!gameState.isPlaying || gameState.isPaused || showStartMenu) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setCurrentTaunt(TAUNTS[Math.floor(Math.random() * TAUNTS.length)]);
+    }, 5000); // Change taunt every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [gameState.isPlaying, gameState.isPaused, showStartMenu]);
 
   // Handle pause with keyboard
   useEffect(() => {
@@ -151,6 +270,17 @@ export const SpaceDefenderGame: React.FC = () => {
       {/* Background starfield */}
       <div className="starfield" />
       
+      {/* Taunt Display */}
+      {gameState.isPlaying && !gameState.isPaused && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20">
+          <div className="hud-panel px-8 py-3">
+            <div className="pixel-text text-2xl color-splash animate-pulse">
+              {currentTaunt}
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Game Canvas */}
       <div className="flex items-center justify-center flex-1">
         <div className="relative">
@@ -169,7 +299,7 @@ export const SpaceDefenderGame: React.FC = () => {
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
         <div className="hud-panel text-xs px-6 py-2">
           <div className="pixel-text text-muted-foreground">
-            ARROWS: Move | SPACE: Shoot | B: Bomb | P/ESC: Pause
+            ARROWS/WASD: Move | SPACE: Shoot | B: Bomb | P/ESC: Pause
           </div>
         </div>
       </div>

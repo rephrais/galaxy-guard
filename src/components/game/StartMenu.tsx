@@ -138,7 +138,7 @@ export const StartMenu: React.FC<StartMenuProps> = ({
             <div className="border-2 border-neon-cyan p-4">
               <div className="pixel-text text-xl text-neon-cyan mb-4">CONTROLS:</div>
               <div className="pixel-text text-sm text-foreground space-y-2">
-                <div>↑↓←→ - Move Spaceship</div>
+                <div>↑↓←→ or WASD - Move Spaceship</div>
                 <div>SPACE - Shoot Bullets</div>
                 <div>B - Drop Bombs</div>
                 <div>P - Pause Game</div>
