@@ -180,10 +180,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       return screenX >= -50 && screenX <= settings.width + 50;
     });
     
-    // Draw flames at intervals along the terrain
+    // Draw flames at intervals along the terrain (capped for performance)
     const time = Date.now() * 0.005; // For animation
+    const MAX_FLAMES = 120;
+    const step = Math.max(3, Math.ceil(visibleForeground.length / MAX_FLAMES));
     
-    for (let i = 0; i < visibleForeground.length; i += 3) {
+    for (let i = 0; i < visibleForeground.length; i += step) {
       const point = visibleForeground[i];
       const screenX = point.x - parallaxOffset;
       
