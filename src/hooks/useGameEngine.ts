@@ -469,41 +469,39 @@ export const useGameEngine = () => {
         lastBossSpawnRef.current = now;
       }
 
-      // Spawn BOSS every minute
+      // Spawn BOSS every 60 seconds
       const gameTime = now - newState.startTime;
-      const currentMinute = Math.floor(gameTime / 60000);
       
-      if (gameTime >= 60000 && currentMinute > 0 && !newState.boss) {
-        const lastSpawnedMinute = Math.floor((bossSpawnedRef.current ? 60000 : 0) / 60000);
-        
-        if (currentMinute > lastSpawnedMinute || !bossSpawnedRef.current) {
-          bossSpawnedRef.current = true;
-          
-          // Create tentacles
-          const tentacles = [];
-          for (let i = 0; i < 6; i++) {
-            tentacles.push({
-              angle: (Math.PI * 2 * i) / 6,
-              length: 80 + Math.random() * 40
-            });
-          }
-          
-          newState.boss = {
-            id: `mega-boss-${currentMinute}`,
-            position: { 
-              x: newState.scrollOffset + settings.width + 50,
-              y: settings.height / 2 - 200
-            },
-            velocity: { x: -0.3, y: 0 },
-            size: { x: 250, y: 400 },
-            active: true,
-            lastFireTime: now,
-            fireRate: 1200,
-            health: 100,
-            maxHealth: 100,
-            tentacles
-          };
+      // Spawn boss every 60 seconds if no boss is currently active
+      if (gameTime >= 60000 && !newState.boss && now - lastBossSpawnRef.current >= 60000) {
+        // Create tentacles
+        const tentacles = [];
+        for (let i = 0; i < 6; i++) {
+          tentacles.push({
+            angle: (Math.PI * 2 * i) / 6,
+            length: 80 + Math.random() * 40
+          });
         }
+        
+        const bossNumber = Math.floor(now - lastBossSpawnRef.current >= 60000 ? (now - newState.startTime) / 60000 : 1);
+        
+        newState.boss = {
+          id: `mega-boss-${bossNumber}-${now}`,
+          position: { 
+            x: newState.scrollOffset + settings.width + 50,
+            y: settings.height / 2 - 200
+          },
+          velocity: { x: -0.3, y: 0 },
+          size: { x: 250, y: 400 },
+          active: true,
+          lastFireTime: now,
+          fireRate: 1200,
+          health: 100,
+          maxHealth: 100,
+          tentacles
+        };
+        
+        lastBossSpawnRef.current = now;
       }
 
       // Update projectiles
