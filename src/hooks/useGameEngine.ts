@@ -46,13 +46,13 @@ const generateTerrainSegment = (startX: number, segmentWidth: number = 1200): Te
 };
 
 // Optimized explosion particles - fewer particles for better performance
-const generateExplosionParticles = (centerX: number, centerY: number, particleCount: number = 10): ExplosionParticle[] => {
+const generateExplosionParticles = (centerX: number, centerY: number, particleCount: number = 6): ExplosionParticle[] => {
   const particles: ExplosionParticle[] = [];
-  const colors = ['#ffff00', '#ff6600', '#ff0000', '#ffffff', '#ffaa00'];
+  const colors = ['#ffff00', '#ff6600', '#ff0000'];
   
   for (let i = 0; i < particleCount; i++) {
     const angle = (Math.PI * 2 * i) / particleCount;
-    const speed = 2 + Math.random() * 3;
+    const speed = 2 + Math.random() * 2;
     
     particles.push({
       position: { x: centerX, y: centerY },
@@ -60,7 +60,7 @@ const generateExplosionParticles = (centerX: number, centerY: number, particleCo
         x: Math.cos(angle) * speed,
         y: Math.sin(angle) * speed
       },
-      size: 3,
+      size: 2,
       color: colors[i % colors.length],
       life: 1.0
     });
@@ -183,12 +183,15 @@ export const useGameEngine = () => {
         }
       }
       
-      // More aggressive cleanup for better performance
-      const minX = newState.scrollOffset - settings.width * 0.5;
+      // Aggressive cleanup for better performance - keep only visible terrain
+      const minX = newState.scrollOffset - settings.width * 0.2;
       newState.terrain.background = newState.terrain.background.filter(p => p.x > minX);
       newState.terrain.middle = newState.terrain.middle.filter(p => p.x > minX);
       newState.terrain.foreground = newState.terrain.foreground.filter(p => p.x > minX);
       newState.trees = newState.trees.filter(t => t.x > minX);
+      
+      // Cleanup old explosions (keep only active ones)
+      newState.explosions = newState.explosions.filter(exp => now - exp.startTime < 500);
 
       // Handle spaceship movement (Arrow keys or WASD)
       if (keysRef.current.has('ArrowUp') || keysRef.current.has('KeyW')) {
@@ -229,7 +232,7 @@ export const useGameEngine = () => {
           particles: generateExplosionParticles(
             newState.spaceship.position.x + newState.scrollOffset, 
             newState.spaceship.position.y + newState.spaceship.size.y / 2,
-            20 // More particles for ship explosion
+            8 // Reduced particle count
           )
         });
         
@@ -289,9 +292,9 @@ export const useGameEngine = () => {
         keysRef.current.delete('KeyB'); // Prevent auto-bomb
       }
 
-      // Launch rockets from terrain (adjusted for scroll and difficulty)
-      const rocketFreq = Math.max(400, settings.rocketLaunchFrequency - (newState.level - 1) * 100);
-      const maxRockets = 3 + Math.floor(newState.level / 2);
+      // Launch rockets from terrain (adjusted for scroll and difficulty) - capped for performance
+      const rocketFreq = Math.max(600, settings.rocketLaunchFrequency - (newState.level - 1) * 80);
+      const maxRockets = Math.min(5, 3 + Math.floor(newState.level / 2));
       
       if (now - lastRocketLaunchRef.current > rocketFreq && newState.rockets.length < maxRockets) {
         // Find visible terrain points to launch from - broader search range
@@ -346,9 +349,9 @@ export const useGameEngine = () => {
         lastRocketLaunchRef.current = now;
       }
 
-      // Spawn saucers from the right side
-      const saucerFreq = Math.max(2000, 4000 - (newState.level - 1) * 200); // Less frequent than rockets
-      const maxSaucers = 2 + Math.floor(newState.level / 3);
+      // Spawn saucers from the right side - capped for performance
+      const saucerFreq = Math.max(3000, 5000 - (newState.level - 1) * 150);
+      const maxSaucers = Math.min(3, 2 + Math.floor(newState.level / 3));
       
       if (now - lastSaucerSpawnRef.current > saucerFreq && newState.saucers.length < maxSaucers) {
         const saucerId = `saucer-${Date.now()}-${Math.random()}`;
@@ -373,9 +376,9 @@ export const useGameEngine = () => {
         lastSaucerSpawnRef.current = now;
       }
 
-      // Spawn aliens on terrain every 10 seconds
-      const alienSpawnFreq = 10000; // 10 seconds
-      const maxAliens = 3 + Math.floor(newState.level / 2);
+      // Spawn aliens on terrain - capped for performance
+      const alienSpawnFreq = 12000;
+      const maxAliens = Math.min(4, 3 + Math.floor(newState.level / 2));
       
       if (now - lastAlienSpawnRef.current > alienSpawnFreq && newState.aliens.length < maxAliens) {
         // Find a terrain point to spawn alien on
@@ -406,9 +409,9 @@ export const useGameEngine = () => {
         }
       }
 
-      // Spawn crawling aliens on foreground terrain every 8 seconds
-      const crawlingAlienSpawnFreq = 8000;
-      const maxCrawlingAliens = 2 + Math.floor(newState.level / 3);
+      // Spawn crawling aliens on foreground terrain - capped for performance
+      const crawlingAlienSpawnFreq = 10000;
+      const maxCrawlingAliens = Math.min(3, 2 + Math.floor(newState.level / 3));
       
       if (now - lastCrawlingAlienSpawnRef.current > crawlingAlienSpawnFreq && newState.crawlingAliens.length < maxCrawlingAliens) {
         // Find a foreground terrain point to spawn crawling alien on
@@ -826,7 +829,7 @@ export const useGameEngine = () => {
             id: `explosion-${Date.now()}-${Math.random()}`,
             position: { x: rocket.position.x, y: rocket.position.y },
             startTime: now,
-            particles: generateExplosionParticles(rocket.position.x, rocket.position.y, 15)
+            particles: generateExplosionParticles(rocket.position.x, rocket.position.y, 8)
           });
             
             // Destroy both
@@ -866,7 +869,7 @@ export const useGameEngine = () => {
               id: `explosion-${Date.now()}-${Math.random()}`,
               position: { x: saucer.position.x, y: saucer.position.y },
               startTime: now,
-              particles: generateExplosionParticles(saucer.position.x, saucer.position.y, 15)
+              particles: generateExplosionParticles(saucer.position.x, saucer.position.y, 8)
             });
             
             // Destroy both
@@ -900,7 +903,7 @@ export const useGameEngine = () => {
                 id: `explosion-${Date.now()}-${Math.random()}`,
                 position: { x: alien.position.x, y: alien.position.y },
                 startTime: now,
-                particles: generateExplosionParticles(alien.position.x, alien.position.y, 20)
+                particles: generateExplosionParticles(alien.position.x, alien.position.y, 8)
               });
               
               alien.active = false;
@@ -928,7 +931,7 @@ export const useGameEngine = () => {
                 id: `explosion-${Date.now()}-${Math.random()}`,
                 position: { x: crawlingAlien.position.x, y: crawlingAlien.position.y },
                 startTime: now,
-                particles: generateExplosionParticles(crawlingAlien.position.x, crawlingAlien.position.y, 20)
+                particles: generateExplosionParticles(crawlingAlien.position.x, crawlingAlien.position.y, 8)
               });
               
               crawlingAlien.active = false;
@@ -971,7 +974,7 @@ export const useGameEngine = () => {
                 id: `explosion-${Date.now()}-${Math.random()}`,
                 position: { x: boss.position.x, y: boss.position.y },
                 startTime: now,
-                particles: generateExplosionParticles(boss.position.x, boss.position.y, 40)
+                particles: generateExplosionParticles(boss.position.x, boss.position.y, 15)
               });
               
               boss.active = false;
@@ -1094,7 +1097,7 @@ export const useGameEngine = () => {
               id: `explosion-${Date.now()}-${Math.random()}`,
               position: { x: rocket.position.x, y: rocket.position.y },
               startTime: now,
-              particles: generateExplosionParticles(rocket.position.x, rocket.position.y, 12)
+              particles: generateExplosionParticles(rocket.position.x, rocket.position.y, 6)
             });
           
           if (newState.spaceship.health <= 0) {
@@ -1127,7 +1130,7 @@ export const useGameEngine = () => {
             id: `explosion-${Date.now()}-${Math.random()}`,
             position: { x: saucer.position.x, y: saucer.position.y },
             startTime: now,
-            particles: generateExplosionParticles(saucer.position.x, saucer.position.y, 18)
+            particles: generateExplosionParticles(saucer.position.x, saucer.position.y, 6)
           });
           
           if (newState.spaceship.health <= 0) {
@@ -1160,7 +1163,7 @@ export const useGameEngine = () => {
             id: `explosion-${Date.now()}-${Math.random()}`,
             position: { x: tree.x, y: tree.y + tree.height / 2 },
             startTime: now,
-            particles: generateExplosionParticles(tree.x, tree.y + tree.height / 2, 25)
+            particles: generateExplosionParticles(tree.x, tree.y + tree.height / 2, 10)
           });
           
           if (newState.lives <= 0) {

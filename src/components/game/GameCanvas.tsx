@@ -180,10 +180,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       return screenX >= -50 && screenX <= settings.width + 50;
     });
     
-    // Draw flames at intervals along the terrain (capped for performance)
+    // Draw flames at intervals along the terrain (heavily capped for performance)
     const time = Date.now() * 0.005; // For animation
-    const MAX_FLAMES = 120;
-    const step = Math.max(3, Math.ceil(visibleForeground.length / MAX_FLAMES));
+    const MAX_FLAMES = 60; // Reduced from 120 for better performance
+    const step = Math.max(5, Math.ceil(visibleForeground.length / MAX_FLAMES));
     
     for (let i = 0; i < visibleForeground.length; i += step) {
       const point = visibleForeground[i];
@@ -207,65 +207,25 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       const flameWidth = flameHeight * 0.4;
       const flameY = point.y - flameHeight;
       
-      // Draw flame with gradient
-      ctx.save();
+      // Simplified flame rendering for better performance
+      ctx.fillStyle = sizeVariant < 0.33 ? '#ff6600' : sizeVariant < 0.66 ? '#ff8800' : '#ffaa00';
       
-      // Flickering animation offset
-      const flicker = Math.sin(time * 2 + point.x * 0.2) * 2;
-      
-      // Outer flame (red-orange)
+      // Simple triangle flame
       ctx.beginPath();
       ctx.moveTo(screenX, point.y);
-      ctx.quadraticCurveTo(
-        screenX - flameWidth / 2 + flicker, 
-        flameY + flameHeight * 0.5, 
-        screenX + Math.sin(time * 3 + point.x) * 2, 
-        flameY
-      );
-      ctx.quadraticCurveTo(
-        screenX + flameWidth / 2 - flicker, 
-        flameY + flameHeight * 0.5, 
-        screenX, 
-        point.y
-      );
+      ctx.lineTo(screenX - flameWidth / 2, flameY + flameHeight * 0.3);
+      ctx.lineTo(screenX, flameY);
+      ctx.lineTo(screenX + flameWidth / 2, flameY + flameHeight * 0.3);
       ctx.closePath();
-      
-      const flameGradient = ctx.createLinearGradient(screenX, point.y, screenX, flameY);
-      flameGradient.addColorStop(0, '#ff3300');
-      flameGradient.addColorStop(0.5, '#ff6600');
-      flameGradient.addColorStop(1, '#ffff00');
-      ctx.fillStyle = flameGradient;
       ctx.fill();
       
-      // Inner flame (bright yellow-white)
-      const innerHeight = flameHeight * 0.6;
-      const innerWidth = flameWidth * 0.5;
-      const innerY = point.y - innerHeight;
-      
-      ctx.beginPath();
-      ctx.moveTo(screenX, point.y);
-      ctx.quadraticCurveTo(
-        screenX - innerWidth / 2, 
-        innerY + innerHeight * 0.5, 
-        screenX, 
-        innerY
-      );
-      ctx.quadraticCurveTo(
-        screenX + innerWidth / 2, 
-        innerY + innerHeight * 0.5, 
-        screenX, 
-        point.y
-      );
-      ctx.closePath();
-      
-      const innerGradient = ctx.createLinearGradient(screenX, point.y, screenX, innerY);
-      innerGradient.addColorStop(0, '#ff6600');
-      innerGradient.addColorStop(0.5, '#ffaa00');
-      innerGradient.addColorStop(1, '#ffffff');
-      ctx.fillStyle = innerGradient;
-      ctx.fill();
-      
-      ctx.restore();
+      // Bright tip
+      if (sizeVariant > 0.5) {
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath();
+        ctx.arc(screenX, flameY + flameHeight * 0.2, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
     
     // Draw big obstacle trees from game state
@@ -912,18 +872,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
           ctx.save();
           ctx.globalAlpha = particle.life;
           
-          // Draw particle as a small filled circle
+          // Simplified particle rendering
+          ctx.fillStyle = particle.color;
           ctx.beginPath();
           ctx.arc(particleScreenX, particle.position.y, particle.size, 0, Math.PI * 2);
-          ctx.fillStyle = particle.color;
-          ctx.fill();
-          
-          // Add glow effect
-          ctx.shadowColor = particle.color;
-          ctx.shadowBlur = particle.size * 2;
-          ctx.beginPath();
-          ctx.arc(particleScreenX, particle.position.y, particle.size * 0.5, 0, Math.PI * 2);
-          ctx.fillStyle = particle.color;
           ctx.fill();
           
           ctx.restore();
