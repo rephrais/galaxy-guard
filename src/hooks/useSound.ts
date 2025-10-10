@@ -62,9 +62,9 @@ export const useSound = (): SoundEffects => {
 
   const gameOver = useCallback(() => {
     // Soft descending tone for game over
-    playBeep(300, 0.4, 0.04);
-    setTimeout(() => playBeep(250, 0.4, 0.03), 200);
-    setTimeout(() => playBeep(200, 0.5, 0.02), 400);
+    playBeep(300, 0.4, 0.01);
+    setTimeout(() => playBeep(250, 0.4, 0.008), 200);
+    setTimeout(() => playBeep(200, 0.5, 0.005), 400);
   }, [playBeep]);
 
   const levelUp = useCallback(() => {
