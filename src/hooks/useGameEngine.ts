@@ -510,8 +510,9 @@ export const useGameEngine = () => {
         projectile.position.x += projectile.velocity.x;
         projectile.position.y += projectile.velocity.y;
         
-        // Remove if off screen
-        if (projectile.position.x > settings.width || projectile.position.y > settings.height) {
+        // Remove if off screen (all edges for boss fireballs)
+        if (projectile.position.x < -100 || projectile.position.x > settings.width + 100 || 
+            projectile.position.y < -100 || projectile.position.y > settings.height + 100) {
           return false;
         }
         
