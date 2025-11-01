@@ -89,6 +89,7 @@ export interface Boss extends GameObject {
   health: number;
   maxHealth: number;
   tentacles: Array<{ angle: number; length: number }>;
+  bossType: number; // 0-5 for different boss variants
 }
 
 export interface Tree {

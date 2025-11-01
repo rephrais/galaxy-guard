@@ -487,6 +487,9 @@ export const useGameEngine = () => {
             });
           }
           
+          // Determine boss type (cycles through 6 types)
+          const bossType = currentInterval % 6;
+          
           newState.boss = {
             id: `mega-boss-${currentInterval}-${now}`,
             position: { 
@@ -500,7 +503,8 @@ export const useGameEngine = () => {
             fireRate: 1200,
             health: 100,
             maxHealth: 100,
-            tentacles
+            tentacles,
+            bossType
           };
           
           lastMegaBossIntervalRef.current = currentInterval;
@@ -780,36 +784,141 @@ export const useGameEngine = () => {
           tentacle.angle = (Math.PI * 2 * i) / 6 + Math.sin(animTime + i) * 0.3;
         });
         
-        // Fire 5 fireballs randomly
+        // Fire different projectiles based on boss type
         if (now - newState.boss.lastFireTime > newState.boss.fireRate) {
           const currentBossScreenX = newState.boss.position.x - newState.scrollOffset;
+          const bossType = newState.boss.bossType;
           
-          for (let i = 0; i < 5; i++) {
-            // Random angle towards left side
-            const angleToPlayer = Math.atan2(
-              newState.spaceship.position.y - newState.boss.position.y - newState.boss.size.y / 2,
-              newState.spaceship.position.x - currentBossScreenX - newState.boss.size.x / 2
-            );
-            const angleVariation = (Math.random() - 0.5) * 1.2;
-            const finalAngle = angleToPlayer + angleVariation;
-            
-            const fireballSpeed = 2 + Math.random() * 2;
-            
-            newState.projectiles.push({
-              id: `fireball-${Date.now()}-${Math.random()}-${i}`,
-              position: {
-                x: currentBossScreenX + newState.boss.size.x / 2,
-                y: newState.boss.position.y + newState.boss.size.y / 2 + (Math.random() - 0.5) * 100
-              },
-              velocity: {
-                x: Math.cos(finalAngle) * fireballSpeed,
-                y: Math.sin(finalAngle) * fireballSpeed
-              },
-              size: { x: 20, y: 20 },
-              active: true,
-              damage: 40,
-              type: 'fireball'
-            });
+          // Type 0: Fireballs (original)
+          if (bossType === 0) {
+            for (let i = 0; i < 5; i++) {
+              const angleToPlayer = Math.atan2(
+                newState.spaceship.position.y - newState.boss.position.y - newState.boss.size.y / 2,
+                newState.spaceship.position.x - currentBossScreenX - newState.boss.size.x / 2
+              );
+              const angleVariation = (Math.random() - 0.5) * 1.2;
+              const finalAngle = angleToPlayer + angleVariation;
+              const fireballSpeed = 2 + Math.random() * 2;
+              
+              newState.projectiles.push({
+                id: `fireball-${Date.now()}-${Math.random()}-${i}`,
+                position: {
+                  x: currentBossScreenX + newState.boss.size.x / 2,
+                  y: newState.boss.position.y + newState.boss.size.y / 2 + (Math.random() - 0.5) * 100
+                },
+                velocity: { x: Math.cos(finalAngle) * fireballSpeed, y: Math.sin(finalAngle) * fireballSpeed },
+                size: { x: 20, y: 20 },
+                active: true,
+                damage: 40,
+                type: 'fireball'
+              });
+            }
+          }
+          // Type 1: Spiral lasers
+          else if (bossType === 1) {
+            for (let i = 0; i < 8; i++) {
+              const angle = (Math.PI * 2 * i) / 8 + Date.now() * 0.003;
+              newState.projectiles.push({
+                id: `laser-${Date.now()}-${Math.random()}-${i}`,
+                position: {
+                  x: currentBossScreenX + newState.boss.size.x / 2,
+                  y: newState.boss.position.y + newState.boss.size.y / 2
+                },
+                velocity: { x: Math.cos(angle) * 3, y: Math.sin(angle) * 3 },
+                size: { x: 8, y: 8 },
+                active: true,
+                damage: 35,
+                type: 'laser'
+              });
+            }
+          }
+          // Type 2: Wave pattern
+          else if (bossType === 2) {
+            for (let i = 0; i < 6; i++) {
+              const angleToPlayer = Math.atan2(
+                newState.spaceship.position.y - newState.boss.position.y,
+                newState.spaceship.position.x - currentBossScreenX
+              );
+              const waveAngle = angleToPlayer + Math.sin(Date.now() * 0.005 + i) * 0.8;
+              
+              newState.projectiles.push({
+                id: `wave-${Date.now()}-${Math.random()}-${i}`,
+                position: {
+                  x: currentBossScreenX + newState.boss.size.x / 2,
+                  y: newState.boss.position.y + newState.boss.size.y / 2
+                },
+                velocity: { x: Math.cos(waveAngle) * 2.5, y: Math.sin(waveAngle) * 2.5 },
+                size: { x: 15, y: 15 },
+                active: true,
+                damage: 38,
+                type: 'fireball'
+              });
+            }
+          }
+          // Type 3: Spread shot
+          else if (bossType === 3) {
+            for (let i = 0; i < 10; i++) {
+              const angleToPlayer = Math.atan2(
+                newState.spaceship.position.y - newState.boss.position.y,
+                newState.spaceship.position.x - currentBossScreenX
+              );
+              const spreadAngle = angleToPlayer + (i - 4.5) * 0.3;
+              
+              newState.projectiles.push({
+                id: `spread-${Date.now()}-${Math.random()}-${i}`,
+                position: {
+                  x: currentBossScreenX + newState.boss.size.x / 2,
+                  y: newState.boss.position.y + newState.boss.size.y / 2
+                },
+                velocity: { x: Math.cos(spreadAngle) * 3.5, y: Math.sin(spreadAngle) * 3.5 },
+                size: { x: 12, y: 12 },
+                active: true,
+                damage: 30,
+                type: 'laser'
+              });
+            }
+          }
+          // Type 4: Homing missiles
+          else if (bossType === 4) {
+            for (let i = 0; i < 4; i++) {
+              const angleToPlayer = Math.atan2(
+                newState.spaceship.position.y - newState.boss.position.y,
+                newState.spaceship.position.x - currentBossScreenX
+              );
+              
+              newState.projectiles.push({
+                id: `missile-${Date.now()}-${Math.random()}-${i}`,
+                position: {
+                  x: currentBossScreenX + newState.boss.size.x / 2,
+                  y: newState.boss.position.y + 100 + i * 70
+                },
+                velocity: { x: Math.cos(angleToPlayer) * 2, y: Math.sin(angleToPlayer) * 2 },
+                size: { x: 18, y: 18 },
+                active: true,
+                damage: 45,
+                type: 'fire'
+              });
+            }
+          }
+          // Type 5: Burst pattern
+          else if (bossType === 5) {
+            for (let i = 0; i < 12; i++) {
+              const angle = (Math.PI * 2 * i) / 12;
+              const speed = 2 + Math.random();
+              
+              newState.projectiles.push({
+                id: `burst-${Date.now()}-${Math.random()}-${i}`,
+                position: {
+                  x: currentBossScreenX + newState.boss.size.x / 2,
+                  y: newState.boss.position.y + newState.boss.size.y / 2
+                },
+                velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
+                size: { x: 16, y: 16 },
+                active: true,
+                damage: 35,
+                type: 'fireball'
+              });
+            }
           }
           
           newState.boss.lastFireTime = now;
