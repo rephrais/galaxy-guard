@@ -471,9 +471,10 @@ export const useGameEngine = () => {
 
       // Spawn BOSS every 60 seconds
       const gameTime = now - newState.startTime;
+      const timeSinceLastBoss = lastBossSpawnRef.current === 0 ? gameTime : now - lastBossSpawnRef.current;
       
       // Spawn boss every 60 seconds if no boss is currently active
-      if (gameTime >= 60000 && !newState.boss && now - lastBossSpawnRef.current >= 60000) {
+      if (gameTime >= 60000 && !newState.boss && timeSinceLastBoss >= 60000) {
         // Create tentacles
         const tentacles = [];
         for (let i = 0; i < 6; i++) {
@@ -840,6 +841,10 @@ export const useGameEngine = () => {
               newState.score += 100; // Bonus for destroying heavy rockets
             }
             
+            // Ammo rewards for small kills
+            newState.spaceship.ammunition += 100;
+            newState.spaceship.bombs += 5;
+            
             // Level up every 1000 points
             const newLevel = Math.floor(newState.score / 1000) + 1;
             if (newLevel > newState.level) {
@@ -874,8 +879,10 @@ export const useGameEngine = () => {
             projectile.active = false;
             saucer.active = false;
             
-            // Add score
+            // Add score and ammo rewards
             newState.score += projectile.type === 'bomb' ? 300 : 200; // Good points for saucers
+            newState.spaceship.ammunition += 100;
+            newState.spaceship.bombs += 5;
           }
         });
       });
@@ -906,6 +913,8 @@ export const useGameEngine = () => {
               
               alien.active = false;
               newState.score += projectile.type === 'bomb' ? 400 : 250; // Good points for aliens
+              newState.spaceship.ammunition += 100;
+              newState.spaceship.bombs += 5;
             }
           }
         });
@@ -934,7 +943,8 @@ export const useGameEngine = () => {
               
               crawlingAlien.active = false;
               newState.score += projectile.type === 'bomb' ? 450 : 300;
-              newState.spaceship.ammunition += 10; // Ammo reward
+              newState.spaceship.ammunition += 100;
+              newState.spaceship.bombs += 5;
             }
           }
         });
@@ -977,7 +987,8 @@ export const useGameEngine = () => {
               
               boss.active = false;
               newState.score += 1000;
-              newState.spaceship.ammunition += 100; // 100 ammo bonus for destroying boss rocket
+              newState.spaceship.ammunition += 200; // 200 ammo bonus for destroying boss rocket (big kill)
+              newState.spaceship.bombs += 10;
             }
           }
         });
@@ -1033,8 +1044,9 @@ export const useGameEngine = () => {
               newState.boss.active = false;
               newState.boss = null;
               newState.score += 5000;
-              newState.spaceship.ammunition += 1000; // 1000 ammo bonus for destroying mega boss
-              bossSpawnedRef.current = false; // Allow next boss to spawn
+              newState.spaceship.ammunition += 200; // 200 ammo bonus for destroying mega boss (big kill)
+              newState.spaceship.bombs += 10;
+              lastBossSpawnRef.current = now; // Reset boss timer for next spawn
             }
           }
         });

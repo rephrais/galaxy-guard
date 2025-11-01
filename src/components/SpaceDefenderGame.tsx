@@ -270,9 +270,9 @@ export const SpaceDefenderGame: React.FC = () => {
       {/* Background starfield */}
       <div className="starfield" />
       
-      {/* Taunt Display */}
+      {/* Taunt Display - moved to bottom to avoid covering HUD */}
       {gameState.isPlaying && !gameState.isPaused && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20">
+        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20">
           <div className="hud-panel px-8 py-3">
             <div className="pixel-text text-2xl color-splash animate-pulse">
               {currentTaunt}
