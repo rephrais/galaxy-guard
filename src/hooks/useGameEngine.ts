@@ -114,7 +114,7 @@ export const useGameEngine = () => {
   const lastAlienSpawnRef = useRef<number>(0);
   const lastCrawlingAlienSpawnRef = useRef<number>(0);
   const lastBossSpawnRef = useRef<number>(0);
-  const lastMegaBossSpawnRef = useRef<number>(0);
+  const lastMegaBossIntervalRef = useRef<number>(0); // Track which 30s interval we spawned for
   const bossSpawnedRef = useRef<boolean>(false);
   const keysRef = useRef<Set<string>>(new Set());
 
@@ -470,40 +470,41 @@ export const useGameEngine = () => {
         lastBossSpawnRef.current = now;
       }
 
-      // Spawn MEGA BOSS at 0:30 and every 30 seconds thereafter
+      // Spawn MEGA BOSS at 0:30, 1:00, 1:30, etc. (every 30 seconds)
       const gameTime = now - newState.startTime;
-      const timeSinceLastMega = lastMegaBossSpawnRef.current === 0 ? gameTime : now - lastMegaBossSpawnRef.current;
+      const currentInterval = Math.floor(gameTime / 30000); // Which 30s interval (0, 1, 2, 3...)
       
-      // Spawn boss every 30 seconds if no boss is currently active
-      if (gameTime >= 30000 && !newState.boss && timeSinceLastMega >= 30000) {
-        // Create tentacles
-        const tentacles = [];
-        for (let i = 0; i < 6; i++) {
-          tentacles.push({
-            angle: (Math.PI * 2 * i) / 6,
-            length: 80 + Math.random() * 40
-          });
+      // Spawn boss if we're past 30s and haven't spawned for this interval yet
+      if (gameTime >= 30000 && currentInterval > lastMegaBossIntervalRef.current) {
+        // Only spawn if no boss exists OR if existing boss is not active
+        if (!newState.boss || !newState.boss.active) {
+          // Create tentacles
+          const tentacles = [];
+          for (let i = 0; i < 6; i++) {
+            tentacles.push({
+              angle: (Math.PI * 2 * i) / 6,
+              length: 80 + Math.random() * 40
+            });
+          }
+          
+          newState.boss = {
+            id: `mega-boss-${currentInterval}-${now}`,
+            position: { 
+              x: newState.scrollOffset + settings.width + 50,
+              y: settings.height / 2 - 200
+            },
+            velocity: { x: -0.3, y: 0 },
+            size: { x: 250, y: 400 },
+            active: true,
+            lastFireTime: now,
+            fireRate: 1200,
+            health: 100,
+            maxHealth: 100,
+            tentacles
+          };
+          
+          lastMegaBossIntervalRef.current = currentInterval;
         }
-        
-        const bossNumber = Math.floor(gameTime / 30000);
-        
-        newState.boss = {
-          id: `mega-boss-${bossNumber}-${now}`,
-          position: { 
-            x: newState.scrollOffset + settings.width + 50,
-            y: settings.height / 2 - 200
-          },
-          velocity: { x: -0.3, y: 0 },
-          size: { x: 250, y: 400 },
-          active: true,
-          lastFireTime: now,
-          fireRate: 1200,
-          health: 100,
-          maxHealth: 100,
-          tentacles
-        };
-        
-        lastMegaBossSpawnRef.current = now;
       }
 
       // Update projectiles
@@ -1047,7 +1048,7 @@ export const useGameEngine = () => {
               newState.score += 5000;
               newState.spaceship.ammunition += 200; // 200 ammo bonus for destroying mega boss (big kill)
               newState.spaceship.bombs += 10;
-              lastMegaBossSpawnRef.current = now; // Reset mega boss timer for next spawn
+              // Don't update lastMegaBossIntervalRef here - let the spawn logic handle intervals
             }
           }
         });
@@ -1238,7 +1239,7 @@ export const useGameEngine = () => {
     lastSaucerSpawnRef.current = Date.now();
     lastAlienSpawnRef.current = Date.now();
     lastBossSpawnRef.current = Date.now(); // boss rockets timer
-    lastMegaBossSpawnRef.current = 0; // allow first mega boss at 0:30
+    lastMegaBossIntervalRef.current = 0; // track intervals, first boss at interval 1 (0:30)
     bossSpawnedRef.current = false;
     
     setGameState(prev => ({
@@ -1292,7 +1293,7 @@ export const useGameEngine = () => {
     lastRocketLaunchRef.current = Date.now();
     lastSaucerSpawnRef.current = Date.now();
     lastBossSpawnRef.current = Date.now(); // boss rockets timer
-    lastMegaBossSpawnRef.current = 0; // allow first mega boss at 0:30
+    lastMegaBossIntervalRef.current = 0; // track intervals
     bossSpawnedRef.current = false;
   }, []);
 
