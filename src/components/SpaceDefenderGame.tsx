@@ -232,10 +232,20 @@ export const SpaceDefenderGame: React.FC = () => {
   useEffect(() => {
     // Play explosion sound when explosions are added
     if (gameState.explosions.length > prevExplosions) {
-      sounds.explosion();
+      // Check if it's a mega boss explosion
+      const latestExplosion = gameState.explosions[gameState.explosions.length - 1];
+      if (latestExplosion?.isMegaExplosion) {
+        // Only play the mega boom sound once for the first mega explosion
+        const megaExplosionsCount = gameState.explosions.filter(e => e.isMegaExplosion).length;
+        if (megaExplosionsCount === 1) {
+          sounds.megaBossExplosion();
+        }
+      } else {
+        sounds.explosion();
+      }
     }
     setPrevExplosions(gameState.explosions.length);
-  }, [gameState.explosions.length, prevExplosions, sounds]);
+  }, [gameState.explosions, prevExplosions, sounds]);
 
   useEffect(() => {
     // Play hit sound when ship takes damage

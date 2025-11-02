@@ -5,6 +5,7 @@ interface SoundEffects {
   shoot: () => void;
   bomb: () => void;
   explosion: () => void;
+  megaBossExplosion: () => void;
   hit: () => void;
   gameOver: () => void;
   levelUp: () => void;
@@ -56,6 +57,42 @@ export const useSound = (): SoundEffects => {
     setTimeout(() => playBeep(80, 0.1, 0.04), 100);
   }, [playBeep]);
 
+  const megaBossExplosion = useCallback(() => {
+    // MASSIVE BOOM sound effect - cascading explosions
+    // Initial deep BOOM
+    playBeep(50, 0.5, 0.15);
+    playBeep(80, 0.5, 0.12);
+    
+    // Secondary explosions cascade
+    setTimeout(() => {
+      playBeep(120, 0.4, 0.1);
+      playBeep(60, 0.4, 0.12);
+    }, 100);
+    
+    setTimeout(() => {
+      playBeep(100, 0.3, 0.09);
+      playBeep(70, 0.35, 0.11);
+    }, 250);
+    
+    setTimeout(() => {
+      playBeep(90, 0.3, 0.08);
+      playBeep(55, 0.3, 0.1);
+    }, 400);
+    
+    setTimeout(() => {
+      playBeep(80, 0.25, 0.07);
+    }, 600);
+    
+    setTimeout(() => {
+      playBeep(70, 0.2, 0.06);
+    }, 800);
+    
+    // Final rumble
+    setTimeout(() => {
+      playBeep(40, 0.6, 0.08);
+    }, 1000);
+  }, [playBeep]);
+
   const hit = useCallback(() => {
     playBeep(300, 0.15, 0.07);
   }, [playBeep]);
@@ -78,6 +115,7 @@ export const useSound = (): SoundEffects => {
     shoot,
     bomb,
     explosion,
+    megaBossExplosion,
     hit,
     gameOver,
     levelUp,
