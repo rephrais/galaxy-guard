@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useGameEngine } from '@/hooks/useGameEngine';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useSound } from '@/hooks/useSound';
+import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
 import { GameCanvas } from '@/components/game/GameCanvas';
 import { GameHUD } from '@/components/game/GameHUD';
 import { StartMenu } from '@/components/game/StartMenu';
@@ -127,12 +128,14 @@ export const SpaceDefenderGame: React.FC = () => {
     hasSavedGame 
   } = useLocalStorage();
   const sounds = useSound();
+  const music = useBackgroundMusic();
 
   // Handle game start
   const handleStartGame = useCallback(() => {
     setShowStartMenu(false);
     startGame();
-  }, [startGame]);
+    music.startMusic();
+  }, [startGame, music]);
 
   // Handle game restart
   const handleRestart = useCallback(() => {
@@ -165,6 +168,17 @@ export const SpaceDefenderGame: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [pauseGame, showStartMenu]);
 
+  // Handle music pause/resume
+  useEffect(() => {
+    if (gameState.isPlaying) {
+      if (gameState.isPaused) {
+        music.stopMusic();
+      } else if (!music.isPlaying()) {
+        music.startMusic();
+      }
+    }
+  }, [gameState.isPaused, gameState.isPlaying, music]);
+
   // Auto-save game progress
   useEffect(() => {
     if (gameState.isPlaying && gameState.score > 0) {
@@ -182,6 +196,9 @@ export const SpaceDefenderGame: React.FC = () => {
   // Handle game over
   useEffect(() => {
     if (gameState.gameOver && gameState.score > 0) {
+      // Stop music
+      music.stopMusic();
+      
       // Add to leaderboard
       const entry = {
         name: playerName,
@@ -197,7 +214,7 @@ export const SpaceDefenderGame: React.FC = () => {
       // Play game over sound
       sounds.gameOver();
     }
-  }, [gameState.gameOver, gameState.score, gameState.level, playerName, addToLeaderboard, deleteSavedGame, sounds]);
+  }, [gameState.gameOver, gameState.score, gameState.level, playerName, addToLeaderboard, deleteSavedGame, sounds, music]);
 
   // Handle load game
   const handleLoadGame = useCallback(() => {
@@ -206,8 +223,9 @@ export const SpaceDefenderGame: React.FC = () => {
       // For now, just start a new game
       setShowStartMenu(false);
       startGame();
+      music.startMusic();
     }
-  }, [savedGame, startGame]);
+  }, [savedGame, startGame, music]);
 
   // Sound effects based on game state changes
   const [prevRockets, setPrevRockets] = useState(gameState.rockets.length);
