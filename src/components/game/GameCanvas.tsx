@@ -837,27 +837,57 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       const screenX = explosion.position.x - gameState.scrollOffset;
       
       // Only draw if visible on screen
-      if (screenX < -100 || screenX > settings.width + 100) return;
+      if (screenX < -200 || screenX > settings.width + 200) return;
       
-      const { position, startTime, particles } = explosion;
+      const { position, startTime, particles, isMegaExplosion } = explosion;
       const elapsed = Date.now() - startTime;
-      const progress = elapsed / 1000; // 1000ms explosion duration
+      const duration = isMegaExplosion ? 2000 : 1000; // Mega explosions last longer
+      const progress = elapsed / duration;
       
       if (progress < 1) {
+        const isMega = isMegaExplosion || false;
+        
         // Draw main explosion rings
-        const radius = 30 * progress;
+        const maxRadius = isMega ? 100 : 30;
+        const radius = maxRadius * progress;
         const opacity = 1 - progress;
         
         ctx.save();
-        ctx.globalAlpha = opacity * 0.8;
+        ctx.globalAlpha = opacity * (isMega ? 0.9 : 0.8);
         
-        // Explosion rings
-        for (let i = 0; i < 4; i++) {
+        // Explosion rings - more for mega explosions
+        const ringCount = isMega ? 8 : 4;
+        for (let i = 0; i < ringCount; i++) {
           ctx.beginPath();
-          ctx.arc(screenX, position.y, radius + i * 8, 0, Math.PI * 2);
-          ctx.strokeStyle = i === 0 ? '#ffff00' : i === 1 ? '#ff6600' : i === 2 ? '#ff0000' : '#ffffff';
-          ctx.lineWidth = 4 - i;
+          ctx.arc(screenX, position.y, radius + i * (isMega ? 15 : 8), 0, Math.PI * 2);
+          
+          // Enhanced colors for mega explosions
+          if (isMega) {
+            ctx.strokeStyle = i === 0 ? '#ffffff' : 
+                            i === 1 ? '#ffff00' : 
+                            i === 2 ? '#ffaa00' :
+                            i === 3 ? '#ff6600' :
+                            i === 4 ? '#ff3300' :
+                            i === 5 ? '#ff0000' : '#cc0000';
+          } else {
+            ctx.strokeStyle = i === 0 ? '#ffff00' : i === 1 ? '#ff6600' : i === 2 ? '#ff0000' : '#ffffff';
+          }
+          
+          ctx.lineWidth = isMega ? 6 - i * 0.5 : 4 - i;
           ctx.stroke();
+        }
+        
+        // Add bright flash for mega explosions
+        if (isMega && progress < 0.3) {
+          ctx.globalAlpha = (1 - progress / 0.3) * 0.6;
+          const flashGradient = ctx.createRadialGradient(screenX, position.y, 0, screenX, position.y, radius * 2);
+          flashGradient.addColorStop(0, '#ffffff');
+          flashGradient.addColorStop(0.5, '#ffff00');
+          flashGradient.addColorStop(1, 'transparent');
+          ctx.fillStyle = flashGradient;
+          ctx.beginPath();
+          ctx.arc(screenX, position.y, radius * 2, 0, Math.PI * 2);
+          ctx.fill();
         }
         
         ctx.restore();
@@ -872,7 +902,22 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
           ctx.save();
           ctx.globalAlpha = particle.life;
           
-          // Simplified particle rendering
+          // Enhanced particle rendering for mega explosions
+          if (isMega) {
+            // Add glow effect
+            const glowGradient = ctx.createRadialGradient(
+              particleScreenX, particle.position.y, 0,
+              particleScreenX, particle.position.y, particle.size * 2
+            );
+            glowGradient.addColorStop(0, particle.color);
+            glowGradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = glowGradient;
+            ctx.beginPath();
+            ctx.arc(particleScreenX, particle.position.y, particle.size * 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          
+          // Core particle
           ctx.fillStyle = particle.color;
           ctx.beginPath();
           ctx.arc(particleScreenX, particle.position.y, particle.size, 0, Math.PI * 2);

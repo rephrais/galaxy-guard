@@ -46,13 +46,13 @@ const generateTerrainSegment = (startX: number, segmentWidth: number = 1200): Te
 };
 
 // Optimized explosion particles - fewer particles for better performance
-const generateExplosionParticles = (centerX: number, centerY: number, particleCount: number = 6): ExplosionParticle[] => {
+const generateExplosionParticles = (centerX: number, centerY: number, particleCount: number = 6, isMega: boolean = false): ExplosionParticle[] => {
   const particles: ExplosionParticle[] = [];
   const colors = ['#ffff00', '#ff6600', '#ff0000'];
   
   for (let i = 0; i < particleCount; i++) {
     const angle = (Math.PI * 2 * i) / particleCount;
-    const speed = 2 + Math.random() * 2;
+    const speed = isMega ? 3 + Math.random() * 4 : 2 + Math.random() * 2;
     
     particles.push({
       position: { x: centerX, y: centerY },
@@ -60,7 +60,7 @@ const generateExplosionParticles = (centerX: number, centerY: number, particleCo
         x: Math.cos(angle) * speed,
         y: Math.sin(angle) * speed
       },
-      size: 2,
+      size: isMega ? 4 + Math.random() * 3 : 2,
       color: colors[i % colors.length],
       life: 1.0
     });
@@ -1135,22 +1135,47 @@ export const useGameEngine = () => {
             });
             
             if (newState.boss!.health <= 0) {
-              // Massive boss destruction
-              for (let i = 0; i < 8; i++) {
+              // MEGA DRAMATIC BOSS DESTRUCTION - BOOOOOM!
+              const bossCenter = {
+                x: newState.boss!.position.x + newState.boss!.size.x / 2,
+                y: newState.boss!.position.y + newState.boss!.size.y / 2
+              };
+              
+              // Create 20 cascading mega explosions across the boss
+              for (let i = 0; i < 20; i++) {
+                const offsetX = (Math.random() - 0.5) * newState.boss!.size.x * 1.5;
+                const offsetY = (Math.random() - 0.5) * newState.boss!.size.y * 1.5;
+                
                 newState.explosions.push({
-                  id: `explosion-${Date.now()}-${Math.random()}-${i}`,
+                  id: `mega-explosion-${Date.now()}-${Math.random()}-${i}`,
                   position: { 
-                    x: newState.boss!.position.x + (Math.random() - 0.5) * newState.boss!.size.x,
-                    y: newState.boss!.position.y + (Math.random() - 0.5) * newState.boss!.size.y
+                    x: bossCenter.x + offsetX,
+                    y: bossCenter.y + offsetY
                   },
-                  startTime: now + i * 100,
+                  startTime: now + i * 80, // Cascade delay
                   particles: generateExplosionParticles(
-                    newState.boss!.position.x + (Math.random() - 0.5) * newState.boss!.size.x,
-                    newState.boss!.position.y + (Math.random() - 0.5) * newState.boss!.size.y,
-                    30
-                  )
+                    bossCenter.x + offsetX,
+                    bossCenter.y + offsetY,
+                    40 + Math.random() * 20, // TONS of particles
+                    true // Mega explosion flag
+                  ),
+                  isMegaExplosion: true
                 });
               }
+              
+              // Add final massive central explosion
+              newState.explosions.push({
+                id: `mega-final-${Date.now()}`,
+                position: bossCenter,
+                startTime: now + 1600, // After all others
+                particles: generateExplosionParticles(
+                  bossCenter.x,
+                  bossCenter.y,
+                  80, // Huge particle count
+                  true
+                ),
+                isMegaExplosion: true
+              });
               
               newState.boss.active = false;
               newState.boss = null;

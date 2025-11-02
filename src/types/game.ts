@@ -53,6 +53,7 @@ export interface Explosion {
   position: Vector2;
   startTime: number;
   particles: ExplosionParticle[];
+  isMegaExplosion?: boolean; // Special flag for boss death explosions
 }
 
 export interface Saucer extends GameObject {
