@@ -11,34 +11,34 @@ const DEFAULT_SETTINGS: GameSettings = {
   rocketSpeed: 4,
 };
 
-// Generate infinite terrain segments
+// Generate infinite terrain segments with improved detail
 const generateTerrainSegment = (startX: number, segmentWidth: number = 1200): TerrainLayers => {
-  const points = Math.floor(segmentWidth / 30);
+  const points = Math.floor(segmentWidth / 15); // More detail - points every 15px instead of 30px
   
   const background: TerrainPoint[] = [];
   const middle: TerrainPoint[] = [];
   const foreground: TerrainPoint[] = [];
   
   for (let i = 0; i < points; i++) {
-    const x = startX + i * 30;
+    const x = startX + i * 15;
     const seedOffset = x * 0.001; // Use x position as seed for consistent terrain
     
-    // Background terrain (higher, visual only)
+    // Background terrain (higher, visual only) - more variation
     background.push({
       x,
-      y: 300 + Math.sin(seedOffset * 0.5) * 30 + Math.sin(seedOffset * 2) * 10,
+      y: 300 + Math.sin(seedOffset * 0.5) * 30 + Math.sin(seedOffset * 2) * 10 + Math.sin(seedOffset * 5) * 5,
     });
     
-    // Middle terrain (solid, affects gameplay)
+    // Middle terrain (solid, affects gameplay) - more variation
     middle.push({
       x,
-      y: 450 + Math.sin(seedOffset * 0.8) * 40 + Math.sin(seedOffset * 3) * 15,
+      y: 450 + Math.sin(seedOffset * 0.8) * 40 + Math.sin(seedOffset * 3) * 15 + Math.sin(seedOffset * 6) * 8,
     });
     
-    // Foreground terrain (lower, visual only)
+    // Foreground terrain (lower, visual only) - more variation
     foreground.push({
       x,
-      y: 520 + Math.sin(seedOffset * 1.2) * 25 + Math.sin(seedOffset * 4) * 10,
+      y: 520 + Math.sin(seedOffset * 1.2) * 25 + Math.sin(seedOffset * 4) * 10 + Math.sin(seedOffset * 7) * 6,
     });
   }
   
@@ -174,7 +174,7 @@ export const useGameEngine = () => {
         
         // Generate trees on the foreground terrain
         for (let x = lastTerrainX; x < lastTerrainX + 1200; x += 200 + Math.floor(Math.sin(x * 0.01) * 100)) {
-          const terrainY = newState.terrain.foreground.find(p => Math.abs(p.x - x) < 20)?.y || 650;
+          const terrainY = newState.terrain.foreground.find(p => Math.abs(p.x - x) < 10)?.y || 650;
           newState.trees.push({
             x: x,
             y: terrainY - 60, // Position tree above terrain

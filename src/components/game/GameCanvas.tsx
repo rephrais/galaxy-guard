@@ -234,7 +234,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       
       // Only draw if visible
       if (screenX >= -50 && screenX <= settings.width + 50) {
-        const treeY = tree.y;
+        // Dynamically get terrain Y at tree position to fix floating trees
+        const nearestTerrainPoint = gameState.terrain.foreground.find(p => Math.abs(p.x - tree.x) < 10);
+        const treeY = nearestTerrainPoint ? nearestTerrainPoint.y - 60 : tree.y;
+        
         const trunkWidth = tree.width * 0.3;
         const trunkHeight = tree.height * 0.7;
         
