@@ -194,108 +194,196 @@ export const StartMenu: React.FC<StartMenuProps> = ({
       </div>
       {renderAnimatedSpaceships()}
       
-      {/* Colorful corner decorations */}
-      <div className="absolute top-0 left-0 w-32 h-32 border-l-4 border-t-4 border-neon-cyan opacity-50" />
-      <div className="absolute top-0 right-0 w-32 h-32 border-r-4 border-t-4 border-neon-purple opacity-50" />
-      <div className="absolute bottom-0 left-0 w-32 h-32 border-l-4 border-b-4 border-neon-orange opacity-50" />
-      <div className="absolute bottom-0 right-0 w-32 h-32 border-r-4 border-b-4 border-neon-green opacity-50" />
+      {/* Crazy animated corner decorations - 80s style */}
+      <div className="absolute top-0 left-0 w-48 h-48 border-l-8 border-t-8 border-neon-cyan animate-pulse" 
+           style={{ 
+             boxShadow: '0 0 20px hsl(var(--neon-cyan)), inset 0 0 20px hsl(var(--neon-cyan))',
+             animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+           }} />
+      <div className="absolute top-0 right-0 w-48 h-48 border-r-8 border-t-8 border-neon-purple animate-pulse" 
+           style={{ 
+             boxShadow: '0 0 20px hsl(var(--neon-purple)), inset 0 0 20px hsl(var(--neon-purple))',
+             animationDelay: '0.5s',
+             animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite 0.5s'
+           }} />
+      <div className="absolute bottom-0 left-0 w-48 h-48 border-l-8 border-b-8 border-neon-orange animate-pulse" 
+           style={{ 
+             boxShadow: '0 0 20px hsl(var(--neon-orange)), inset 0 0 20px hsl(var(--neon-orange))',
+             animationDelay: '1s',
+             animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite 1s'
+           }} />
+      <div className="absolute bottom-0 right-0 w-48 h-48 border-r-8 border-b-8 border-neon-green animate-pulse" 
+           style={{ 
+             boxShadow: '0 0 20px hsl(var(--neon-green)), inset 0 0 20px hsl(var(--neon-green))',
+             animationDelay: '1.5s',
+             animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite 1.5s'
+           }} />
+      
+      {/* Extra animated borders for that 80s arcade cabinet look */}
+      <div className="absolute inset-8 border-4 border-neon-yellow pointer-events-none"
+           style={{ 
+             boxShadow: '0 0 30px hsl(var(--neon-yellow)), inset 0 0 30px hsl(var(--neon-yellow))',
+             animation: 'pulse 3s ease-in-out infinite'
+           }} />
       
       <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
-        {/* Game Title */}
-        <div className="mb-8">
+        {/* Massive 80s Game Title with crazy effects */}
+        <div className="mb-12 animate-pulse">
           <div 
-            className="pixel-text text-7xl md:text-8xl mb-4"
+            className="pixel-text text-8xl md:text-9xl mb-6 tracking-wider"
             style={{
-              background: 'linear-gradient(180deg, hsl(120, 100%, 50%) 0%, hsl(51, 100%, 50%) 50%, hsl(120, 100%, 50%) 100%)',
+              background: 'linear-gradient(45deg, hsl(var(--neon-cyan)) 0%, hsl(var(--neon-purple)) 25%, hsl(var(--neon-yellow)) 50%, hsl(var(--neon-orange)) 75%, hsl(var(--neon-cyan)) 100%)',
+              backgroundSize: '200% 200%',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
-              filter: 'drop-shadow(4px 4px 0px black) drop-shadow(8px 8px 0px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 10px white) drop-shadow(0 0 20px white) drop-shadow(0 0 40px rgba(255, 255, 255, 0.8))',
-              WebkitTextStroke: '6px black',
-              paintOrder: 'stroke fill',
+              filter: 'drop-shadow(0 0 10px hsl(var(--neon-cyan))) drop-shadow(0 0 20px hsl(var(--neon-purple))) drop-shadow(0 0 30px hsl(var(--neon-yellow))) drop-shadow(4px 4px 0 black)',
+              animation: 'retro-glow 3s ease-in-out infinite, color-splash 8s linear infinite',
+              WebkitTextStroke: '3px black',
+              textShadow: '6px 6px 0 black, 0 0 50px hsl(var(--neon-yellow))'
             }}
           >
             SPACE OFFENDER
           </div>
-          <div className="pixel-text text-xl md:text-2xl text-neon-cyan">
-            Defend Against the Rocket Storm!
+          <div className="pixel-text text-2xl md:text-3xl text-neon-cyan animate-pulse"
+               style={{
+                 filter: 'drop-shadow(0 0 10px hsl(var(--neon-cyan)))',
+                 textShadow: '0 0 20px hsl(var(--neon-cyan))'
+               }}>
+            ⚡ Defend Against the Rocket Storm! ⚡
           </div>
         </div>
 
-        {/* Main Menu Container */}
-        <div className="hud-panel inline-block p-8 mb-6 border-4">
-          <div className="space-y-4">
-            <button
-              onClick={onStartGame}
-              className="arcade-button text-xl w-72 border-neon-yellow hover:bg-neon-yellow"
-            >
-              ▶ START GAME
-            </button>
-            
-            {hasSavedGame && onLoadGame && (
+        {/* Main Menu Container with crazy border */}
+        <div className="relative inline-block mb-8"
+             style={{
+               background: 'linear-gradient(45deg, transparent 0%, rgba(0,0,0,0.5) 100%)',
+               padding: '6px',
+               animation: 'pulse 2s infinite'
+             }}>
+          <div className="absolute inset-0 border-8 border-double animate-pulse"
+               style={{
+                 borderImage: 'linear-gradient(45deg, hsl(var(--neon-cyan)), hsl(var(--neon-purple)), hsl(var(--neon-yellow)), hsl(var(--neon-orange))) 1',
+                 borderImageSlice: 1,
+                 boxShadow: '0 0 40px hsl(var(--neon-purple)), inset 0 0 40px rgba(0,0,0,0.8)',
+                 animation: 'pulse 2s ease-in-out infinite'
+               }} />
+          <div className="hud-panel p-10 border-4 border-neon-yellow relative"
+               style={{
+                 boxShadow: '0 0 30px hsl(var(--neon-yellow)), inset 0 0 20px rgba(0,0,0,0.9)'
+               }}>
+            <div className="space-y-6">
+              {/* HUGE START BUTTON */}
               <button
-                onClick={onLoadGame}
-                className="arcade-button text-xl w-72 border-neon-green hover:bg-neon-green text-neon-green hover:text-black"
+                onClick={onStartGame}
+                className="arcade-button text-4xl w-96 py-8 border-8 border-neon-yellow hover:bg-neon-yellow font-black tracking-widest transform hover:scale-110 transition-all duration-200"
+                style={{
+                  boxShadow: '0 0 40px hsl(var(--neon-yellow)), inset 0 0 20px rgba(255,255,0,0.2)',
+                  animation: 'pulse 1.5s ease-in-out infinite',
+                  textShadow: '0 0 20px hsl(var(--neon-yellow)), 4px 4px 0 black'
+                }}
               >
-                ⟳ CONTINUE GAME
+                ▶▶ START GAME ◀◀
               </button>
-            )}
-            
-            <button
-              onClick={() => setShowLeaderboard(true)}
-              className="arcade-button text-xl w-72 border-neon-cyan hover:bg-neon-cyan text-neon-cyan hover:text-black"
-            >
-              ★ HIGH SCORES
-            </button>
-
-            {/* Level Dropdown */}
-            <div className="pt-2">
-              <label className="pixel-text text-sm text-neon-purple block mb-2">
-                STARTING LEVEL
-              </label>
-              <select
-                value={selectedLevel}
-                onChange={(e) => setSelectedLevel(Number(e.target.value))}
-                className="w-72 px-4 py-3 bg-background border-2 border-neon-purple text-neon-purple pixel-text text-lg hover:bg-neon-purple hover:text-black transition-all cursor-pointer"
+              
+              {/* HUGE CONTINUE BUTTON */}
+              {hasSavedGame && onLoadGame && (
+                <button
+                  onClick={onLoadGame}
+                  className="arcade-button text-3xl w-96 py-6 border-8 border-neon-green hover:bg-neon-green text-neon-green hover:text-black font-black tracking-widest transform hover:scale-110 transition-all duration-200"
+                  style={{
+                    boxShadow: '0 0 40px hsl(var(--neon-green)), inset 0 0 20px rgba(0,255,0,0.2)',
+                    textShadow: '0 0 20px hsl(var(--neon-green)), 3px 3px 0 black'
+                  }}
+                >
+                  ⟳ CONTINUE GAME ⟳
+                </button>
+              )}
+              
+              {/* HUGE HIGH SCORES BUTTON */}
+              <button
+                onClick={() => setShowLeaderboard(true)}
+                className="arcade-button text-3xl w-96 py-6 border-8 border-neon-cyan hover:bg-neon-cyan text-neon-cyan hover:text-black font-black tracking-widest transform hover:scale-110 transition-all duration-200"
+                style={{
+                  boxShadow: '0 0 40px hsl(var(--neon-cyan)), inset 0 0 20px rgba(0,255,255,0.2)',
+                  textShadow: '0 0 20px hsl(var(--neon-cyan)), 3px 3px 0 black'
+                }}
               >
-                {Array.from({ length: 100 }, (_, i) => i + 1).map((level) => (
-                  <option key={level} value={level} className="bg-background text-foreground">
-                    Level {level}
-                  </option>
-                ))}
-              </select>
-            </div>
+                ★★ HIGH SCORES ★★
+              </button>
 
-            <button
-              onClick={() => setShowHowToPlay(true)}
-              className="arcade-button text-xl w-72 border-neon-orange hover:bg-neon-orange text-neon-orange hover:text-black"
-            >
-              ? HOW TO PLAY
-            </button>
+              {/* Level Dropdown - 80s style */}
+              <div className="pt-4">
+                <label className="pixel-text text-2xl text-neon-purple block mb-3 font-black tracking-wider"
+                       style={{
+                         textShadow: '0 0 20px hsl(var(--neon-purple)), 2px 2px 0 black'
+                       }}>
+                  ⚙ STARTING LEVEL ⚙
+                </label>
+                <select
+                  value={selectedLevel}
+                  onChange={(e) => setSelectedLevel(Number(e.target.value))}
+                  className="w-96 px-6 py-5 bg-background border-8 border-neon-purple text-neon-purple pixel-text text-2xl hover:bg-neon-purple hover:text-black transition-all cursor-pointer font-black"
+                  style={{
+                    boxShadow: '0 0 30px hsl(var(--neon-purple)), inset 0 0 10px rgba(255,0,255,0.2)',
+                    textShadow: '0 0 10px hsl(var(--neon-purple))'
+                  }}
+                >
+                  {Array.from({ length: 100 }, (_, i) => i + 1).map((level) => (
+                    <option key={level} value={level} className="bg-background text-foreground">
+                      Level {level}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* HUGE HOW TO PLAY BUTTON */}
+              <button
+                onClick={() => setShowHowToPlay(true)}
+                className="arcade-button text-3xl w-96 py-6 border-8 border-neon-orange hover:bg-neon-orange text-neon-orange hover:text-black font-black tracking-widest transform hover:scale-110 transition-all duration-200"
+                style={{
+                  boxShadow: '0 0 40px hsl(var(--neon-orange)), inset 0 0 20px rgba(255,128,0,0.2)',
+                  textShadow: '0 0 20px hsl(var(--neon-orange)), 3px 3px 0 black'
+                }}
+              >
+                ? HOW TO PLAY ?
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Audio Controls */}
-        <div className="flex justify-center gap-4 mb-4">
+        {/* Audio Controls - 80s style */}
+        <div className="flex justify-center gap-6 mb-6">
           <button
             onClick={() => setMusicEnabled(!musicEnabled)}
-            className="arcade-button text-sm px-6 border-neon-cyan text-neon-cyan hover:bg-neon-cyan hover:text-black flex items-center gap-2"
+            className="arcade-button text-xl px-8 py-4 border-4 border-neon-cyan text-neon-cyan hover:bg-neon-cyan hover:text-black flex items-center gap-3 font-black transform hover:scale-110 transition-all"
+            style={{
+              boxShadow: '0 0 20px hsl(var(--neon-cyan))',
+              textShadow: '0 0 10px hsl(var(--neon-cyan))'
+            }}
           >
-            <Music size={18} className={!musicEnabled ? 'opacity-30' : ''} />
+            <Music size={24} className={!musicEnabled ? 'opacity-30' : ''} />
             MUSIC: {musicEnabled ? 'ON' : 'OFF'}
           </button>
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className="arcade-button text-sm px-6 border-neon-green text-neon-green hover:bg-neon-green hover:text-black flex items-center gap-2"
+            className="arcade-button text-xl px-8 py-4 border-4 border-neon-green text-neon-green hover:bg-neon-green hover:text-black flex items-center gap-3 font-black transform hover:scale-110 transition-all"
+            style={{
+              boxShadow: '0 0 20px hsl(var(--neon-green))',
+              textShadow: '0 0 10px hsl(var(--neon-green))'
+            }}
           >
-            {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            {soundEnabled ? <Volume2 size={24} /> : <VolumeX size={24} />}
             SOUND: {soundEnabled ? 'ON' : 'OFF'}
           </button>
         </div>
 
-        {/* Footer Credits */}
-        <div className="pixel-text text-xs text-muted-foreground">
-          Created with ❤️ by AJ Batac (@ajbatac) - v1.0.0 (<Link to="/changelog" className="text-neon-cyan hover:text-neon-yellow transition-colors">changelog</Link>)
+        {/* Footer Credits with glow */}
+        <div className="pixel-text text-sm text-muted-foreground"
+             style={{
+               textShadow: '0 0 10px rgba(255,255,255,0.3)'
+             }}>
+          Created with ❤️ by AJ Batac (@ajbatac) - v1.0.0 (<Link to="/changelog" className="text-neon-cyan hover:text-neon-yellow transition-colors" style={{ textShadow: '0 0 10px hsl(var(--neon-cyan))' }}>changelog</Link>)
         </div>
       </div>
     </div>
