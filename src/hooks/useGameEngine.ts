@@ -157,8 +157,8 @@ export const useGameEngine = () => {
       const newState = { ...prevState };
       const now = Date.now();
 
-      // Update world scroll - speed increases with level
-      const currentScrollSpeed = settings.scrollSpeed + (newState.level - 1) * 0.5;
+      // Update world scroll - speed increases with level (reduced for better pacing)
+      const currentScrollSpeed = settings.scrollSpeed + (newState.level - 1) * 0.2;
       newState.scrollOffset += currentScrollSpeed;
       
       // Generate new terrain if needed (infinite scrolling)
@@ -294,7 +294,7 @@ export const useGameEngine = () => {
       }
 
       // Launch rockets from terrain (adjusted for scroll and difficulty) - capped for performance
-      const rocketFreq = Math.max(600, settings.rocketLaunchFrequency - (newState.level - 1) * 80);
+      const rocketFreq = Math.max(800, settings.rocketLaunchFrequency - (newState.level - 1) * 40);
       const maxRockets = Math.min(5, 3 + Math.floor(newState.level / 2));
       
       if (now - lastRocketLaunchRef.current > rocketFreq && newState.rockets.length < maxRockets) {
@@ -319,7 +319,7 @@ export const useGameEngine = () => {
         const rocketId = `rocket-${Date.now()}-${Math.random()}`;
         
         // Randomly choose rocket type (70% normal, 30% heavy)
-        const isHeavy = Math.random() < 0.3 + (newState.level - 1) * 0.05; // More heavy rockets at higher levels
+        const isHeavy = Math.random() < 0.3 + (newState.level - 1) * 0.02; // More heavy rockets at higher levels (reduced scaling)
         
         if (isHeavy) {
           // Heavy rocket - bigger and slower
@@ -351,7 +351,7 @@ export const useGameEngine = () => {
       }
 
       // Spawn saucers from the right side - capped for performance
-      const saucerFreq = Math.max(3000, 5000 - (newState.level - 1) * 150);
+      const saucerFreq = Math.max(4000, 6000 - (newState.level - 1) * 80);
       const maxSaucers = Math.min(3, 2 + Math.floor(newState.level / 3));
       
       if (now - lastSaucerSpawnRef.current > saucerFreq && newState.saucers.length < maxSaucers) {
@@ -956,8 +956,8 @@ export const useGameEngine = () => {
             newState.spaceship.ammunition += 100;
             newState.spaceship.bombs += 5;
             
-            // Level up every 1000 points
-            const newLevel = Math.floor(newState.score / 1000) + 1;
+            // Level up every 2000 points (slowed down for better pacing)
+            const newLevel = Math.floor(newState.score / 2000) + 1;
             if (newLevel > newState.level) {
               newState.level = newLevel;
               newState.spaceship.ammunition += 20; // Bonus ammo on level up
