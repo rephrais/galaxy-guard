@@ -243,7 +243,7 @@ export const StartMenu: React.FC<StartMenuProps> = ({
               textShadow: '2px 2px 0 black, 0 0 30px hsl(var(--neon-yellow))'
             }}
           >
-            SPACE OFFENDER
+            GALAXY GUARD
           </div>
           <div className="pixel-text text-sm sm:text-base md:text-lg text-neon-cyan animate-pulse"
                style={{
