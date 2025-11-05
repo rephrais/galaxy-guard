@@ -195,92 +195,92 @@ export const StartMenu: React.FC<StartMenuProps> = ({
       {renderAnimatedSpaceships()}
       
       {/* Crazy animated corner decorations - 80s style */}
-      <div className="absolute top-0 left-0 w-48 h-48 border-l-8 border-t-8 border-neon-cyan animate-pulse" 
+      <div className="absolute top-0 left-0 w-24 h-24 sm:w-32 sm:h-32 border-l-4 border-t-4 sm:border-l-6 sm:border-t-6 border-neon-cyan animate-pulse" 
            style={{ 
-             boxShadow: '0 0 20px hsl(var(--neon-cyan)), inset 0 0 20px hsl(var(--neon-cyan))',
+             boxShadow: '0 0 15px hsl(var(--neon-cyan)), inset 0 0 15px hsl(var(--neon-cyan))',
              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
            }} />
-      <div className="absolute top-0 right-0 w-48 h-48 border-r-8 border-t-8 border-neon-purple animate-pulse" 
+      <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 border-r-4 border-t-4 sm:border-r-6 sm:border-t-6 border-neon-purple animate-pulse" 
            style={{ 
-             boxShadow: '0 0 20px hsl(var(--neon-purple)), inset 0 0 20px hsl(var(--neon-purple))',
+             boxShadow: '0 0 15px hsl(var(--neon-purple)), inset 0 0 15px hsl(var(--neon-purple))',
              animationDelay: '0.5s',
              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite 0.5s'
            }} />
-      <div className="absolute bottom-0 left-0 w-48 h-48 border-l-8 border-b-8 border-neon-orange animate-pulse" 
+      <div className="absolute bottom-0 left-0 w-24 h-24 sm:w-32 sm:h-32 border-l-4 border-b-4 sm:border-l-6 sm:border-b-6 border-neon-orange animate-pulse" 
            style={{ 
-             boxShadow: '0 0 20px hsl(var(--neon-orange)), inset 0 0 20px hsl(var(--neon-orange))',
+             boxShadow: '0 0 15px hsl(var(--neon-orange)), inset 0 0 15px hsl(var(--neon-orange))',
              animationDelay: '1s',
              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite 1s'
            }} />
-      <div className="absolute bottom-0 right-0 w-48 h-48 border-r-8 border-b-8 border-neon-green animate-pulse" 
+      <div className="absolute bottom-0 right-0 w-24 h-24 sm:w-32 sm:h-32 border-r-4 border-b-4 sm:border-r-6 sm:border-b-6 border-neon-green animate-pulse" 
            style={{ 
-             boxShadow: '0 0 20px hsl(var(--neon-green)), inset 0 0 20px hsl(var(--neon-green))',
+             boxShadow: '0 0 15px hsl(var(--neon-green)), inset 0 0 15px hsl(var(--neon-green))',
              animationDelay: '1.5s',
              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite 1.5s'
            }} />
       
       {/* Extra animated borders for that 80s arcade cabinet look */}
-      <div className="absolute inset-8 border-4 border-neon-yellow pointer-events-none"
+      <div className="absolute inset-4 sm:inset-6 border-2 sm:border-3 border-neon-yellow pointer-events-none"
            style={{ 
-             boxShadow: '0 0 30px hsl(var(--neon-yellow)), inset 0 0 30px hsl(var(--neon-yellow))',
+             boxShadow: '0 0 20px hsl(var(--neon-yellow)), inset 0 0 20px hsl(var(--neon-yellow))',
              animation: 'pulse 3s ease-in-out infinite'
            }} />
       
-      <div className="relative z-10 text-center w-full max-w-2xl mx-auto px-4">
+      <div className="relative z-10 text-center w-full max-w-xl mx-auto px-4">
         {/* Massive 80s Game Title with crazy effects */}
-        <div className="mb-8 animate-pulse">
+        <div className="mb-4 sm:mb-6 animate-pulse">
           <div 
-            className="pixel-text text-5xl sm:text-6xl md:text-7xl lg:text-8xl mb-4 tracking-wider"
+            className="pixel-text text-4xl sm:text-5xl md:text-6xl mb-2 sm:mb-3 tracking-wider"
             style={{
               background: 'linear-gradient(45deg, hsl(var(--neon-cyan)) 0%, hsl(var(--neon-purple)) 25%, hsl(var(--neon-yellow)) 50%, hsl(var(--neon-orange)) 75%, hsl(var(--neon-cyan)) 100%)',
               backgroundSize: '200% 200%',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
-              filter: 'drop-shadow(0 0 10px hsl(var(--neon-cyan))) drop-shadow(0 0 20px hsl(var(--neon-purple))) drop-shadow(0 0 30px hsl(var(--neon-yellow))) drop-shadow(4px 4px 0 black)',
+              filter: 'drop-shadow(0 0 8px hsl(var(--neon-cyan))) drop-shadow(0 0 15px hsl(var(--neon-purple))) drop-shadow(2px 2px 0 black)',
               animation: 'retro-glow 3s ease-in-out infinite, color-splash 8s linear infinite',
-              WebkitTextStroke: '2px black',
-              textShadow: '4px 4px 0 black, 0 0 50px hsl(var(--neon-yellow))'
+              WebkitTextStroke: '1px black',
+              textShadow: '2px 2px 0 black, 0 0 30px hsl(var(--neon-yellow))'
             }}
           >
             SPACE OFFENDER
           </div>
-          <div className="pixel-text text-lg sm:text-xl md:text-2xl text-neon-cyan animate-pulse"
+          <div className="pixel-text text-sm sm:text-base md:text-lg text-neon-cyan animate-pulse"
                style={{
-                 filter: 'drop-shadow(0 0 10px hsl(var(--neon-cyan)))',
-                 textShadow: '0 0 20px hsl(var(--neon-cyan))'
+                 filter: 'drop-shadow(0 0 8px hsl(var(--neon-cyan)))',
+                 textShadow: '0 0 15px hsl(var(--neon-cyan))'
                }}>
             ⚡ Defend Against the Rocket Storm! ⚡
           </div>
         </div>
 
         {/* Main Menu Container with crazy border */}
-        <div className="relative w-full mb-6"
+        <div className="relative w-full mb-4"
              style={{
                background: 'linear-gradient(45deg, transparent 0%, rgba(0,0,0,0.5) 100%)',
-               padding: '4px',
+               padding: '3px',
                animation: 'pulse 2s infinite'
              }}>
-          <div className="absolute inset-0 border-4 sm:border-6 md:border-8 border-double animate-pulse"
+          <div className="absolute inset-0 border-2 sm:border-3 md:border-4 border-double animate-pulse"
                style={{
                  borderImage: 'linear-gradient(45deg, hsl(var(--neon-cyan)), hsl(var(--neon-purple)), hsl(var(--neon-yellow)), hsl(var(--neon-orange))) 1',
                  borderImageSlice: 1,
-                 boxShadow: '0 0 40px hsl(var(--neon-purple)), inset 0 0 40px rgba(0,0,0,0.8)',
+                 boxShadow: '0 0 30px hsl(var(--neon-purple)), inset 0 0 30px rgba(0,0,0,0.8)',
                  animation: 'pulse 2s ease-in-out infinite'
                }} />
-          <div className="hud-panel p-6 sm:p-8 md:p-10 border-4 border-neon-yellow relative"
+          <div className="hud-panel p-4 sm:p-6 border-2 sm:border-3 border-neon-yellow relative"
                style={{
-                 boxShadow: '0 0 30px hsl(var(--neon-yellow)), inset 0 0 20px rgba(0,0,0,0.9)'
+                 boxShadow: '0 0 20px hsl(var(--neon-yellow)), inset 0 0 15px rgba(0,0,0,0.9)'
                }}>
-            <div className="space-y-4 sm:space-y-5 md:space-y-6">
+            <div className="space-y-2 sm:space-y-3 md:space-y-4">
               {/* HUGE START BUTTON */}
               <button
                 onClick={onStartGame}
-                className="arcade-button text-2xl sm:text-3xl md:text-4xl w-full max-w-md mx-auto py-4 sm:py-6 md:py-8 border-4 sm:border-6 md:border-8 border-neon-yellow hover:bg-neon-yellow font-black tracking-widest transform hover:scale-105 transition-all duration-200"
+                className="arcade-button text-xl sm:text-2xl md:text-3xl w-full py-3 sm:py-4 md:py-5 border-3 sm:border-4 md:border-5 border-neon-yellow hover:bg-neon-yellow font-black tracking-widest transform hover:scale-105 transition-all duration-200"
                 style={{
-                  boxShadow: '0 0 40px hsl(var(--neon-yellow)), inset 0 0 20px rgba(255,255,0,0.2)',
+                  boxShadow: '0 0 30px hsl(var(--neon-yellow)), inset 0 0 15px rgba(255,255,0,0.2)',
                   animation: 'pulse 1.5s ease-in-out infinite',
-                  textShadow: '0 0 20px hsl(var(--neon-yellow)), 3px 3px 0 black'
+                  textShadow: '0 0 15px hsl(var(--neon-yellow)), 2px 2px 0 black'
                 }}
               >
                 ▶▶ START GAME ◀◀
@@ -290,10 +290,10 @@ export const StartMenu: React.FC<StartMenuProps> = ({
               {hasSavedGame && onLoadGame && (
                 <button
                   onClick={onLoadGame}
-                  className="arcade-button text-xl sm:text-2xl md:text-3xl w-full max-w-md mx-auto py-3 sm:py-4 md:py-6 border-4 sm:border-6 md:border-8 border-neon-green hover:bg-neon-green text-neon-green hover:text-black font-black tracking-widest transform hover:scale-105 transition-all duration-200"
+                  className="arcade-button text-lg sm:text-xl md:text-2xl w-full py-2 sm:py-3 md:py-4 border-3 sm:border-4 border-neon-green hover:bg-neon-green text-neon-green hover:text-black font-black tracking-widest transform hover:scale-105 transition-all duration-200"
                   style={{
-                    boxShadow: '0 0 40px hsl(var(--neon-green)), inset 0 0 20px rgba(0,255,0,0.2)',
-                    textShadow: '0 0 20px hsl(var(--neon-green)), 2px 2px 0 black'
+                    boxShadow: '0 0 30px hsl(var(--neon-green)), inset 0 0 15px rgba(0,255,0,0.2)',
+                    textShadow: '0 0 15px hsl(var(--neon-green)), 2px 2px 0 black'
                   }}
                 >
                   ⟳ CONTINUE GAME ⟳
@@ -303,30 +303,30 @@ export const StartMenu: React.FC<StartMenuProps> = ({
               {/* HUGE HIGH SCORES BUTTON */}
               <button
                 onClick={() => setShowLeaderboard(true)}
-                className="arcade-button text-xl sm:text-2xl md:text-3xl w-full max-w-md mx-auto py-3 sm:py-4 md:py-6 border-4 sm:border-6 md:border-8 border-neon-cyan hover:bg-neon-cyan text-neon-cyan hover:text-black font-black tracking-widest transform hover:scale-105 transition-all duration-200"
+                className="arcade-button text-lg sm:text-xl md:text-2xl w-full py-2 sm:py-3 md:py-4 border-3 sm:border-4 border-neon-cyan hover:bg-neon-cyan text-neon-cyan hover:text-black font-black tracking-widest transform hover:scale-105 transition-all duration-200"
                 style={{
-                  boxShadow: '0 0 40px hsl(var(--neon-cyan)), inset 0 0 20px rgba(0,255,255,0.2)',
-                  textShadow: '0 0 20px hsl(var(--neon-cyan)), 2px 2px 0 black'
+                  boxShadow: '0 0 30px hsl(var(--neon-cyan)), inset 0 0 15px rgba(0,255,255,0.2)',
+                  textShadow: '0 0 15px hsl(var(--neon-cyan)), 2px 2px 0 black'
                 }}
               >
                 ★★ HIGH SCORES ★★
               </button>
 
               {/* Level Dropdown - 80s style */}
-              <div className="pt-2 sm:pt-3 md:pt-4">
-                <label className="pixel-text text-lg sm:text-xl md:text-2xl text-neon-purple block mb-2 sm:mb-3 font-black tracking-wider"
+              <div className="pt-1 sm:pt-2">
+                <label className="pixel-text text-base sm:text-lg md:text-xl text-neon-purple block mb-1 sm:mb-2 font-black tracking-wider"
                        style={{
-                         textShadow: '0 0 20px hsl(var(--neon-purple)), 2px 2px 0 black'
+                         textShadow: '0 0 15px hsl(var(--neon-purple)), 1px 1px 0 black'
                        }}>
                   ⚙ STARTING LEVEL ⚙
                 </label>
                 <select
                   value={selectedLevel}
                   onChange={(e) => setSelectedLevel(Number(e.target.value))}
-                  className="w-full max-w-md mx-auto px-4 sm:px-6 py-3 sm:py-4 md:py-5 bg-background border-4 sm:border-6 md:border-8 border-neon-purple text-neon-purple pixel-text text-lg sm:text-xl md:text-2xl hover:bg-neon-purple hover:text-black transition-all cursor-pointer font-black"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-background border-3 sm:border-4 border-neon-purple text-neon-purple pixel-text text-base sm:text-lg md:text-xl hover:bg-neon-purple hover:text-black transition-all cursor-pointer font-black"
                   style={{
-                    boxShadow: '0 0 30px hsl(var(--neon-purple)), inset 0 0 10px rgba(255,0,255,0.2)',
-                    textShadow: '0 0 10px hsl(var(--neon-purple))'
+                    boxShadow: '0 0 20px hsl(var(--neon-purple)), inset 0 0 8px rgba(255,0,255,0.2)',
+                    textShadow: '0 0 8px hsl(var(--neon-purple))'
                   }}
                 >
                   {Array.from({ length: 100 }, (_, i) => i + 1).map((level) => (
@@ -340,10 +340,10 @@ export const StartMenu: React.FC<StartMenuProps> = ({
               {/* HUGE HOW TO PLAY BUTTON */}
               <button
                 onClick={() => setShowHowToPlay(true)}
-                className="arcade-button text-xl sm:text-2xl md:text-3xl w-full max-w-md mx-auto py-3 sm:py-4 md:py-6 border-4 sm:border-6 md:border-8 border-neon-orange hover:bg-neon-orange text-neon-orange hover:text-black font-black tracking-widest transform hover:scale-105 transition-all duration-200"
+                className="arcade-button text-lg sm:text-xl md:text-2xl w-full py-2 sm:py-3 md:py-4 border-3 sm:border-4 border-neon-orange hover:bg-neon-orange text-neon-orange hover:text-black font-black tracking-widest transform hover:scale-105 transition-all duration-200"
                 style={{
-                  boxShadow: '0 0 40px hsl(var(--neon-orange)), inset 0 0 20px rgba(255,128,0,0.2)',
-                  textShadow: '0 0 20px hsl(var(--neon-orange)), 2px 2px 0 black'
+                  boxShadow: '0 0 30px hsl(var(--neon-orange)), inset 0 0 15px rgba(255,128,0,0.2)',
+                  textShadow: '0 0 15px hsl(var(--neon-orange)), 2px 2px 0 black'
                 }}
               >
                 ? HOW TO PLAY ?
@@ -353,27 +353,27 @@ export const StartMenu: React.FC<StartMenuProps> = ({
         </div>
 
         {/* Audio Controls - 80s style */}
-        <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
           <button
             onClick={() => setMusicEnabled(!musicEnabled)}
-            className="arcade-button text-base sm:text-lg md:text-xl px-4 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4 border-4 border-neon-cyan text-neon-cyan hover:bg-neon-cyan hover:text-black flex items-center justify-center gap-2 sm:gap-3 font-black transform hover:scale-105 transition-all"
+            className="arcade-button text-sm sm:text-base px-3 sm:px-4 py-2 border-2 sm:border-3 border-neon-cyan text-neon-cyan hover:bg-neon-cyan hover:text-black flex items-center justify-center gap-2 font-black transform hover:scale-105 transition-all"
             style={{
-              boxShadow: '0 0 20px hsl(var(--neon-cyan))',
-              textShadow: '0 0 10px hsl(var(--neon-cyan))'
+              boxShadow: '0 0 15px hsl(var(--neon-cyan))',
+              textShadow: '0 0 8px hsl(var(--neon-cyan))'
             }}
           >
-            <Music size={20} className={!musicEnabled ? 'opacity-30' : ''} />
+            <Music size={16} className={!musicEnabled ? 'opacity-30' : ''} />
             MUSIC: {musicEnabled ? 'ON' : 'OFF'}
           </button>
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className="arcade-button text-base sm:text-lg md:text-xl px-4 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4 border-4 border-neon-green text-neon-green hover:bg-neon-green hover:text-black flex items-center justify-center gap-2 sm:gap-3 font-black transform hover:scale-105 transition-all"
+            className="arcade-button text-sm sm:text-base px-3 sm:px-4 py-2 border-2 sm:border-3 border-neon-green text-neon-green hover:bg-neon-green hover:text-black flex items-center justify-center gap-2 font-black transform hover:scale-105 transition-all"
             style={{
-              boxShadow: '0 0 20px hsl(var(--neon-green))',
-              textShadow: '0 0 10px hsl(var(--neon-green))'
+              boxShadow: '0 0 15px hsl(var(--neon-green))',
+              textShadow: '0 0 8px hsl(var(--neon-green))'
             }}
           >
-            {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+            {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
             SOUND: {soundEnabled ? 'ON' : 'OFF'}
           </button>
         </div>
