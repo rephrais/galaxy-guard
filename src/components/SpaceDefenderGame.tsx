@@ -331,6 +331,8 @@ export const SpaceDefenderGame: React.FC = () => {
         onStartGame={handleStartGame}
         onLoadGame={handleLoadGame}
         hasSavedGame={hasSavedGame}
+        playerName={playerName}
+        onPlayerNameChange={setPlayerName}
       />
     );
   }
