@@ -137,6 +137,7 @@ export interface LeaderboardEntry {
   score: number;
   level: number;
   date: string;
+  country?: string; // ISO country code (e.g., 'US', 'GB', 'JP')
 }
 
 export interface SaveData {

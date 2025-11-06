@@ -3,6 +3,14 @@ import { Link } from 'react-router-dom';
 import { LeaderboardEntry, SaveData } from '@/types/game';
 import { Volume2, VolumeX, Music } from 'lucide-react';
 
+const getCountryFlag = (countryCode: string): string => {
+  const codePoints = countryCode
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
+};
+
 interface StartMenuProps {
   onStartGame: () => void;
   onLoadGame?: () => void;
@@ -81,10 +89,15 @@ export const StartMenu: React.FC<StartMenuProps> = ({
                     borderColor: `hsl(var(--neon-${['yellow', 'cyan', 'purple', 'green', 'orange'][index % 5]}))`
                   }}
                 >
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-3">
                     <div className="pixel-text text-xl text-neon-yellow w-8">
                       {index + 1}
                     </div>
+                    {entry.country && (
+                      <div className="text-2xl">
+                        {getCountryFlag(entry.country)}
+                      </div>
+                    )}
                     <div className="pixel-text text-lg text-foreground">
                       {entry.name}
                     </div>

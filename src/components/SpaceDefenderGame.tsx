@@ -113,8 +113,40 @@ const TAUNTS = [
   "Humiliation!",
 ];
 
+const COUNTRIES = [
+  { code: 'US', name: 'United States' },
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'CA', name: 'Canada' },
+  { code: 'AU', name: 'Australia' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'FR', name: 'France' },
+  { code: 'ES', name: 'Spain' },
+  { code: 'IT', name: 'Italy' },
+  { code: 'JP', name: 'Japan' },
+  { code: 'KR', name: 'South Korea' },
+  { code: 'CN', name: 'China' },
+  { code: 'BR', name: 'Brazil' },
+  { code: 'MX', name: 'Mexico' },
+  { code: 'IN', name: 'India' },
+  { code: 'SE', name: 'Sweden' },
+  { code: 'NO', name: 'Norway' },
+  { code: 'PL', name: 'Poland' },
+  { code: 'NL', name: 'Netherlands' },
+  { code: 'RU', name: 'Russia' },
+];
+
+const getCountryFlag = (countryCode: string): string => {
+  const codePoints = countryCode
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
+};
+
 export const SpaceDefenderGame: React.FC = () => {
   const [showStartMenu, setShowStartMenu] = useState(true);
+  const [showCountrySelect, setShowCountrySelect] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState('US');
   const [playerName, setPlayerName] = useState('PLAYER');
   const [currentTaunt, setCurrentTaunt] = useState(TAUNTS[Math.floor(Math.random() * TAUNTS.length)]);
   
@@ -199,22 +231,32 @@ export const SpaceDefenderGame: React.FC = () => {
       // Stop music
       music.stopMusic();
       
-      // Add to leaderboard
-      const entry = {
-        name: playerName,
-        score: gameState.score,
-        level: gameState.level,
-        date: new Date().toISOString(),
-      };
-      addToLeaderboard(entry);
-      
-      // Clear saved game
-      deleteSavedGame();
+      // Show country selection dialog
+      setShowCountrySelect(true);
       
       // Play game over sound
       sounds.gameOver();
     }
-  }, [gameState.gameOver, gameState.score, gameState.level, playerName, addToLeaderboard, deleteSavedGame, sounds, music]);
+  }, [gameState.gameOver, gameState.score, sounds, music]);
+
+  // Submit score with country
+  const handleSubmitScore = useCallback(() => {
+    const entry = {
+      name: playerName,
+      score: gameState.score,
+      level: gameState.level,
+      date: new Date().toISOString(),
+      country: selectedCountry,
+    };
+    addToLeaderboard(entry);
+    
+    // Clear saved game
+    deleteSavedGame();
+    
+    // Close dialog and show menu
+    setShowCountrySelect(false);
+    setShowStartMenu(true);
+  }, [playerName, gameState.score, gameState.level, selectedCountry, addToLeaderboard, deleteSavedGame]);
 
   // Handle load game
   const handleLoadGame = useCallback(() => {
@@ -290,6 +332,68 @@ export const SpaceDefenderGame: React.FC = () => {
         onLoadGame={handleLoadGame}
         hasSavedGame={hasSavedGame}
       />
+    );
+  }
+
+  // Country selection dialog
+  if (showCountrySelect) {
+    return (
+      <div className="fixed inset-0 bg-background flex items-center justify-center z-50">
+        <div className="starfield" />
+        <div className="aurora">
+          <div className="aurora-layer-1" />
+          <div className="aurora-layer-2" />
+          <div className="aurora-layer-3" />
+        </div>
+        <div className="hud-panel max-w-2xl w-full mx-4 relative z-10">
+          <div className="pixel-text text-4xl text-center color-splash mb-6">
+            GAME OVER!
+          </div>
+          <div className="pixel-text text-2xl text-center text-score-text mb-8">
+            Score: {gameState.score.toLocaleString()}
+          </div>
+          
+          <div className="space-y-4 mb-6">
+            <div className="pixel-text text-xl text-center text-neon-cyan">
+              Select Your Country:
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto p-2">
+              {COUNTRIES.map((country) => (
+                <button
+                  key={country.code}
+                  onClick={() => setSelectedCountry(country.code)}
+                  className={`arcade-button text-sm px-3 py-2 border-2 flex items-center gap-2 justify-center transition-all ${
+                    selectedCountry === country.code
+                      ? 'border-neon-yellow bg-neon-yellow text-black'
+                      : 'border-neon-cyan text-neon-cyan hover:bg-neon-cyan hover:text-black'
+                  }`}
+                  style={{
+                    boxShadow: selectedCountry === country.code 
+                      ? '0 0 20px hsl(var(--neon-yellow))' 
+                      : '0 0 10px hsl(var(--neon-cyan))'
+                  }}
+                >
+                  <span className="text-xl">{getCountryFlag(country.code)}</span>
+                  <span className="pixel-text">{country.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          <div className="text-center">
+            <button
+              onClick={handleSubmitScore}
+              className="arcade-button text-xl px-8 py-4 border-3 border-neon-green text-neon-green hover:bg-neon-green hover:text-black"
+              style={{
+                boxShadow: '0 0 30px hsl(var(--neon-green))',
+                animation: 'pulse 1.5s ease-in-out infinite'
+              }}
+            >
+              SUBMIT SCORE
+            </button>
+          </div>
+        </div>
+      </div>
     );
   }
 
