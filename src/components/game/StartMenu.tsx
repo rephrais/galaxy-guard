@@ -337,7 +337,7 @@ export const StartMenu: React.FC<StartMenuProps> = ({
                        }}>
                   ✦ PLAYER NAME ✦
                 </label>
-                <input
+              <input
                   type="text"
                   value={playerName}
                   onChange={(e) => {
@@ -352,6 +352,12 @@ export const StartMenu: React.FC<StartMenuProps> = ({
                     textShadow: '0 0 8px hsl(var(--neon-yellow))'
                   }}
                 />
+                <div className="pixel-text text-xs sm:text-sm text-neon-cyan mt-1 text-right"
+                     style={{
+                       textShadow: '0 0 8px hsl(var(--neon-cyan))'
+                     }}>
+                  {20 - playerName.length} characters remaining
+                </div>
               </div>
 
               {/* Level Dropdown - 80s style */}
