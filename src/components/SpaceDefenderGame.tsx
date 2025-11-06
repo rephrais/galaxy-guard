@@ -400,26 +400,24 @@ export const SpaceDefenderGame: React.FC = () => {
   }
 
   return (
-    <div className="relative w-full h-screen bg-background overflow-hidden flex flex-col">
+    <div className="relative w-full h-[100dvh] bg-background overflow-hidden flex flex-col touch-none">
       {/* Background starfield */}
       <div className="starfield" />
       
-      {/* Taunt Display - moved to bottom to avoid covering HUD */}
+      {/* Taunt Display - positioned for mobile */}
       {gameState.isPlaying && !gameState.isPaused && (
-        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20">
-          <div className="hud-panel px-8 py-3">
-            <div className="pixel-text text-2xl color-splash animate-pulse">
+        <div className="absolute bottom-16 sm:bottom-20 left-1/2 transform -translate-x-1/2 z-20 px-2 max-w-[90%] sm:max-w-none">
+          <div className="hud-panel px-3 sm:px-8 py-2 sm:py-3">
+            <div className="pixel-text text-sm sm:text-2xl color-splash animate-pulse text-center">
               {currentTaunt}
             </div>
           </div>
         </div>
       )}
       
-      {/* Game Canvas */}
-      <div className="flex items-center justify-center flex-1">
-        <div className="relative">
-          <GameCanvas gameState={gameState} settings={settings} />
-        </div>
+      {/* Game Canvas - fills available space */}
+      <div className="flex-1 flex items-center justify-center w-full h-full p-0">
+        <GameCanvas gameState={gameState} settings={settings} />
       </div>
 
       {/* Game HUD Overlay */}
@@ -429,18 +427,21 @@ export const SpaceDefenderGame: React.FC = () => {
         onRestart={handleRestart}
       />
       
-      {/* Controls Help Footer */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
-        <div className="hud-panel text-xs px-6 py-2">
-          <div className="pixel-text text-muted-foreground">
+      {/* Controls Help Footer - smaller on mobile */}
+      <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 z-10 px-2">
+        <div className="hud-panel text-[10px] sm:text-xs px-3 sm:px-6 py-1 sm:py-2">
+          <div className="pixel-text text-muted-foreground hidden sm:block">
             ARROWS/WASD: Move | SPACE: Shoot | B: Bomb | P/ESC: Pause
+          </div>
+          <div className="pixel-text text-muted-foreground sm:hidden text-center">
+            ARROWS: Move | SPACE: Shoot | B: Bomb
           </div>
         </div>
       </div>
 
       {/* Debug Info (can be removed in final version) */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="absolute bottom-16 left-4 text-xs text-muted-foreground bg-black bg-opacity-50 p-2 rounded">
+        <div className="absolute bottom-16 left-4 text-xs text-muted-foreground bg-black bg-opacity-50 p-2 rounded hidden sm:block">
           <div>Rockets: {gameState.rockets.length}</div>
           <div>Projectiles: {gameState.projectiles.length}</div>
           <div>Explosions: {gameState.explosions.length}</div>

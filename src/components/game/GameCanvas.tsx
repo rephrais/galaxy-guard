@@ -17,6 +17,8 @@ interface Star {
 
 export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: settings.width, height: settings.height });
   const [stars] = useState<Star[]>(() => {
     // Initialize 200 random stars
     const starArray: Star[] = [];
@@ -33,12 +35,38 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
     return starArray;
   });
 
+  // Handle responsive canvas sizing
+  useEffect(() => {
+    const updateSize = () => {
+      if (containerRef.current) {
+        const container = containerRef.current;
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        setCanvasSize({ width, height });
+      }
+    };
+
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    // Calculate scale factors for responsive rendering
+    const scaleX = canvasSize.width / settings.width;
+    const scaleY = canvasSize.height / settings.height;
+    
+    // Save context state
+    ctx.save();
+    
+    // Scale the entire canvas
+    ctx.scale(scaleX, scaleY);
 
     // Clear canvas
     ctx.fillStyle = '#000003';
@@ -931,18 +959,25 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       }
     });
 
-  }, [gameState, settings]);
+    // Restore context state
+    ctx.restore();
+
+  }, [gameState, settings, canvasSize]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={settings.width}
-      height={settings.height}
-      className="game-canvas border-2 border-neon-yellow"
-      style={{ 
-        background: 'linear-gradient(180deg, #000003 0%, #000008 100%)',
-        imageRendering: 'pixelated' 
-      }}
-    />
+    <div ref={containerRef} className="w-full h-full">
+      <canvas
+        ref={canvasRef}
+        width={canvasSize.width}
+        height={canvasSize.height}
+        className="game-canvas border-2 border-neon-yellow w-full h-full"
+        style={{ 
+          background: 'linear-gradient(180deg, #000003 0%, #000008 100%)',
+          imageRendering: 'pixelated',
+          maxWidth: '100%',
+          maxHeight: '100%'
+        }}
+      />
+    </div>
   );
 };
