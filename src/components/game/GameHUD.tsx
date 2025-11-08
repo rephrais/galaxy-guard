@@ -5,9 +5,16 @@ interface GameHUDProps {
   gameState: GameState;
   onPause: () => void;
   onRestart: () => void;
+  gameAreaDimensions: {
+    scale: number;
+    offsetX: number;
+    offsetY: number;
+    width: number;
+    height: number;
+  };
 }
 
-export const GameHUD: React.FC<GameHUDProps> = ({ gameState, onPause, onRestart }) => {
+export const GameHUD: React.FC<GameHUDProps> = ({ gameState, onPause, onRestart, gameAreaDimensions }) => {
   const healthPercent = (gameState.spaceship.health / gameState.spaceship.maxHealth) * 100;
   const [elapsedTime, setElapsedTime] = useState(0);
   
@@ -33,9 +40,21 @@ export const GameHUD: React.FC<GameHUDProps> = ({ gameState, onPause, onRestart 
   };
   
   return (
-    <div className="absolute top-0 left-0 w-full z-10 p-2 sm:p-4">
+    <div 
+      className="absolute z-10"
+      style={{
+        left: `${gameAreaDimensions.offsetX}px`,
+        top: `${gameAreaDimensions.offsetY}px`,
+        width: `${gameAreaDimensions.width}px`,
+        height: `${gameAreaDimensions.height}px`,
+        paddingTop: 'max(0.5rem, env(safe-area-inset-top))',
+        paddingRight: 'max(0.5rem, env(safe-area-inset-right))',
+        paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))',
+        paddingLeft: 'max(0.5rem, env(safe-area-inset-left))',
+      }}
+    >
       {/* Top HUD Bar */}
-      <div className="hud-panel flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-2 sm:mb-4 p-2 sm:p-3">
+      <div className="hud-panel flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-2 p-2 sm:p-3">
         <div className="flex flex-wrap gap-2 sm:gap-4 md:gap-8 text-xs sm:text-sm md:text-base">
           <div className="pixel-text text-score-text">
             SCORE: {gameState.score.toLocaleString()}
@@ -68,7 +87,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({ gameState, onPause, onRestart 
       </div>
 
       {/* Status Bars */}
-      <div className="flex flex-wrap gap-2 sm:gap-4 mb-2 sm:mb-4">
+      <div className="flex flex-wrap gap-2 sm:gap-4">
         {/* Health Bar */}
         <div className="hud-panel p-1 sm:p-2">
           <div className="pixel-text text-[10px] sm:text-xs text-health-bar mb-1">HEALTH</div>

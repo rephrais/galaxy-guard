@@ -149,7 +149,9 @@ export const SpaceDefenderGame: React.FC = () => {
   const [selectedCountry, setSelectedCountry] = useState('US');
   const [playerName, setPlayerName] = useState('PLAYER');
   const [currentTaunt, setCurrentTaunt] = useState(TAUNTS[Math.floor(Math.random() * TAUNTS.length)]);
+  const [gameAreaDimensions, setGameAreaDimensions] = useState({ scale: 1, offsetX: 0, offsetY: 0, width: 800, height: 600 });
   
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const { gameState, settings, startGame, pauseGame, resetGame } = useGameEngine();
   const { 
     savedGame, 
@@ -161,6 +163,25 @@ export const SpaceDefenderGame: React.FC = () => {
   } = useLocalStorage();
   const sounds = useSound();
   const music = useBackgroundMusic();
+
+  // Calculate game area dimensions for HUD positioning
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const scale = Math.min(rect.width / settings.width, rect.height / settings.height);
+        const width = settings.width * scale;
+        const height = settings.height * scale;
+        const offsetX = (rect.width - width) / 2;
+        const offsetY = (rect.height - height) / 2;
+        setGameAreaDimensions({ scale, offsetX, offsetY, width, height });
+      }
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, [settings.width, settings.height]);
 
   // Handle game start
   const handleStartGame = useCallback(() => {
@@ -416,7 +437,7 @@ export const SpaceDefenderGame: React.FC = () => {
       )}
       
       {/* Game Canvas - fills available space */}
-      <div className="flex-1 flex items-center justify-center w-full h-full p-0">
+      <div ref={containerRef} className="flex-1 flex items-center justify-center w-full h-full p-0">
         <GameCanvas gameState={gameState} settings={settings} />
       </div>
 
@@ -425,6 +446,7 @@ export const SpaceDefenderGame: React.FC = () => {
         gameState={gameState}
         onPause={pauseGame}
         onRestart={handleRestart}
+        gameAreaDimensions={gameAreaDimensions}
       />
       
       {/* Controls Help Footer - smaller on mobile */}
