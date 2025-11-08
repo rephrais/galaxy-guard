@@ -58,17 +58,22 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Calculate scale factors for responsive rendering
-    const scaleX = canvasSize.width / settings.width;
-    const scaleY = canvasSize.height / settings.height;
+    // Calculate uniform scale to preserve aspect ratio (letterboxing)
+    const scale = Math.min(canvasSize.width / settings.width, canvasSize.height / settings.height);
+    const offsetX = Math.floor((canvasSize.width - settings.width * scale) / 2);
+    const offsetY = Math.floor((canvasSize.height - settings.height * scale) / 2);
     
-    // Save context state
+    // Reset any existing transforms, clear and paint full canvas background (including letterbox areas)
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#000003';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Save context state and apply world transform
     ctx.save();
-    
-    // Scale the entire canvas
-    ctx.scale(scaleX, scaleY);
+    ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
 
-    // Clear canvas
+    // Fill game world background
     ctx.fillStyle = '#000003';
     ctx.fillRect(0, 0, settings.width, settings.height);
 
