@@ -50,6 +50,50 @@ const Changelog = () => {
 
         {/* Changelog Entries */}
         <div className="space-y-8">
+          {/* Version 1.1.0 */}
+          <div className="hud-panel p-6 border-4 border-neon-cyan">
+            <div className="flex items-center justify-between mb-4">
+              <div className="pixel-text text-3xl text-neon-cyan">
+                v1.1.0
+              </div>
+              <div className="pixel-text text-sm text-muted-foreground">
+                November 2025
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <div className="pixel-text text-lg text-neon-green mb-2">🐛 BUG FIXES</div>
+                <ul className="pixel-text text-sm text-foreground space-y-1 list-disc list-inside">
+                  <li>Fixed mobile and tablet layout distortion issues</li>
+                  <li>Resolved UI squeezing on smaller screens</li>
+                  <li>Corrected aspect ratio preservation across all devices</li>
+                </ul>
+              </div>
+
+              <div>
+                <div className="pixel-text text-lg text-neon-purple mb-2">✨ IMPROVEMENTS</div>
+                <ul className="pixel-text text-sm text-foreground space-y-1 list-disc list-inside">
+                  <li>Enhanced responsive design with letterbox scaling</li>
+                  <li>Added safe-area support for notched devices (iPhone, modern Android)</li>
+                  <li>Improved HUD positioning within game boundaries</li>
+                  <li>Optimized touch controls and prevented unwanted scrolling</li>
+                  <li>Better viewport handling for iPad and tablets</li>
+                </ul>
+              </div>
+
+              <div>
+                <div className="pixel-text text-lg text-neon-orange mb-2">📱 MOBILE EXPERIENCE</div>
+                <ul className="pixel-text text-sm text-foreground space-y-1 list-disc list-inside">
+                  <li>Game maintains proper aspect ratio on all screen sizes</li>
+                  <li>HUD elements stay within playable area</li>
+                  <li>Smooth gameplay on iPhone, iPad, and Android devices</li>
+                  <li>Professional appearance without amateur stretching</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
           {/* Version 1.0.0 */}
           <div className="hud-panel p-6 border-4 border-neon-yellow">
             <div className="flex items-center justify-between mb-4">

@@ -1,73 +1,88 @@
-# Welcome to your Lovable project
+# Galaxy Guard - Epic Arcade Space Shooter
 
-## Project info
+An immersive retro arcade-style space shooter game featuring vibrant neon graphics, intense boss battles, and infinite gameplay progression.
+
+## Overview
+
+Galaxy Guard is a modern take on classic arcade space shooters, built with React and TypeScript. Pilot your spaceship through endless waves of enemies, face challenging bosses every minute, and climb the leaderboard while enjoying a nostalgic pixel-perfect aesthetic.
+
+## Key Features
+
+- **Infinite Gameplay**: 100 progressively challenging levels with endless replayability
+- **Boss Battles**: Face unique boss encounters every minute with distinct visual themes
+- **Ammo System**: Strategic resource management with ammo rewards for defeating enemies
+- **Leaderboard**: Compete globally with integrated high score tracking
+- **Save/Load**: Continue your progress anytime with local game saves
+- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
+- **Audio Controls**: Toggle music and sound effects to your preference
+- **Retro Aesthetics**: Vibrant neon colors, smooth animations, and pixel-perfect graphics
+
+## Controls
+
+- **Arrow Keys**: Move your spaceship
+- **SPACE**: Fire bullets
+- **B**: Drop bombs
+- **P**: Pause game
+
+## Project Info
 
 **URL**: https://lovable.dev/projects/9dbf25c6-9d71-4891-91e3-53cf0610622f
 
-## How can I edit this code?
+## Technology Stack
 
-There are several ways of editing your application.
+- **Vite**: Lightning-fast build tool
+- **TypeScript**: Type-safe development
+- **React**: Modern UI framework
+- **shadcn-ui**: Beautiful component library
+- **Tailwind CSS**: Utility-first styling
 
-**Use Lovable**
+## Development
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/9dbf25c6-9d71-4891-91e3-53cf0610622f) and start prompting.
+### Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js & npm ([install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating))
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### Setup
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
+# Navigate to project directory
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
+# Install dependencies
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Editing Options
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. **Lovable Platform**: Visit the [Lovable Project](https://lovable.dev/projects/9dbf25c6-9d71-4891-91e3-53cf0610622f)
+2. **Local IDE**: Clone repo and push changes
+3. **GitHub**: Edit files directly in repository
+4. **GitHub Codespaces**: Cloud-based development environment
 
-**Use GitHub Codespaces**
+## Deployment
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Open [Lovable](https://lovable.dev/projects/9dbf25c6-9d71-4891-91e3-53cf0610622f) and click Share → Publish.
 
-## What technologies are used for this project?
+### Custom Domain
 
-This project is built with:
+Connect your own domain via Project > Settings > Domains. [Learn more](https://docs.lovable.dev/features/custom-domain#custom-domain)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Version
 
-## How can I deploy this project?
+Current version: **v1.1.0**
 
-Simply open [Lovable](https://lovable.dev/projects/9dbf25c6-9d71-4891-91e3-53cf0610622f) and click on Share -> Publish.
+See [CHANGELOG.md](CHANGELOG.md) for version history and technical details.
 
-## Can I connect a custom domain to my Lovable project?
+## Credits
 
-Yes, you can!
+Created with ❤️ by AJ Batac (@ajbatac)
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+*Built with [Lovable](https://lovable.dev)*
