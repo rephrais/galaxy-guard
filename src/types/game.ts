@@ -100,6 +100,16 @@ export interface Tree {
   height: number;
 }
 
+export interface PowerUp extends GameObject {
+  powerUpType: 'speed' | 'fireRate' | 'shield';
+  expiresAt?: number; // Timestamp when the power-up effect expires (for active effects)
+}
+
+export interface ActivePowerUp {
+  type: 'speed' | 'fireRate' | 'shield';
+  expiresAt: number;
+}
+
 export interface GameState {
   isPlaying: boolean;
   isPaused: boolean;
@@ -120,6 +130,8 @@ export interface GameState {
   terrain: TerrainLayers;
   explosions: Explosion[];
   trees: Tree[];
+  powerUps: PowerUp[];
+  activePowerUps: ActivePowerUp[];
 }
 
 export interface GameSettings {

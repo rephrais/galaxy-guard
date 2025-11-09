@@ -88,6 +88,47 @@ export const GameHUD: React.FC<GameHUDProps> = ({ gameState, onPause, onRestart,
 
       {/* Status Bars */}
       <div className="flex flex-wrap gap-2 sm:gap-4">
+        {/* Active Power-Ups */}
+        {gameState.activePowerUps.length > 0 && (
+          <div className="hud-panel p-1 sm:p-2">
+            <div className="pixel-text text-[10px] sm:text-xs text-neon-yellow mb-1">POWER-UPS</div>
+            <div className="flex gap-1">
+              {gameState.activePowerUps.map((powerUp, index) => {
+                const remaining = Math.ceil((powerUp.expiresAt - Date.now()) / 1000);
+                const colors = {
+                  speed: { bg: '#00ffff', text: 'S' },
+                  fireRate: { bg: '#ff6600', text: 'F' },
+                  shield: { bg: '#00ff00', text: 'H' }
+                };
+                const color = colors[powerUp.type];
+                
+                return (
+                  <div 
+                    key={`${powerUp.type}-${index}`}
+                    className="flex flex-col items-center gap-0.5"
+                    style={{ 
+                      padding: '2px 4px',
+                      backgroundColor: 'rgba(0,0,0,0.5)',
+                      border: `1px solid ${color.bg}`,
+                      borderRadius: '2px'
+                    }}
+                  >
+                    <span 
+                      className="pixel-text text-xs font-bold"
+                      style={{ color: color.bg }}
+                    >
+                      {color.text}
+                    </span>
+                    <span className="pixel-text text-[8px]" style={{ color: color.bg }}>
+                      {remaining}s
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        
         {/* Health Bar */}
         <div className="hud-panel p-1 sm:p-2">
           <div className="pixel-text text-[10px] sm:text-xs text-health-bar mb-1">HEALTH</div>

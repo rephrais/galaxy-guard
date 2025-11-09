@@ -868,6 +868,74 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       }
     }
 
+    // Draw power-ups (collectibles)
+    gameState.powerUps.forEach(powerUp => {
+      if (!powerUp.active) return;
+      
+      const screenX = powerUp.position.x - gameState.scrollOffset;
+      
+      // Only draw if visible on screen
+      if (screenX < -powerUp.size.x || screenX > settings.width) return;
+      
+      const { position, size, powerUpType } = powerUp;
+      const time = Date.now() * 0.005;
+      
+      // Draw power-up with pulsing glow and icon
+      ctx.save();
+      
+      // Pulsing glow effect
+      const pulseSize = 5 + Math.sin(time * 3) * 3;
+      const glowGradient = ctx.createRadialGradient(
+        screenX + size.x / 2, position.y + size.y / 2, 0,
+        screenX + size.x / 2, position.y + size.y / 2, size.x / 2 + pulseSize
+      );
+      
+      // Different colors for different power-up types
+      let color1, color2, icon;
+      if (powerUpType === 'speed') {
+        color1 = '#00ffff'; // Cyan
+        color2 = '#0088ff';
+        icon = 'S';
+      } else if (powerUpType === 'fireRate') {
+        color1 = '#ff6600'; // Orange
+        color2 = '#ff0000';
+        icon = 'F';
+      } else { // shield
+        color1 = '#00ff00'; // Green
+        color2 = '#00aa00';
+        icon = 'H';
+      }
+      
+      glowGradient.addColorStop(0, color1);
+      glowGradient.addColorStop(0.7, color2);
+      glowGradient.addColorStop(1, 'transparent');
+      
+      ctx.fillStyle = glowGradient;
+      ctx.beginPath();
+      ctx.arc(screenX + size.x / 2, position.y + size.y / 2, size.x / 2 + pulseSize, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Main power-up body (rotating square)
+      ctx.save();
+      ctx.translate(screenX + size.x / 2, position.y + size.y / 2);
+      ctx.rotate(time * 2);
+      ctx.fillStyle = color1;
+      ctx.fillRect(-size.x / 3, -size.y / 3, size.x / 1.5, size.y / 1.5);
+      ctx.strokeStyle = color2;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-size.x / 3, -size.y / 3, size.x / 1.5, size.y / 1.5);
+      ctx.restore();
+      
+      // Icon letter
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 14px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(icon, screenX + size.x / 2, position.y + size.y / 2);
+      
+      ctx.restore();
+    });
+
     // Draw explosions with particles (adjusted for scroll)
     gameState.explosions.forEach(explosion => {
       const screenX = explosion.position.x - gameState.scrollOffset;

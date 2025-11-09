@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Boss, Tree, CrawlingAlien } from '@/types/game';
+import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Boss, Tree, CrawlingAlien, PowerUp } from '@/types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
   width: 1200,
@@ -74,6 +74,23 @@ const generateInitialTerrain = (): TerrainLayers => {
   return generateTerrainSegment(0, 3600); // Start with 3 segments
 };
 
+// Spawn power-up with 20% chance
+const maybeSpawnPowerUp = (x: number, y: number, powerUps: PowerUp[]) => {
+  if (Math.random() < 0.2) { // 20% chance
+    const types: ('speed' | 'fireRate' | 'shield')[] = ['speed', 'fireRate', 'shield'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    
+    powerUps.push({
+      id: `powerup-${Date.now()}-${Math.random()}`,
+      position: { x, y },
+      velocity: { x: 0, y: 1.5 }, // Fall slowly
+      size: { x: 25, y: 25 },
+      active: true,
+      powerUpType: type
+    });
+  }
+};
+
 export const useGameEngine = () => {
   const [gameState, setGameState] = useState<GameState>({
     isPlaying: false,
@@ -105,6 +122,8 @@ export const useGameEngine = () => {
     terrain: generateInitialTerrain(),
     explosions: [],
     trees: [],
+    powerUps: [],
+    activePowerUps: [],
   });
 
   const [settings] = useState<GameSettings>(DEFAULT_SETTINGS);
@@ -193,20 +212,28 @@ export const useGameEngine = () => {
       
       // Cleanup old explosions (keep only active ones)
       newState.explosions = newState.explosions.filter(exp => now - exp.startTime < 500);
+      
+      // Remove expired power-ups (both collectibles and active effects)
+      newState.powerUps = newState.powerUps.filter(p => p.active && p.position.y < settings.height + 100);
+      newState.activePowerUps = newState.activePowerUps.filter(p => p.expiresAt > now);
 
+      // Check for active speed boost
+      const hasSpeedBoost = newState.activePowerUps.some(p => p.type === 'speed');
+      const speedMultiplier = hasSpeedBoost ? 1.5 : 1;
+      
       // Handle spaceship movement (Arrow keys or WASD)
       if (keysRef.current.has('ArrowUp') || keysRef.current.has('KeyW')) {
-        newState.spaceship.velocity.y = -settings.spaceshipSpeed;
+        newState.spaceship.velocity.y = -settings.spaceshipSpeed * speedMultiplier;
       } else if (keysRef.current.has('ArrowDown') || keysRef.current.has('KeyS')) {
-        newState.spaceship.velocity.y = settings.spaceshipSpeed;
+        newState.spaceship.velocity.y = settings.spaceshipSpeed * speedMultiplier;
       } else {
         newState.spaceship.velocity.y = 0;
       }
 
       if (keysRef.current.has('ArrowLeft') || keysRef.current.has('KeyA')) {
-        newState.spaceship.velocity.x = -settings.spaceshipSpeed;
+        newState.spaceship.velocity.x = -settings.spaceshipSpeed * speedMultiplier;
       } else if (keysRef.current.has('ArrowRight') || keysRef.current.has('KeyD')) {
-        newState.spaceship.velocity.x = settings.spaceshipSpeed;
+        newState.spaceship.velocity.x = settings.spaceshipSpeed * speedMultiplier;
       } else {
         newState.spaceship.velocity.x = 0;
       }
@@ -255,7 +282,10 @@ export const useGameEngine = () => {
         }
       }
 
-      // Handle shooting
+      // Check for fire rate boost
+      const hasFireRateBoost = newState.activePowerUps.some(p => p.type === 'fireRate');
+      
+      // Handle shooting (with fire rate boost allowing rapid fire)
       if (keysRef.current.has('Space') && newState.spaceship.ammunition > 0) {
         const bulletId = `bullet-${Date.now()}-${Math.random()}`;
         newState.projectiles.push({
@@ -271,7 +301,9 @@ export const useGameEngine = () => {
           type: 'bullet',
         });
         newState.spaceship.ammunition--;
-        keysRef.current.delete('Space'); // Prevent auto-fire
+        if (!hasFireRateBoost) {
+          keysRef.current.delete('Space'); // Prevent auto-fire unless boosted
+        }
       }
 
       // Handle bombing
@@ -956,6 +988,9 @@ export const useGameEngine = () => {
             newState.spaceship.ammunition += 100;
             newState.spaceship.bombs += 5;
             
+            // Maybe spawn power-up
+            maybeSpawnPowerUp(rocket.position.x, rocket.position.y, newState.powerUps);
+            
             // Level up every 2000 points (slowed down for better pacing)
             const newLevel = Math.floor(newState.score / 2000) + 1;
             if (newLevel > newState.level) {
@@ -994,6 +1029,9 @@ export const useGameEngine = () => {
             newState.score += projectile.type === 'bomb' ? 300 : 200; // Good points for saucers
             newState.spaceship.ammunition += 100;
             newState.spaceship.bombs += 5;
+            
+            // Maybe spawn power-up
+            maybeSpawnPowerUp(saucer.position.x, saucer.position.y, newState.powerUps);
           }
         });
       });
@@ -1026,6 +1064,9 @@ export const useGameEngine = () => {
               newState.score += projectile.type === 'bomb' ? 400 : 250; // Good points for aliens
               newState.spaceship.ammunition += 100;
               newState.spaceship.bombs += 5;
+              
+              // Maybe spawn power-up
+              maybeSpawnPowerUp(alien.position.x, alien.position.y, newState.powerUps);
             }
           }
         });
@@ -1056,6 +1097,9 @@ export const useGameEngine = () => {
               newState.score += projectile.type === 'bomb' ? 450 : 300;
               newState.spaceship.ammunition += 100;
               newState.spaceship.bombs += 5;
+              
+              // Maybe spawn power-up
+              maybeSpawnPowerUp(crawlingAlien.position.x, crawlingAlien.position.y, newState.powerUps);
             }
           }
         });
@@ -1100,6 +1144,10 @@ export const useGameEngine = () => {
               newState.score += 1000;
               newState.spaceship.ammunition += 200; // 200 ammo bonus for destroying boss rocket (big kill)
               newState.spaceship.bombs += 10;
+              
+              // Guaranteed power-up drop from boss rocket
+              maybeSpawnPowerUp(boss.position.x, boss.position.y, newState.powerUps);
+              maybeSpawnPowerUp(boss.position.x + 30, boss.position.y + 20, newState.powerUps); // Spawn 2
             }
           }
         });
@@ -1182,6 +1230,15 @@ export const useGameEngine = () => {
               newState.score += 5000;
               newState.spaceship.ammunition += 200; // 200 ammo bonus for destroying mega boss (big kill)
               newState.spaceship.bombs += 10;
+              
+              // Mega boss drops multiple power-ups!
+              for (let i = 0; i < 5; i++) {
+                maybeSpawnPowerUp(
+                  bossCenter.x + (Math.random() - 0.5) * 100, 
+                  bossCenter.y + (Math.random() - 0.5) * 100, 
+                  newState.powerUps
+                );
+              }
               // Don't update lastMegaBossIntervalRef here - let the spawn logic handle intervals
             }
           }
@@ -1339,6 +1396,46 @@ export const useGameEngine = () => {
         return true;
       });
 
+      // Update power-ups (falling)
+      newState.powerUps.forEach(powerUp => {
+        powerUp.position.x += powerUp.velocity.x;
+        powerUp.position.y += powerUp.velocity.y;
+        
+        // Check collision with spaceship
+        const powerUpScreen = {
+          ...powerUp,
+          position: { ...powerUp.position, x: powerUp.position.x - newState.scrollOffset }
+        };
+        
+        if (powerUp.active && checkCollision(newState.spaceship, powerUpScreen)) {
+          powerUp.active = false;
+          
+          // Apply power-up effect (10 second duration)
+          const effectDuration = 10000;
+          const expiresAt = now + effectDuration;
+          
+          // Check if this power-up type is already active
+          const existingPowerUp = newState.activePowerUps.find(p => p.type === powerUp.powerUpType);
+          
+          if (existingPowerUp) {
+            // Extend existing power-up duration
+            existingPowerUp.expiresAt = Math.max(existingPowerUp.expiresAt, expiresAt);
+          } else {
+            // Add new power-up effect
+            newState.activePowerUps.push({
+              type: powerUp.powerUpType,
+              expiresAt
+            });
+            
+            // Apply immediate effects
+            if (powerUp.powerUpType === 'shield') {
+              // Shield restores and boosts max health temporarily
+              newState.spaceship.health = Math.min(newState.spaceship.health + 50, newState.spaceship.maxHealth + 50);
+            }
+          }
+        }
+      });
+
       // Filter out inactive objects
       newState.projectiles = newState.projectiles.filter(p => p.active);
       newState.rockets = newState.rockets.filter(r => r.active);
@@ -1423,6 +1520,8 @@ export const useGameEngine = () => {
       terrain: generateInitialTerrain(),
       explosions: [],
       trees: [],
+      powerUps: [],
+      activePowerUps: [],
     });
     lastRocketLaunchRef.current = Date.now();
     lastSaucerSpawnRef.current = Date.now();
