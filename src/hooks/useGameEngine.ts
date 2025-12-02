@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Boss, Tree, CrawlingAlien, PowerUp, TrailParticle } from '@/types/game';
+import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Boss, Tree, CrawlingAlien, PowerUp, TrailParticle, ScreenShake } from '@/types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
   width: 1200,
@@ -125,6 +125,7 @@ export const useGameEngine = () => {
     powerUps: [],
     activePowerUps: [],
     trailParticles: [],
+    screenShake: null,
   });
 
   const [settings] = useState<GameSettings>(DEFAULT_SETTINGS);
@@ -176,6 +177,19 @@ export const useGameEngine = () => {
     setGameState(prevState => {
       const newState = { ...prevState };
       const now = Date.now();
+
+      // Helper to trigger screen shake
+      const triggerScreenShake = (intensity: number, duration: number) => {
+        // Only trigger if no existing shake, or if new shake is stronger
+        if (!newState.screenShake || intensity > newState.screenShake.intensity) {
+          newState.screenShake = { intensity, duration, startTime: now };
+        }
+      };
+
+      // Clean up expired screen shake
+      if (newState.screenShake && now - newState.screenShake.startTime > newState.screenShake.duration) {
+        newState.screenShake = null;
+      }
 
       // Update world scroll - speed increases with level (reduced for better pacing)
       const currentScrollSpeed = settings.scrollSpeed + (newState.level - 1) * 0.2;
@@ -252,6 +266,7 @@ export const useGameEngine = () => {
       if (hitLeftEdge || hitRightEdge || hitTopEdge || hitBottomEdge) {
         // Damage spaceship for hitting edges
         newState.spaceship.health -= 50;
+        triggerScreenShake(0.3, 150);
         
         // Create explosion at spaceship position
         newState.explosions.push({
@@ -265,16 +280,17 @@ export const useGameEngine = () => {
           )
         });
         
-        if (newState.spaceship.health <= 0) {
-          newState.lives--;
-          if (newState.lives <= 0) {
-            newState.gameOver = true;
+          if (newState.spaceship.health <= 0) {
+            newState.lives--;
+            triggerScreenShake(0.7, 400); // Losing a life
+            if (newState.lives <= 0) {
+              newState.gameOver = true;
+            } else {
+              // Reset spaceship
+              newState.spaceship.health = newState.spaceship.maxHealth;
+              newState.spaceship.position = { x: 100, y: 300 };
+            }
           } else {
-            // Reset spaceship
-            newState.spaceship.health = newState.spaceship.maxHealth;
-            newState.spaceship.position = { x: 100, y: 300 };
-          }
-        } else {
           // Push ship back from edge
           if (hitLeftEdge) newState.spaceship.position.x = 1;
           if (hitRightEdge) newState.spaceship.position.x = settings.width - newState.spaceship.size.x - 1;
@@ -979,6 +995,13 @@ export const useGameEngine = () => {
             projectile.active = false;
             rocket.active = false;
             
+            // Screen shake based on rocket type
+            if (rocket.type === 'heavy') {
+              triggerScreenShake(0.25, 150);
+            } else {
+              triggerScreenShake(0.15, 100);
+            }
+            
             // Add score and level progression
             newState.score += projectile.type === 'bomb' ? 150 : 100; // More points for bomb hits
             if (rocket.type === 'heavy') {
@@ -1026,6 +1049,8 @@ export const useGameEngine = () => {
             projectile.active = false;
             saucer.active = false;
             
+            triggerScreenShake(0.3, 150); // Saucer destroyed
+            
             // Add score and ammo rewards
             newState.score += projectile.type === 'bomb' ? 300 : 200; // Good points for saucers
             newState.spaceship.ammunition += 100;
@@ -1061,6 +1086,8 @@ export const useGameEngine = () => {
                 particles: generateExplosionParticles(alien.position.x, alien.position.y, 8)
               });
               
+              triggerScreenShake(0.25, 150); // Alien destroyed
+              
               alien.active = false;
               newState.score += projectile.type === 'bomb' ? 400 : 250; // Good points for aliens
               newState.spaceship.ammunition += 100;
@@ -1093,6 +1120,8 @@ export const useGameEngine = () => {
                 startTime: now,
                 particles: generateExplosionParticles(crawlingAlien.position.x, crawlingAlien.position.y, 8)
               });
+              
+              triggerScreenShake(0.3, 150); // Crawling alien destroyed
               
               crawlingAlien.active = false;
               newState.score += projectile.type === 'bomb' ? 450 : 300;
@@ -1141,6 +1170,8 @@ export const useGameEngine = () => {
                 particles: generateExplosionParticles(boss.position.x, boss.position.y, 15)
               });
               
+              triggerScreenShake(0.5, 250); // Boss rocket destroyed
+              
               boss.active = false;
               newState.score += 1000;
               newState.spaceship.ammunition += 200; // 200 ammo bonus for destroying boss rocket (big kill)
@@ -1167,6 +1198,8 @@ export const useGameEngine = () => {
           if (projectile.active && checkCollision(projectile, bossScreen)) {
             newState.boss!.health -= 1;
             projectile.active = false;
+            
+            triggerScreenShake(0.3, 150); // Hit on mega boss
             
             // Hit explosion
             newState.explosions.push({
@@ -1228,6 +1261,9 @@ export const useGameEngine = () => {
               
               newState.boss.active = false;
               newState.boss = null;
+              
+              triggerScreenShake(1.0, 600); // MEGA BOSS DESTROYED - EPIC SHAKE!
+              
               newState.score += 5000;
               newState.spaceship.ammunition += 200; // 200 ammo bonus for destroying mega boss (big kill)
               newState.spaceship.bombs += 10;
@@ -1255,6 +1291,8 @@ export const useGameEngine = () => {
           newState.spaceship.health -= projectile.damage;
           projectile.active = false;
           
+          triggerScreenShake(0.4, 200); // Hit by laser/fireball/fire
+          
           // Create small explosion at spaceship
           newState.explosions.push({
             id: `explosion-${Date.now()}-${Math.random()}`,
@@ -1272,6 +1310,7 @@ export const useGameEngine = () => {
           
           if (newState.spaceship.health <= 0) {
             newState.lives--;
+            triggerScreenShake(0.7, 400); // Losing a life
             if (newState.lives <= 0) {
               newState.gameOver = true;
             } else {
@@ -1296,6 +1335,8 @@ export const useGameEngine = () => {
           newState.spaceship.health -= damage;
           rocket.active = false;
           
+          triggerScreenShake(0.35, 180); // Rocket collision
+          
             // Create explosion at world position
             newState.explosions.push({
               id: `explosion-${Date.now()}-${Math.random()}`,
@@ -1306,6 +1347,7 @@ export const useGameEngine = () => {
           
           if (newState.spaceship.health <= 0) {
             newState.lives--;
+            triggerScreenShake(0.7, 400); // Losing a life
             if (newState.lives <= 0) {
               newState.gameOver = true;
             } else {
@@ -1329,6 +1371,8 @@ export const useGameEngine = () => {
           newState.spaceship.health -= 30;
           saucer.active = false;
           
+          triggerScreenShake(0.4, 200); // Saucer collision
+          
           // Create explosion at world position
           newState.explosions.push({
             id: `explosion-${Date.now()}-${Math.random()}`,
@@ -1339,6 +1383,7 @@ export const useGameEngine = () => {
           
           if (newState.spaceship.health <= 0) {
             newState.lives--;
+            triggerScreenShake(0.7, 400); // Losing a life
             if (newState.lives <= 0) {
               newState.gameOver = true;
             } else {
@@ -1361,6 +1406,8 @@ export const useGameEngine = () => {
         if (checkCollision(newState.spaceship, treeCollider)) {
           // Instant kill - lose a life
           newState.lives--;
+          
+          triggerScreenShake(0.8, 450); // Tree collision - heavy impact
           
           // Create big explosion
           newState.explosions.push({
@@ -1586,6 +1633,7 @@ export const useGameEngine = () => {
       powerUps: [],
       activePowerUps: [],
       trailParticles: [],
+      screenShake: null,
     });
     lastRocketLaunchRef.current = Date.now();
     lastSaucerSpawnRef.current = Date.now();
