@@ -119,6 +119,12 @@ export interface TrailParticle {
   life: number;
 }
 
+export interface ScreenShake {
+  intensity: number;
+  duration: number;
+  startTime: number;
+}
+
 export interface GameState {
   isPlaying: boolean;
   isPaused: boolean;
@@ -142,6 +148,7 @@ export interface GameState {
   powerUps: PowerUp[];
   activePowerUps: ActivePowerUp[];
   trailParticles: TrailParticle[];
+  screenShake: ScreenShake | null;
 }
 
 export interface GameSettings {

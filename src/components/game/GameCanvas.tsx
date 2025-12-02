@@ -63,15 +63,34 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
     const offsetX = Math.floor((canvasSize.width - settings.width * scale) / 2);
     const offsetY = Math.floor((canvasSize.height - settings.height * scale) / 2);
     
+    // Calculate screen shake offset
+    let shakeOffsetX = 0;
+    let shakeOffsetY = 0;
+    
+    if (gameState.screenShake) {
+      const shake = gameState.screenShake;
+      const elapsed = Date.now() - shake.startTime;
+      
+      if (elapsed <= shake.duration) {
+        const progress = elapsed / shake.duration;
+        const decay = 1 - progress; // Linear decay
+        const currentIntensity = shake.intensity * decay;
+        
+        // Use sine waves with different frequencies for smooth, natural shake
+        shakeOffsetX = Math.sin(elapsed * 0.03) * currentIntensity * 15;
+        shakeOffsetY = Math.cos(elapsed * 0.04) * currentIntensity * 10;
+      }
+    }
+    
     // Reset any existing transforms, clear and paint full canvas background (including letterbox areas)
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#000003';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Save context state and apply world transform
+    // Save context state and apply world transform with shake
     ctx.save();
-    ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+    ctx.setTransform(scale, 0, 0, scale, offsetX + shakeOffsetX, offsetY + shakeOffsetY);
 
     // Fill game world background
     ctx.fillStyle = '#000003';
