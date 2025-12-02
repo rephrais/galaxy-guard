@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Boss, Tree, CrawlingAlien, PowerUp } from '@/types/game';
+import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Boss, Tree, CrawlingAlien, PowerUp, TrailParticle } from '@/types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
   width: 1200,
@@ -124,6 +124,7 @@ export const useGameEngine = () => {
     trees: [],
     powerUps: [],
     activePowerUps: [],
+    trailParticles: [],
   });
 
   const [settings] = useState<GameSettings>(DEFAULT_SETTINGS);
@@ -1436,6 +1437,68 @@ export const useGameEngine = () => {
         }
       });
 
+      // Generate and update trail particles for active power-ups
+      const MAX_TRAIL_PARTICLES = 50;
+      
+      // Generate new trail particles based on active power-ups (every 2-3 frames, spawn conditionally)
+      if (Math.random() < 0.4) { // 40% chance per frame = spawns every ~2-3 frames
+        newState.activePowerUps.forEach(powerUp => {
+          const shipCenterX = newState.spaceship.position.x + newState.spaceship.size.x / 2;
+          const shipCenterY = newState.spaceship.position.y + newState.spaceship.size.y / 2;
+          
+          if (powerUp.type === 'speed') {
+            // Cyan afterburner trails behind ship
+            for (let i = 0; i < 2; i++) {
+              newState.trailParticles.push({
+                x: shipCenterX - 20 + Math.random() * 10,
+                y: shipCenterY + (Math.random() - 0.5) * newState.spaceship.size.y,
+                size: 3 + Math.random() * 3,
+                alpha: 0.8,
+                color: '#00ffff',
+                life: 0.5 + Math.random() * 0.3
+              });
+            }
+          } else if (powerUp.type === 'fireRate') {
+            // Orange/red energy sparks around ship
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 15 + Math.random() * 10;
+            newState.trailParticles.push({
+              x: shipCenterX + Math.cos(angle) * distance,
+              y: shipCenterY + Math.sin(angle) * distance,
+              size: 2 + Math.random() * 2,
+              alpha: 0.7,
+              color: Math.random() > 0.5 ? '#ff6600' : '#ff3300',
+              life: 0.4 + Math.random() * 0.2
+            });
+          } else if (powerUp.type === 'shield') {
+            // Green shield ring particles
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 25 + Math.random() * 5;
+            newState.trailParticles.push({
+              x: shipCenterX + Math.cos(angle) * distance,
+              y: shipCenterY + Math.sin(angle) * distance,
+              size: 2 + Math.random() * 2,
+              alpha: 0.6,
+              color: '#00ff00',
+              life: 0.5 + Math.random() * 0.3
+            });
+          }
+        });
+      }
+      
+      // Update and fade trail particles
+      newState.trailParticles = newState.trailParticles.filter(particle => {
+        particle.life -= 0.03; // Fade out
+        particle.alpha = particle.life;
+        particle.x -= 1; // Slight drift backwards
+        return particle.life > 0;
+      });
+      
+      // Cap particle count for performance
+      if (newState.trailParticles.length > MAX_TRAIL_PARTICLES) {
+        newState.trailParticles = newState.trailParticles.slice(-MAX_TRAIL_PARTICLES);
+      }
+
       // Filter out inactive objects
       newState.projectiles = newState.projectiles.filter(p => p.active);
       newState.rockets = newState.rockets.filter(r => r.active);
@@ -1522,6 +1585,7 @@ export const useGameEngine = () => {
       trees: [],
       powerUps: [],
       activePowerUps: [],
+      trailParticles: [],
     });
     lastRocketLaunchRef.current = Date.now();
     lastSaucerSpawnRef.current = Date.now();

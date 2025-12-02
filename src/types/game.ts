@@ -110,6 +110,15 @@ export interface ActivePowerUp {
   expiresAt: number;
 }
 
+export interface TrailParticle {
+  x: number;
+  y: number;
+  size: number;
+  alpha: number;
+  color: string;
+  life: number;
+}
+
 export interface GameState {
   isPlaying: boolean;
   isPaused: boolean;
@@ -132,6 +141,7 @@ export interface GameState {
   trees: Tree[];
   powerUps: PowerUp[];
   activePowerUps: ActivePowerUp[];
+  trailParticles: TrailParticle[];
 }
 
 export interface GameSettings {
