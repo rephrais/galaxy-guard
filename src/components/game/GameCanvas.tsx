@@ -307,9 +307,188 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       }
     });
 
+    // Draw trail particles (before spaceship)
+    gameState.trailParticles.forEach(particle => {
+      ctx.save();
+      ctx.globalAlpha = particle.alpha;
+      
+      // Radial gradient glow for particles
+      const gradient = ctx.createRadialGradient(
+        particle.x, particle.y, 0,
+        particle.x, particle.y, particle.size * 2
+      );
+      gradient.addColorStop(0, particle.color);
+      gradient.addColorStop(0.5, particle.color + '88');
+      gradient.addColorStop(1, 'transparent');
+      
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(particle.x, particle.y, particle.size * 2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Core particle
+      ctx.fillStyle = particle.color;
+      ctx.fillRect(particle.x - particle.size / 2, particle.y - particle.size / 2, particle.size, particle.size);
+      
+      ctx.restore();
+    });
+
     // Draw spaceship  
     if (gameState.spaceship.active) {
       const { position, size } = gameState.spaceship;
+      const shipCenterX = position.x + size.x / 2;
+      const shipCenterY = position.y + size.y / 2;
+      const time = Date.now() * 0.005;
+      
+      // Draw power-up auras/glows around spaceship
+      gameState.activePowerUps.forEach(powerUp => {
+        ctx.save();
+        
+        if (powerUp.type === 'speed') {
+          // Cyan pulsing glow and motion blur
+          const pulseSize = 50 + Math.sin(time * 3) * 10;
+          ctx.globalAlpha = 0.3 + Math.sin(time * 3) * 0.1;
+          
+          const speedGradient = ctx.createRadialGradient(
+            shipCenterX, shipCenterY, 0,
+            shipCenterX, shipCenterY, pulseSize
+          );
+          speedGradient.addColorStop(0, '#00ffff');
+          speedGradient.addColorStop(0.5, '#0088ff');
+          speedGradient.addColorStop(1, 'transparent');
+          
+          ctx.fillStyle = speedGradient;
+          ctx.beginPath();
+          ctx.arc(shipCenterX, shipCenterY, pulseSize, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Engine boost flames (larger, bluer)
+          ctx.globalAlpha = 0.7;
+          ctx.fillStyle = '#00ddff';
+          for (let i = 0; i < 3; i++) {
+            const flameLength = 15 + Math.sin(time * 5 + i) * 8;
+            ctx.beginPath();
+            ctx.moveTo(position.x - 10, shipCenterY + (i - 1) * 5);
+            ctx.lineTo(position.x - 10 - flameLength, shipCenterY + (i - 1) * 3);
+            ctx.lineTo(position.x - 10, shipCenterY + (i - 1) * 3);
+            ctx.closePath();
+            ctx.fill();
+          }
+        } else if (powerUp.type === 'fireRate') {
+          // Orange/red pulsing energy field
+          const pulseSize = 45 + Math.sin(time * 4) * 8;
+          ctx.globalAlpha = 0.25 + Math.sin(time * 4) * 0.1;
+          
+          const fireGradient = ctx.createRadialGradient(
+            shipCenterX, shipCenterY, 0,
+            shipCenterX, shipCenterY, pulseSize
+          );
+          fireGradient.addColorStop(0, '#ff6600');
+          fireGradient.addColorStop(0.5, '#ff3300');
+          fireGradient.addColorStop(1, 'transparent');
+          
+          ctx.fillStyle = fireGradient;
+          ctx.beginPath();
+          ctx.arc(shipCenterX, shipCenterY, pulseSize, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Weapon glow at front of ship
+          ctx.globalAlpha = 0.6 + Math.sin(time * 6) * 0.2;
+          const weaponGradient = ctx.createRadialGradient(
+            position.x + size.x, shipCenterY, 0,
+            position.x + size.x, shipCenterY, 15
+          );
+          weaponGradient.addColorStop(0, '#ffaa00');
+          weaponGradient.addColorStop(0.5, '#ff6600');
+          weaponGradient.addColorStop(1, 'transparent');
+          
+          ctx.fillStyle = weaponGradient;
+          ctx.beginPath();
+          ctx.arc(position.x + size.x, shipCenterY, 15, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Sparks around guns
+          for (let i = 0; i < 3; i++) {
+            const sparkAngle = time * 3 + i * Math.PI * 0.66;
+            const sparkDist = 8 + Math.sin(time * 5 + i) * 3;
+            const sparkX = position.x + size.x + Math.cos(sparkAngle) * sparkDist;
+            const sparkY = shipCenterY + Math.sin(sparkAngle) * sparkDist;
+            
+            ctx.fillStyle = '#ffff00';
+            ctx.beginPath();
+            ctx.arc(sparkX, sparkY, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        } else if (powerUp.type === 'shield') {
+          // Green/cyan shield bubble with hexagonal pattern
+          const shieldRadius = 35;
+          ctx.globalAlpha = 0.3 + Math.sin(time * 2) * 0.1;
+          
+          const shieldGradient = ctx.createRadialGradient(
+            shipCenterX, shipCenterY, shieldRadius * 0.7,
+            shipCenterX, shipCenterY, shieldRadius
+          );
+          shieldGradient.addColorStop(0, 'transparent');
+          shieldGradient.addColorStop(0.7, '#00ff0040');
+          shieldGradient.addColorStop(1, '#00ffff80');
+          
+          ctx.fillStyle = shieldGradient;
+          ctx.beginPath();
+          ctx.arc(shipCenterX, shipCenterY, shieldRadius, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Hexagonal shield pattern
+          ctx.globalAlpha = 0.5;
+          ctx.strokeStyle = '#00ffaa';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI * 2 * i) / 6 + time * 0.5;
+            const x = shipCenterX + Math.cos(angle) * shieldRadius;
+            const y = shipCenterY + Math.sin(angle) * shieldRadius;
+            if (i === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          }
+          ctx.closePath();
+          ctx.stroke();
+          
+          // Energy ripples
+          ctx.globalAlpha = 0.4 * Math.sin(time * 3);
+          ctx.strokeStyle = '#00ff00';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(shipCenterX, shipCenterY, shieldRadius * (0.7 + Math.sin(time * 3) * 0.2), 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        
+        ctx.restore();
+      });
+      
+      // If multiple power-ups active, add outer ring showing all colors
+      if (gameState.activePowerUps.length > 1) {
+        ctx.save();
+        ctx.globalAlpha = 0.2;
+        ctx.lineWidth = 2;
+        
+        gameState.activePowerUps.forEach((powerUp, index) => {
+          const colors = {
+            speed: '#00ffff',
+            fireRate: '#ff6600',
+            shield: '#00ff00'
+          };
+          
+          ctx.strokeStyle = colors[powerUp.type];
+          ctx.beginPath();
+          ctx.arc(shipCenterX, shipCenterY, 40 + index * 5, 0, Math.PI * 2);
+          ctx.stroke();
+        });
+        
+        ctx.restore();
+      }
+      
       const pixelSize = 2; // Scale up the pixel art
       
       // Define the pixel art pattern matching the reference image
