@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Boss, Tree, CrawlingAlien, PowerUp, TrailParticle, ScreenShake, ComboState } from '@/types/game';
+import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Boss, Tree, CrawlingAlien, PowerUp, TrailParticle, ScreenShake, ComboState, ScorePopup } from '@/types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
   width: 1200,
@@ -127,6 +127,7 @@ export const useGameEngine = () => {
     trailParticles: [],
     screenShake: null,
     combo: { count: 0, multiplier: 1, lastKillTime: 0, comboTimeout: 2000 },
+    scorePopups: [],
   });
 
   const [settings] = useState<GameSettings>(DEFAULT_SETTINGS);
@@ -197,8 +198,11 @@ export const useGameEngine = () => {
         newState.combo = { count: 0, multiplier: 1, lastKillTime: 0, comboTimeout: 2000 };
       }
 
-      // Helper to register kills and update combo
-      const registerKill = (baseScore: number) => {
+      // Clean up expired score popups
+      newState.scorePopups = newState.scorePopups.filter(popup => now - popup.startTime < popup.duration);
+
+      // Helper to register kills, update combo, and create score popup
+      const registerKill = (baseScore: number, worldX: number, worldY: number) => {
         const timeSinceLastKill = now - newState.combo.lastKillTime;
         
         if (timeSinceLastKill < newState.combo.comboTimeout) {
@@ -213,8 +217,19 @@ export const useGameEngine = () => {
         }
         newState.combo.lastKillTime = now;
         
-        // Return score with multiplier applied
-        return Math.floor(baseScore * newState.combo.multiplier);
+        // Calculate final score with multiplier
+        const finalScore = Math.floor(baseScore * newState.combo.multiplier);
+        
+        // Create score popup at kill location
+        newState.scorePopups.push({
+          id: `popup-${now}-${Math.random()}`,
+          position: { x: worldX, y: worldY },
+          score: finalScore,
+          startTime: now,
+          duration: 1500,
+        });
+        
+        return finalScore;
       };
 
       // Update world scroll - speed increases with level (reduced for better pacing)
@@ -1031,7 +1046,7 @@ export const useGameEngine = () => {
             // Add score and level progression
             const baseScore = projectile.type === 'bomb' ? 150 : 100;
             const bonusScore = rocket.type === 'heavy' ? 100 : 0;
-            newState.score += registerKill(baseScore + bonusScore);
+            newState.score += registerKill(baseScore + bonusScore, rocket.position.x, rocket.position.y);
             
             // Ammo rewards for small kills
             newState.spaceship.ammunition += 100;
@@ -1078,7 +1093,7 @@ export const useGameEngine = () => {
             
             // Add score and ammo rewards
             const baseScore = projectile.type === 'bomb' ? 300 : 200;
-            newState.score += registerKill(baseScore);
+            newState.score += registerKill(baseScore, saucer.position.x, saucer.position.y);
             newState.spaceship.ammunition += 100;
             newState.spaceship.bombs += 5;
             
@@ -1116,7 +1131,7 @@ export const useGameEngine = () => {
               
               alien.active = false;
               const baseScore = projectile.type === 'bomb' ? 400 : 250;
-              newState.score += registerKill(baseScore);
+              newState.score += registerKill(baseScore, alien.position.x, alien.position.y);
               newState.spaceship.ammunition += 100;
               newState.spaceship.bombs += 5;
               
@@ -1152,7 +1167,7 @@ export const useGameEngine = () => {
               
               crawlingAlien.active = false;
               const baseScore = projectile.type === 'bomb' ? 450 : 300;
-              newState.score += registerKill(baseScore);
+              newState.score += registerKill(baseScore, crawlingAlien.position.x, crawlingAlien.position.y);
               newState.spaceship.ammunition += 100;
               newState.spaceship.bombs += 5;
               
@@ -1201,7 +1216,7 @@ export const useGameEngine = () => {
               triggerScreenShake(0.5, 250); // Boss rocket destroyed
               
               boss.active = false;
-              newState.score += registerKill(1000);
+              newState.score += registerKill(1000, boss.position.x, boss.position.y);
               newState.spaceship.ammunition += 200; // 200 ammo bonus for destroying boss rocket (big kill)
               newState.spaceship.bombs += 10;
               
@@ -1292,7 +1307,7 @@ export const useGameEngine = () => {
               
               triggerScreenShake(1.0, 600); // MEGA BOSS DESTROYED - EPIC SHAKE!
               
-              newState.score += registerKill(5000);
+              newState.score += registerKill(5000, bossCenter.x, bossCenter.y);
               newState.spaceship.ammunition += 200; // 200 ammo bonus for destroying mega boss (big kill)
               newState.spaceship.bombs += 10;
               
@@ -1663,6 +1678,7 @@ export const useGameEngine = () => {
       trailParticles: [],
       screenShake: null,
       combo: { count: 0, multiplier: 1, lastKillTime: 0, comboTimeout: 2000 },
+      scorePopups: [],
     });
     lastRocketLaunchRef.current = Date.now();
     lastSaucerSpawnRef.current = Date.now();
