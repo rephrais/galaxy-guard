@@ -296,6 +296,8 @@ export const SpaceDefenderGame: React.FC = () => {
   const [prevExplosions, setPrevExplosions] = useState(gameState.explosions.length);
   const [prevHealth, setPrevHealth] = useState(gameState.spaceship.health);
   const [prevLives, setPrevLives] = useState(gameState.lives);
+  const [prevActivePowerUps, setPrevActivePowerUps] = useState(gameState.activePowerUps.length);
+  const [prevLevel, setPrevLevel] = useState(gameState.level);
 
   useEffect(() => {
     // Play shoot sound when projectiles are added
@@ -339,12 +341,28 @@ export const SpaceDefenderGame: React.FC = () => {
   useEffect(() => {
     // Play crash sound when ship loses a life (dies and respawns)
     if (gameState.lives < prevLives) {
-      // Play both explosion and hit sound for dramatic effect
-      sounds.explosion();
-      setTimeout(() => sounds.hit(), 100);
+      // Play both collision and explosion sound for dramatic effect
+      sounds.collision();
+      setTimeout(() => sounds.explosion(), 100);
     }
     setPrevLives(gameState.lives);
   }, [gameState.lives, prevLives, sounds]);
+
+  useEffect(() => {
+    // Play power-up sound when collecting a power-up
+    if (gameState.activePowerUps.length > prevActivePowerUps) {
+      sounds.powerUp();
+    }
+    setPrevActivePowerUps(gameState.activePowerUps.length);
+  }, [gameState.activePowerUps.length, prevActivePowerUps, sounds]);
+
+  useEffect(() => {
+    // Play level up sound when advancing to a new level
+    if (gameState.level > prevLevel && prevLevel > 0) {
+      sounds.levelUp();
+    }
+    setPrevLevel(gameState.level);
+  }, [gameState.level, prevLevel, sounds]);
 
   if (showStartMenu) {
     return (

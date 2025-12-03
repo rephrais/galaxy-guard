@@ -9,6 +9,8 @@ interface SoundEffects {
   hit: () => void;
   gameOver: () => void;
   levelUp: () => void;
+  powerUp: () => void;
+  collision: () => void;
 }
 
 export const useSound = (): SoundEffects => {
@@ -111,6 +113,20 @@ export const useSound = (): SoundEffects => {
     setTimeout(() => playBeep(600, 0.2, 0.08), 200);
   }, [playBeep]);
 
+  const powerUp = useCallback(() => {
+    // Magical ascending chime for power-up collection
+    playBeep(600, 0.15, 0.08);
+    setTimeout(() => playBeep(800, 0.15, 0.08), 80);
+    setTimeout(() => playBeep(1000, 0.2, 0.1), 160);
+    setTimeout(() => playBeep(1200, 0.25, 0.08), 240);
+  }, [playBeep]);
+
+  const collision = useCallback(() => {
+    // Heavy thud for collisions
+    playBeep(80, 0.25, 0.12);
+    setTimeout(() => playBeep(60, 0.2, 0.1), 50);
+  }, [playBeep]);
+
   return {
     shoot,
     bomb,
@@ -119,5 +135,7 @@ export const useSound = (): SoundEffects => {
     hit,
     gameOver,
     levelUp,
+    powerUp,
+    collision,
   };
 };
