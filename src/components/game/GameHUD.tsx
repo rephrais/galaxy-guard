@@ -68,6 +68,19 @@ export const GameHUD: React.FC<GameHUDProps> = ({ gameState, onPause, onRestart,
           <div className="pixel-text text-neon-yellow">
             {formatTime(elapsedTime)}
           </div>
+          {gameState.combo.count > 1 && (
+            <div 
+              className="pixel-text animate-pulse"
+              style={{ 
+                color: gameState.combo.multiplier >= 5 ? '#ff0000' : 
+                       gameState.combo.multiplier >= 3 ? '#ff6600' : '#ffff00',
+                textShadow: `0 0 10px ${gameState.combo.multiplier >= 5 ? '#ff0000' : 
+                             gameState.combo.multiplier >= 3 ? '#ff6600' : '#ffff00'}`
+              }}
+            >
+              {gameState.combo.count}x COMBO! ({gameState.combo.multiplier.toFixed(2)}x)
+            </div>
+          )}
         </div>
         
         <div className="flex gap-2">
