@@ -125,6 +125,13 @@ export interface ScreenShake {
   startTime: number;
 }
 
+export interface ComboState {
+  count: number;
+  multiplier: number;
+  lastKillTime: number;
+  comboTimeout: number; // ms before combo resets
+}
+
 export interface GameState {
   isPlaying: boolean;
   isPaused: boolean;
@@ -149,6 +156,7 @@ export interface GameState {
   activePowerUps: ActivePowerUp[];
   trailParticles: TrailParticle[];
   screenShake: ScreenShake | null;
+  combo: ComboState;
 }
 
 export interface GameSettings {
