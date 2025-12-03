@@ -1230,6 +1230,50 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       }
     });
 
+    // Draw score popups
+    const now = Date.now();
+    gameState.scorePopups.forEach(popup => {
+      const popupScreenX = popup.position.x - gameState.scrollOffset;
+      
+      // Only draw if visible on screen
+      if (popupScreenX < -100 || popupScreenX > settings.width + 100) return;
+      
+      const elapsed = now - popup.startTime;
+      const progress = elapsed / popup.duration;
+      const alpha = 1 - progress; // Fade out
+      const yOffset = progress * 60; // Float up
+      
+      if (alpha <= 0) return;
+      
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      
+      // Draw score text with glow
+      const fontSize = popup.score >= 1000 ? 24 : popup.score >= 500 ? 20 : 16;
+      ctx.font = `bold ${fontSize}px "Press Start 2P", monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Color based on score value
+      const color = popup.score >= 5000 ? '#ff0000' : 
+                    popup.score >= 1000 ? '#ff6600' : 
+                    popup.score >= 500 ? '#ffff00' : '#00ff00';
+      
+      // Glow effect
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = color;
+      ctx.fillText(`+${popup.score}`, popupScreenX, popup.position.y - yOffset);
+      
+      // White outline for readability
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.strokeText(`+${popup.score}`, popupScreenX, popup.position.y - yOffset);
+      
+      ctx.restore();
+    });
+
     // Restore context state
     ctx.restore();
 

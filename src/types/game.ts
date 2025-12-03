@@ -132,6 +132,14 @@ export interface ComboState {
   comboTimeout: number; // ms before combo resets
 }
 
+export interface ScorePopup {
+  id: string;
+  position: Vector2;
+  score: number;
+  startTime: number;
+  duration: number;
+}
+
 export interface GameState {
   isPlaying: boolean;
   isPaused: boolean;
@@ -157,6 +165,7 @@ export interface GameState {
   trailParticles: TrailParticle[];
   screenShake: ScreenShake | null;
   combo: ComboState;
+  scorePopups: ScorePopup[];
 }
 
 export interface GameSettings {
