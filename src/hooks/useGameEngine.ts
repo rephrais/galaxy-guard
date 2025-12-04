@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Boss, Tree, CrawlingAlien, PowerUp, TrailParticle, ScreenShake, ComboState, ScorePopup } from '@/types/game';
+import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Boss, Tree, CrawlingAlien, PowerUp, TrailParticle, ScreenShake, ScreenFlash, ComboState, ScorePopup } from '@/types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
   width: 1200,
@@ -126,6 +126,7 @@ export const useGameEngine = () => {
     activePowerUps: [],
     trailParticles: [],
     screenShake: null,
+    screenFlash: null,
     combo: { count: 0, multiplier: 1, lastKillTime: 0, comboTimeout: 2000 },
     scorePopups: [],
   });
@@ -188,9 +189,19 @@ export const useGameEngine = () => {
         }
       };
 
+      // Helper to trigger screen flash
+      const triggerScreenFlash = (color: string, intensity: number, duration: number) => {
+        newState.screenFlash = { color, intensity, startTime: now, duration };
+      };
+
       // Clean up expired screen shake
       if (newState.screenShake && now - newState.screenShake.startTime > newState.screenShake.duration) {
         newState.screenShake = null;
+      }
+
+      // Clean up expired screen flash
+      if (newState.screenFlash && now - newState.screenFlash.startTime > newState.screenFlash.duration) {
+        newState.screenFlash = null;
       }
 
       // Combo system - reset if too much time passed since last kill
@@ -308,6 +319,7 @@ export const useGameEngine = () => {
         // Damage spaceship for hitting edges
         newState.spaceship.health -= 50;
         triggerScreenShake(0.3, 150);
+        triggerScreenFlash('#ff0000', 0.4, 150);
         
         // Create explosion at spaceship position
         newState.explosions.push({
@@ -1363,6 +1375,7 @@ export const useGameEngine = () => {
           projectile.active = false;
           
           triggerScreenShake(0.4, 200); // Hit by laser/fireball/fire
+          triggerScreenFlash('#ff0000', 0.35, 120);
           
           // Create small explosion at spaceship
           newState.explosions.push({
@@ -1407,6 +1420,7 @@ export const useGameEngine = () => {
           rocket.active = false;
           
           triggerScreenShake(0.35, 180); // Rocket collision
+          triggerScreenFlash('#ff0000', 0.3, 100);
           
             // Create explosion at world position
             newState.explosions.push({
@@ -1443,6 +1457,7 @@ export const useGameEngine = () => {
           saucer.active = false;
           
           triggerScreenShake(0.4, 200); // Saucer collision
+          triggerScreenFlash('#ff0000', 0.35, 120);
           
           // Create explosion at world position
           newState.explosions.push({
@@ -1546,7 +1561,14 @@ export const useGameEngine = () => {
               expiresAt
             });
             
-            // Apply immediate effects
+            // Apply immediate effects and screen flash based on type
+            const flashColors: Record<string, string> = {
+              speed: '#00ffff',
+              fireRate: '#ff6600', 
+              shield: '#00ff00'
+            };
+            triggerScreenFlash(flashColors[powerUp.powerUpType] || '#ffffff', 0.4, 200);
+            
             if (powerUp.powerUpType === 'shield') {
               // Shield restores and boosts max health temporarily
               newState.spaceship.health = Math.min(newState.spaceship.health + 50, newState.spaceship.maxHealth + 50);
@@ -1705,6 +1727,7 @@ export const useGameEngine = () => {
       activePowerUps: [],
       trailParticles: [],
       screenShake: null,
+      screenFlash: null,
       combo: { count: 0, multiplier: 1, lastKillTime: 0, comboTimeout: 2000 },
       scorePopups: [],
     });
