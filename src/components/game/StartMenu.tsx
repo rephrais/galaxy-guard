@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { LeaderboardEntry, SaveData } from '@/types/game';
 import { Volume2, VolumeX, Music } from 'lucide-react';
+import { WarpStarfield } from './WarpStarfield';
 
 const getCountryFlag = (countryCode: string): string => {
   const codePoints = countryCode
@@ -71,7 +72,7 @@ export const StartMenu: React.FC<StartMenuProps> = ({
   if (showLeaderboard) {
     return (
       <div className="fixed inset-0 bg-background flex items-center justify-center z-50">
-        <div className="starfield" />
+        <WarpStarfield />
         <div className="aurora">
           <div className="aurora-layer-1" />
           <div className="aurora-layer-2" />
@@ -139,7 +140,7 @@ export const StartMenu: React.FC<StartMenuProps> = ({
   if (showHowToPlay) {
     return (
       <div className="fixed inset-0 bg-background flex items-center justify-center z-50">
-        <div className="starfield" />
+        <WarpStarfield />
         <div className="aurora">
           <div className="aurora-layer-1" />
           <div className="aurora-layer-2" />
@@ -203,7 +204,7 @@ export const StartMenu: React.FC<StartMenuProps> = ({
 
   return (
     <div className="fixed inset-0 bg-background flex items-center justify-center z-50 overflow-hidden">
-      <div className="starfield" />
+      <WarpStarfield />
       <div className="aurora">
         <div className="aurora-layer-1" />
         <div className="aurora-layer-2" />
