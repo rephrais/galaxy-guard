@@ -601,6 +601,34 @@ export const useGameEngine = () => {
         }
       }
 
+      // Generate trail particles from player projectiles
+      newState.projectiles.forEach(proj => {
+        if (proj.active && (proj.type === 'bullet' || proj.type === 'bomb')) {
+          const trailColor = proj.type === 'bullet' ? '#00ffff' : '#ff6600';
+          for (let i = 0; i < 2; i++) {
+            newState.trailParticles.push({
+              x: proj.position.x - Math.random() * 5,
+              y: proj.position.y + (Math.random() - 0.5) * 4,
+              size: proj.type === 'bomb' ? 3 + Math.random() * 2 : 2 + Math.random(),
+              alpha: 0.8,
+              color: trailColor,
+              life: 1.0,
+            });
+          }
+        }
+      });
+
+      // Update and decay trail particles
+      newState.trailParticles = newState.trailParticles
+        .map(p => ({
+          ...p,
+          alpha: p.alpha - 0.06,
+          size: p.size * 0.94,
+          life: p.life - 0.06,
+        }))
+        .filter(p => p.alpha > 0 && p.life > 0)
+        .slice(-200); // Cap trail particles for performance
+
       // Update projectiles
       newState.projectiles = newState.projectiles.filter(projectile => {
         if (!projectile.active) return false;
