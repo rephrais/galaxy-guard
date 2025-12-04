@@ -125,6 +125,13 @@ export interface ScreenShake {
   startTime: number;
 }
 
+export interface ScreenFlash {
+  color: string;
+  intensity: number;
+  startTime: number;
+  duration: number;
+}
+
 export interface ComboState {
   count: number;
   multiplier: number;
@@ -164,6 +171,7 @@ export interface GameState {
   activePowerUps: ActivePowerUp[];
   trailParticles: TrailParticle[];
   screenShake: ScreenShake | null;
+  screenFlash: ScreenFlash | null;
   combo: ComboState;
   scorePopups: ScorePopup[];
 }

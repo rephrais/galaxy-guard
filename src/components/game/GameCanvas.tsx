@@ -1274,6 +1274,23 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       ctx.restore();
     });
 
+    // Draw screen flash effect
+    if (gameState.screenFlash) {
+      const flash = gameState.screenFlash;
+      const elapsed = Date.now() - flash.startTime;
+      
+      if (elapsed <= flash.duration) {
+        const progress = elapsed / flash.duration;
+        const alpha = flash.intensity * (1 - progress); // Fade out
+        
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = flash.color;
+        ctx.fillRect(0, 0, settings.width, settings.height);
+        ctx.restore();
+      }
+    }
+
     // Restore context state
     ctx.restore();
 
