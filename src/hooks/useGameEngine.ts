@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Boss, Tree, CrawlingAlien, PowerUp, TrailParticle, ScreenShake, ScreenFlash, ComboState, ScorePopup } from '@/types/game';
+import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Boss, Tree, CrawlingAlien, PowerUp, TrailParticle, ScreenShake, ScreenFlash, ComboState, ScorePopup, DiveBomber, ZigzagFighter, Splitter } from '@/types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
   width: 1200,
@@ -118,6 +118,9 @@ export const useGameEngine = () => {
     saucers: [],
     aliens: [],
     crawlingAliens: [],
+    diveBombers: [],
+    zigzagFighters: [],
+    splitters: [],
     bossRockets: [],
     boss: null,
     terrain: generateInitialTerrain(),
@@ -139,6 +142,9 @@ export const useGameEngine = () => {
   const lastAlienSpawnRef = useRef<number>(0);
   const lastCrawlingAlienSpawnRef = useRef<number>(0);
   const lastBossSpawnRef = useRef<number>(0);
+  const lastDiveBomberSpawnRef = useRef<number>(0);
+  const lastZigzagFighterSpawnRef = useRef<number>(0);
+  const lastSplitterSpawnRef = useRef<number>(0);
   const lastMegaBossIntervalRef = useRef<number>(0); // Track which 30s interval we spawned for
   const bossSpawnedRef = useRef<boolean>(false);
   const keysRef = useRef<Set<string>>(new Set());
@@ -629,6 +635,88 @@ export const useGameEngine = () => {
         lastBossSpawnRef.current = now;
       }
 
+      // Spawn Dive Bombers (appear after level 2)
+      const diveBomberSpawnFreq = Math.max(6000, 8000 - (newState.level - 1) * 100);
+      const maxDiveBombers = Math.min(2, 1 + Math.floor(newState.level / 4));
+      
+      if (newState.level >= 2 && now - lastDiveBomberSpawnRef.current > diveBomberSpawnFreq && newState.diveBombers.length < maxDiveBombers) {
+        const diveBomberId = `divebomber-${Date.now()}-${Math.random()}`;
+        const spawnY = 50 + Math.random() * 100; // Spawn high
+        
+        newState.diveBombers.push({
+          id: diveBomberId,
+          position: { 
+            x: newState.scrollOffset + settings.width + 50,
+            y: spawnY
+          },
+          velocity: { x: -2, y: 0 },
+          size: { x: 45, y: 25 },
+          active: true,
+          lastFireTime: now,
+          fireRate: 1500,
+          health: 40 + newState.level * 8,
+          phase: 'approach',
+          diveStartY: spawnY,
+          diveTargetY: newState.spaceship.position.y
+        });
+        
+        lastDiveBomberSpawnRef.current = now;
+      }
+
+      // Spawn Zigzag Fighters (appear after level 3)
+      const zigzagSpawnFreq = Math.max(5000, 7000 - (newState.level - 1) * 80);
+      const maxZigzags = Math.min(3, 1 + Math.floor(newState.level / 3));
+      
+      if (newState.level >= 3 && now - lastZigzagFighterSpawnRef.current > zigzagSpawnFreq && newState.zigzagFighters.length < maxZigzags) {
+        const zigzagId = `zigzag-${Date.now()}-${Math.random()}`;
+        const spawnY = 100 + Math.random() * (settings.height - 300);
+        
+        newState.zigzagFighters.push({
+          id: zigzagId,
+          position: { 
+            x: newState.scrollOffset + settings.width + 30,
+            y: spawnY
+          },
+          velocity: { x: -1.5, y: 0 },
+          size: { x: 35, y: 30 },
+          active: true,
+          lastFireTime: now,
+          fireRate: 1200 - newState.level * 30,
+          health: 35 + newState.level * 6,
+          zigzagPhase: 0,
+          zigzagAmplitude: 60 + Math.random() * 40,
+          zigzagSpeed: 0.05 + Math.random() * 0.03
+        });
+        
+        lastZigzagFighterSpawnRef.current = now;
+      }
+
+      // Spawn Splitters (appear after level 4)
+      const splitterSpawnFreq = Math.max(8000, 12000 - (newState.level - 1) * 150);
+      const maxSplitters = Math.min(2, 1 + Math.floor(newState.level / 5));
+      
+      if (newState.level >= 4 && now - lastSplitterSpawnRef.current > splitterSpawnFreq && newState.splitters.filter(s => s.generation === 0).length < maxSplitters) {
+        const splitterId = `splitter-${Date.now()}-${Math.random()}`;
+        const spawnY = 150 + Math.random() * (settings.height - 400);
+        
+        newState.splitters.push({
+          id: splitterId,
+          position: { 
+            x: newState.scrollOffset + settings.width + 40,
+            y: spawnY
+          },
+          velocity: { x: -1, y: (Math.random() - 0.5) * 0.5 },
+          size: { x: 50, y: 50 },
+          active: true,
+          lastFireTime: now,
+          fireRate: 2000,
+          health: 80 + newState.level * 10,
+          generation: 0
+        });
+        
+        lastSplitterSpawnRef.current = now;
+      }
+
       // Spawn MEGA BOSS at 0:30, 1:00, 1:30, etc. (every 30 seconds)
       const gameTime = now - newState.startTime;
       const currentInterval = Math.floor(gameTime / 30000); // Which 30s interval (0, 1, 2, 3...)
@@ -983,6 +1071,149 @@ export const useGameEngine = () => {
         if (crawlingAlienScreenX < -400 || crawlingAlienScreenX > settings.width + 400) {
           return false;
         }
+        
+        return true;
+      });
+
+      // Update Dive Bombers
+      newState.diveBombers = newState.diveBombers.filter(bomber => {
+        if (!bomber.active) return false;
+        
+        const bomberScreenX = bomber.position.x - newState.scrollOffset;
+        
+        // Phase-based movement
+        if (bomber.phase === 'approach') {
+          bomber.position.x += bomber.velocity.x;
+          // Start dive when close to player X position
+          if (bomberScreenX < newState.spaceship.position.x + 200) {
+            bomber.phase = 'dive';
+            bomber.diveTargetY = newState.spaceship.position.y;
+          }
+        } else if (bomber.phase === 'dive') {
+          bomber.position.x += bomber.velocity.x * 0.5;
+          const diveSpeed = 4;
+          const yDiff = bomber.diveTargetY - bomber.position.y;
+          bomber.position.y += Math.sign(yDiff) * diveSpeed;
+          
+          // Switch to retreat after diving past target
+          if (Math.abs(yDiff) < 20 || bomber.position.y > settings.height - 100) {
+            bomber.phase = 'retreat';
+          }
+        } else if (bomber.phase === 'retreat') {
+          bomber.position.x += bomber.velocity.x * 1.5;
+          bomber.position.y -= 2; // Move up while retreating
+        }
+        
+        // Fire at player during dive
+        if (bomber.phase === 'dive' && now - bomber.lastFireTime > bomber.fireRate) {
+          if (bomberScreenX > 0 && bomberScreenX < settings.width) {
+            const dx = newState.spaceship.position.x - bomberScreenX;
+            const dy = newState.spaceship.position.y - bomber.position.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            newState.projectiles.push({
+              id: `divebomb-${Date.now()}-${Math.random()}`,
+              position: { x: bomberScreenX, y: bomber.position.y + bomber.size.y },
+              velocity: { x: (dx / dist) * 5, y: (dy / dist) * 5 },
+              size: { x: 8, y: 8 },
+              active: true,
+              damage: 30,
+              type: 'fire'
+            });
+            bomber.lastFireTime = now;
+          }
+        }
+        
+        // Remove if off screen
+        if (bomberScreenX < -100) return false;
+        
+        return true;
+      });
+
+      // Update Zigzag Fighters
+      newState.zigzagFighters = newState.zigzagFighters.filter(zigzag => {
+        if (!zigzag.active) return false;
+        
+        const zigzagScreenX = zigzag.position.x - newState.scrollOffset;
+        
+        // Zigzag movement
+        zigzag.zigzagPhase += zigzag.zigzagSpeed;
+        zigzag.position.x += zigzag.velocity.x;
+        zigzag.position.y += Math.sin(zigzag.zigzagPhase) * 3;
+        
+        // Keep within screen bounds
+        if (zigzag.position.y < 50) zigzag.position.y = 50;
+        if (zigzag.position.y > settings.height - 100) zigzag.position.y = settings.height - 100;
+        
+        // Fire bursts at player
+        if (now - zigzag.lastFireTime > zigzag.fireRate) {
+          if (zigzagScreenX > 0 && zigzagScreenX < settings.width) {
+            // Fire 3-shot burst
+            for (let i = 0; i < 3; i++) {
+              const angle = Math.atan2(
+                newState.spaceship.position.y - zigzag.position.y,
+                newState.spaceship.position.x - zigzagScreenX
+              ) + (i - 1) * 0.2;
+              
+              setTimeout(() => {
+                newState.projectiles.push({
+                  id: `zigzag-shot-${Date.now()}-${Math.random()}-${i}`,
+                  position: { x: zigzagScreenX, y: zigzag.position.y + zigzag.size.y / 2 },
+                  velocity: { x: Math.cos(angle) * 6, y: Math.sin(angle) * 6 },
+                  size: { x: 5, y: 5 },
+                  active: true,
+                  damage: 20,
+                  type: 'laser'
+                });
+              }, i * 80);
+            }
+            zigzag.lastFireTime = now;
+          }
+        }
+        
+        // Remove if off screen
+        if (zigzagScreenX < -100) return false;
+        
+        return true;
+      });
+
+      // Update Splitters
+      newState.splitters = newState.splitters.filter(splitter => {
+        if (!splitter.active) return false;
+        
+        const splitterScreenX = splitter.position.x - newState.scrollOffset;
+        
+        // Move and bounce off screen edges
+        splitter.position.x += splitter.velocity.x;
+        splitter.position.y += splitter.velocity.y;
+        
+        if (splitter.position.y < 50 || splitter.position.y > settings.height - 100) {
+          splitter.velocity.y *= -1;
+        }
+        
+        // Fire occasionally
+        if (now - splitter.lastFireTime > splitter.fireRate) {
+          if (splitterScreenX > 0 && splitterScreenX < settings.width) {
+            const angle = Math.atan2(
+              newState.spaceship.position.y - splitter.position.y,
+              newState.spaceship.position.x - splitterScreenX
+            );
+            
+            newState.projectiles.push({
+              id: `splitter-shot-${Date.now()}-${Math.random()}`,
+              position: { x: splitterScreenX + splitter.size.x / 2, y: splitter.position.y + splitter.size.y / 2 },
+              velocity: { x: Math.cos(angle) * 4, y: Math.sin(angle) * 4 },
+              size: { x: 10, y: 10 },
+              active: true,
+              damage: 25 + splitter.generation * 5,
+              type: 'fireball'
+            });
+            splitter.lastFireTime = now;
+          }
+        }
+        
+        // Remove if off screen
+        if (splitterScreenX < -150) return false;
         
         return true;
       });
@@ -1361,6 +1592,141 @@ export const useGameEngine = () => {
             }
           }
         });
+      });
+
+      // Check projectile-dive bomber collisions
+      newState.projectiles.forEach(projectile => {
+        if (projectile.type === 'laser' || projectile.type === 'fire' || projectile.type === 'fireball') return;
+        
+        newState.diveBombers.forEach(bomber => {
+          const bomberScreen = {
+            ...bomber,
+            position: { ...bomber.position, x: bomber.position.x - newState.scrollOffset },
+          };
+          if (projectile.active && bomber.active && checkCollision(projectile, bomberScreen)) {
+            bomber.health -= projectile.damage;
+            projectile.active = false;
+            
+            if (bomber.health <= 0) {
+              newState.explosions.push({
+                id: `explosion-${Date.now()}-${Math.random()}`,
+                position: { x: bomber.position.x, y: bomber.position.y },
+                startTime: now,
+                particles: generateExplosionParticles(bomber.position.x, bomber.position.y, 10)
+              });
+              
+              triggerScreenShake(0.3, 150);
+              bomber.active = false;
+              const baseScore = projectile.type === 'bomb' ? 500 : 350;
+              newState.score += registerKill(baseScore, bomber.position.x, bomber.position.y);
+              newState.spaceship.ammunition += 80;
+              newState.spaceship.bombs += 3;
+              
+              maybeSpawnPowerUp(bomber.position.x, bomber.position.y, newState.powerUps);
+            }
+          }
+        });
+      });
+
+      // Check projectile-zigzag fighter collisions
+      newState.projectiles.forEach(projectile => {
+        if (projectile.type === 'laser' || projectile.type === 'fire' || projectile.type === 'fireball') return;
+        
+        newState.zigzagFighters.forEach(zigzag => {
+          const zigzagScreen = {
+            ...zigzag,
+            position: { ...zigzag.position, x: zigzag.position.x - newState.scrollOffset },
+          };
+          if (projectile.active && zigzag.active && checkCollision(projectile, zigzagScreen)) {
+            zigzag.health -= projectile.damage;
+            projectile.active = false;
+            
+            if (zigzag.health <= 0) {
+              newState.explosions.push({
+                id: `explosion-${Date.now()}-${Math.random()}`,
+                position: { x: zigzag.position.x, y: zigzag.position.y },
+                startTime: now,
+                particles: generateExplosionParticles(zigzag.position.x, zigzag.position.y, 8)
+              });
+              
+              triggerScreenShake(0.25, 120);
+              zigzag.active = false;
+              const baseScore = projectile.type === 'bomb' ? 400 : 280;
+              newState.score += registerKill(baseScore, zigzag.position.x, zigzag.position.y);
+              newState.spaceship.ammunition += 60;
+              newState.spaceship.bombs += 2;
+              
+              maybeSpawnPowerUp(zigzag.position.x, zigzag.position.y, newState.powerUps);
+            }
+          }
+        });
+      });
+
+      // Check projectile-splitter collisions
+      newState.projectiles.forEach(projectile => {
+        if (projectile.type === 'laser' || projectile.type === 'fire' || projectile.type === 'fireball') return;
+        
+        const splittersToAdd: Splitter[] = [];
+        
+        newState.splitters.forEach(splitter => {
+          const splitterScreen = {
+            ...splitter,
+            position: { ...splitter.position, x: splitter.position.x - newState.scrollOffset },
+          };
+          if (projectile.active && splitter.active && checkCollision(projectile, splitterScreen)) {
+            splitter.health -= projectile.damage;
+            projectile.active = false;
+            
+            if (splitter.health <= 0) {
+              newState.explosions.push({
+                id: `explosion-${Date.now()}-${Math.random()}`,
+                position: { x: splitter.position.x, y: splitter.position.y },
+                startTime: now,
+                particles: generateExplosionParticles(splitter.position.x, splitter.position.y, 12)
+              });
+              
+              triggerScreenShake(0.35, 180);
+              splitter.active = false;
+              
+              // Split into smaller splitters if not at max generation
+              if (splitter.generation < 2) {
+                const newGen = splitter.generation + 1;
+                const newSize = newGen === 1 ? 35 : 20;
+                const newHealth = newGen === 1 ? 40 : 20;
+                
+                for (let i = 0; i < 2; i++) {
+                  splittersToAdd.push({
+                    id: `splitter-child-${Date.now()}-${Math.random()}-${i}`,
+                    position: { 
+                      x: splitter.position.x + (i === 0 ? -15 : 15), 
+                      y: splitter.position.y + (i === 0 ? -20 : 20)
+                    },
+                    velocity: { 
+                      x: -1.5 - Math.random() * 0.5, 
+                      y: (i === 0 ? -1 : 1) * (1 + Math.random())
+                    },
+                    size: { x: newSize, y: newSize },
+                    active: true,
+                    lastFireTime: now,
+                    fireRate: 1500 - newGen * 200,
+                    health: newHealth,
+                    generation: newGen
+                  });
+                }
+              }
+              
+              const baseScore = (3 - splitter.generation) * 200;
+              newState.score += registerKill(baseScore, splitter.position.x, splitter.position.y);
+              newState.spaceship.ammunition += 50;
+              newState.spaceship.bombs += 2;
+              
+              maybeSpawnPowerUp(splitter.position.x, splitter.position.y, newState.powerUps);
+            }
+          }
+        });
+        
+        // Add split children after iteration
+        newState.splitters.push(...splittersToAdd);
       });
 
       newState.projectiles.forEach(projectile => {
@@ -1873,6 +2239,9 @@ export const useGameEngine = () => {
       saucers: [],
       aliens: [],
       crawlingAliens: [],
+      diveBombers: [],
+      zigzagFighters: [],
+      splitters: [],
       bossRockets: [],
       boss: null,
       terrain: generateInitialTerrain(),
