@@ -86,6 +86,31 @@ export interface BossRocket extends GameObject {
   maxHealth: number;
 }
 
+export interface DiveBomber extends GameObject {
+  lastFireTime: number;
+  fireRate: number;
+  health: number;
+  phase: 'approach' | 'dive' | 'retreat';
+  diveStartY: number;
+  diveTargetY: number;
+}
+
+export interface ZigzagFighter extends GameObject {
+  lastFireTime: number;
+  fireRate: number;
+  health: number;
+  zigzagPhase: number;
+  zigzagAmplitude: number;
+  zigzagSpeed: number;
+}
+
+export interface Splitter extends GameObject {
+  lastFireTime: number;
+  fireRate: number;
+  health: number;
+  generation: number; // 0 = large, 1 = medium, 2 = small (no more splits)
+}
+
 export interface Boss extends GameObject {
   lastFireTime: number;
   fireRate: number;
@@ -164,6 +189,9 @@ export interface GameState {
   saucers: Saucer[];
   aliens: Alien[];
   crawlingAliens: CrawlingAlien[];
+  diveBombers: DiveBomber[];
+  zigzagFighters: ZigzagFighter[];
+  splitters: Splitter[];
   bossRockets: BossRocket[];
   boss: Boss | null;
   terrain: TerrainLayers;

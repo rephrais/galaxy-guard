@@ -893,6 +893,183 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       }
     });
 
+    // Draw Dive Bombers
+    gameState.diveBombers.forEach(bomber => {
+      if (!bomber.active) return;
+      
+      const screenX = bomber.position.x - gameState.scrollOffset;
+      if (screenX < -bomber.size.x || screenX > settings.width + 50) return;
+      
+      const { position, size, health, phase } = bomber;
+      
+      ctx.save();
+      
+      // Rotate based on dive phase
+      ctx.translate(screenX + size.x / 2, position.y + size.y / 2);
+      if (phase === 'dive') {
+        ctx.rotate(0.4);
+      } else if (phase === 'retreat') {
+        ctx.rotate(-0.3);
+      }
+      ctx.translate(-(screenX + size.x / 2), -(position.y + size.y / 2));
+      
+      // Main body - sleek jet-like
+      ctx.fillStyle = '#cc2222';
+      ctx.beginPath();
+      ctx.moveTo(screenX + size.x, position.y + size.y / 2);
+      ctx.lineTo(screenX, position.y);
+      ctx.lineTo(screenX + 10, position.y + size.y / 2);
+      ctx.lineTo(screenX, position.y + size.y);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Wings
+      ctx.fillStyle = '#881111';
+      ctx.fillRect(screenX + 5, position.y - 8, 15, 8);
+      ctx.fillRect(screenX + 5, position.y + size.y, 15, 8);
+      
+      // Cockpit
+      ctx.fillStyle = '#ffcc00';
+      ctx.beginPath();
+      ctx.arc(screenX + size.x - 12, position.y + size.y / 2, 4, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Engine glow during dive
+      if (phase === 'dive') {
+        ctx.fillStyle = '#ff6600';
+        ctx.fillRect(screenX - 8, position.y + size.y / 2 - 3, 8, 6);
+      }
+      
+      ctx.restore();
+      
+      // Health bar
+      const maxHealth = 40 + gameState.level * 8;
+      if (health < maxHealth) {
+        const healthPercent = health / maxHealth;
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(screenX, position.y - 12, size.x, 3);
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(screenX, position.y - 12, size.x * healthPercent, 3);
+      }
+    });
+
+    // Draw Zigzag Fighters
+    gameState.zigzagFighters.forEach(zigzag => {
+      if (!zigzag.active) return;
+      
+      const screenX = zigzag.position.x - gameState.scrollOffset;
+      if (screenX < -zigzag.size.x || screenX > settings.width + 50) return;
+      
+      const { position, size, health, zigzagPhase } = zigzag;
+      const time = Date.now() * 0.01;
+      
+      ctx.save();
+      
+      // Slight rotation based on zigzag movement
+      ctx.translate(screenX + size.x / 2, position.y + size.y / 2);
+      ctx.rotate(Math.sin(zigzagPhase) * 0.2);
+      ctx.translate(-(screenX + size.x / 2), -(position.y + size.y / 2));
+      
+      // Main body - hexagonal shape
+      ctx.fillStyle = '#6622aa';
+      ctx.beginPath();
+      ctx.moveTo(screenX + size.x, position.y + size.y / 2);
+      ctx.lineTo(screenX + size.x * 0.7, position.y);
+      ctx.lineTo(screenX + size.x * 0.3, position.y);
+      ctx.lineTo(screenX, position.y + size.y / 2);
+      ctx.lineTo(screenX + size.x * 0.3, position.y + size.y);
+      ctx.lineTo(screenX + size.x * 0.7, position.y + size.y);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Glowing core
+      const pulseSize = 6 + Math.sin(time) * 2;
+      ctx.fillStyle = '#ff00ff';
+      ctx.beginPath();
+      ctx.arc(screenX + size.x / 2, position.y + size.y / 2, pulseSize, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Eye
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(screenX + size.x * 0.7, position.y + size.y / 2, 3, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.restore();
+      
+      // Health bar
+      const maxHealth = 35 + gameState.level * 6;
+      if (health < maxHealth) {
+        const healthPercent = health / maxHealth;
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(screenX, position.y - 10, size.x, 3);
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(screenX, position.y - 10, size.x * healthPercent, 3);
+      }
+    });
+
+    // Draw Splitters
+    gameState.splitters.forEach(splitter => {
+      if (!splitter.active) return;
+      
+      const screenX = splitter.position.x - gameState.scrollOffset;
+      if (screenX < -splitter.size.x || screenX > settings.width + 50) return;
+      
+      const { position, size, health, generation } = splitter;
+      const time = Date.now() * 0.008;
+      
+      ctx.save();
+      
+      // Wobble animation
+      ctx.translate(screenX + size.x / 2, position.y + size.y / 2);
+      ctx.rotate(Math.sin(time + position.x * 0.01) * 0.1);
+      
+      // Color based on generation
+      const colors = ['#22cc44', '#44aa22', '#668800'];
+      const baseColor = colors[generation];
+      
+      // Blob-like body (circle)
+      ctx.fillStyle = baseColor;
+      ctx.beginPath();
+      ctx.arc(0, 0, size.x / 2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Inner pattern (shows split capability)
+      if (generation < 2) {
+        ctx.fillStyle = '#88ff88';
+        ctx.beginPath();
+        ctx.arc(-size.x / 6, 0, size.x / 6, 0, Math.PI * 2);
+        ctx.arc(size.x / 6, 0, size.x / 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      // Eyes
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(-size.x / 5, -size.y / 6, 3, 0, Math.PI * 2);
+      ctx.arc(size.x / 5, -size.y / 6, 3, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Pupils
+      ctx.fillStyle = '#000000';
+      ctx.beginPath();
+      ctx.arc(-size.x / 5 + 1, -size.y / 6, 1.5, 0, Math.PI * 2);
+      ctx.arc(size.x / 5 + 1, -size.y / 6, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.restore();
+      
+      // Health bar
+      const maxHealth = generation === 0 ? 80 + gameState.level * 10 : generation === 1 ? 40 : 20;
+      if (health < maxHealth) {
+        const healthPercent = health / maxHealth;
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(screenX, position.y - size.y / 2 - 8, size.x, 3);
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(screenX, position.y - size.y / 2 - 8, size.x * healthPercent, 3);
+      }
+    });
+
     gameState.bossRockets.forEach(boss => {
       if (!boss.active) return;
       
