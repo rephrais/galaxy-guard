@@ -3,6 +3,9 @@ import { useCallback, useRef } from 'react';
 // Audio context and sounds setup for future implementation
 interface SoundEffects {
   shoot: () => void;
+  shootSpread: () => void;
+  shootLaser: () => void;
+  shootMissile: () => void;
   bomb: () => void;
   explosion: () => void;
   megaBossExplosion: () => void;
@@ -46,6 +49,30 @@ export const useSound = (): SoundEffects => {
 
   const shoot = useCallback(() => {
     playBeep(800, 0.1, 0.05);
+  }, [playBeep]);
+
+  const shootSpread = useCallback(() => {
+    // Rapid burst sound for spread shot
+    playBeep(600, 0.06, 0.04);
+    setTimeout(() => playBeep(700, 0.06, 0.04), 20);
+    setTimeout(() => playBeep(800, 0.06, 0.04), 40);
+    setTimeout(() => playBeep(700, 0.06, 0.04), 60);
+    setTimeout(() => playBeep(600, 0.06, 0.04), 80);
+  }, [playBeep]);
+
+  const shootLaser = useCallback(() => {
+    // High-pitched sustained beam sound
+    playBeep(1200, 0.15, 0.06);
+    playBeep(1400, 0.12, 0.04);
+    setTimeout(() => playBeep(1600, 0.1, 0.03), 50);
+  }, [playBeep]);
+
+  const shootMissile = useCallback(() => {
+    // Whoosh + ignition sound for missile
+    playBeep(200, 0.2, 0.08);
+    playBeep(300, 0.15, 0.06);
+    setTimeout(() => playBeep(400, 0.1, 0.05), 80);
+    setTimeout(() => playBeep(500, 0.08, 0.04), 140);
   }, [playBeep]);
 
   const bomb = useCallback(() => {
@@ -129,6 +156,9 @@ export const useSound = (): SoundEffects => {
 
   return {
     shoot,
+    shootSpread,
+    shootLaser,
+    shootMissile,
     bomb,
     explosion,
     megaBossExplosion,

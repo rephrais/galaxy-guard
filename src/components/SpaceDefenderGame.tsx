@@ -307,6 +307,12 @@ export const SpaceDefenderGame: React.FC = () => {
         sounds.shoot();
       } else if (newProjectile.type === 'bomb') {
         sounds.bomb();
+      } else if (newProjectile.type === 'spread') {
+        sounds.shootSpread();
+      } else if (newProjectile.type === 'player_laser') {
+        sounds.shootLaser();
+      } else if (newProjectile.type === 'missile') {
+        sounds.shootMissile();
       }
     }
     setPrevProjectiles(gameState.projectiles.length);
