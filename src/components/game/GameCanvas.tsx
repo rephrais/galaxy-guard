@@ -666,6 +666,49 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       if (type === 'bullet') {
         ctx.fillStyle = '#00ff00';
         ctx.fillRect(screenX, position.y, size.x, size.y);
+      } else if (type === 'spread') {
+        // Yellow spread shot bullets
+        ctx.fillStyle = '#ffff00';
+        ctx.fillRect(screenX, position.y, size.x, size.y);
+        // Glow effect
+        ctx.fillStyle = '#ffff88';
+        ctx.fillRect(screenX + 1, position.y, size.x - 2, size.y);
+      } else if (type === 'player_laser') {
+        // Player laser beam - green/cyan
+        ctx.save();
+        const laserGradient = ctx.createLinearGradient(screenX, position.y, screenX + size.x, position.y);
+        laserGradient.addColorStop(0, '#00ff88');
+        laserGradient.addColorStop(0.5, '#00ffcc');
+        laserGradient.addColorStop(1, '#00ff88');
+        ctx.fillStyle = laserGradient;
+        ctx.fillRect(screenX, position.y, size.x, size.y);
+        // Bright core
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(screenX, position.y + 1, size.x, 2);
+        ctx.restore();
+      } else if (type === 'missile') {
+        // Homing missile with fins
+        ctx.save();
+        // Missile body
+        ctx.fillStyle = '#aa4400';
+        ctx.fillRect(screenX, position.y, size.x - 4, size.y);
+        // Nose cone
+        ctx.fillStyle = '#ff6600';
+        ctx.beginPath();
+        ctx.moveTo(screenX + size.x - 4, position.y + size.y / 2);
+        ctx.lineTo(screenX + size.x, position.y);
+        ctx.lineTo(screenX + size.x, position.y + size.y);
+        ctx.closePath();
+        ctx.fill();
+        // Fins
+        ctx.fillStyle = '#666666';
+        ctx.fillRect(screenX, position.y - 2, 4, 2);
+        ctx.fillRect(screenX, position.y + size.y, 4, 2);
+        // Exhaust flame
+        const flameLen = 4 + Math.sin(Date.now() * 0.02) * 2;
+        ctx.fillStyle = '#ffff00';
+        ctx.fillRect(screenX - flameLen, position.y + 1, flameLen, size.y - 2);
+        ctx.restore();
       } else if (type === 'bomb') {
         ctx.fillStyle = '#ff00ff';
         ctx.fillRect(screenX, position.y, size.x, size.y);
@@ -1098,6 +1141,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
         color1 = '#ff6600'; // Orange
         color2 = '#ff0000';
         icon = 'F';
+      } else if (powerUpType === 'spread') {
+        color1 = '#ffff00'; // Yellow
+        color2 = '#ff8800';
+        icon = 'W'; // Wide shot
+      } else if (powerUpType === 'laser') {
+        color1 = '#00ff88'; // Cyan-green
+        color2 = '#00cc66';
+        icon = 'L';
+      } else if (powerUpType === 'missile') {
+        color1 = '#ff4400'; // Red-orange
+        color2 = '#cc2200';
+        icon = 'M';
       } else { // shield
         color1 = '#00ff00'; // Green
         color2 = '#00aa00';

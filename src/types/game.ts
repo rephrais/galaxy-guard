@@ -24,9 +24,11 @@ export interface Rocket extends GameObject {
   type: 'normal' | 'heavy';
 }
 
+export type WeaponType = 'normal' | 'spread' | 'laser' | 'missile';
+
 export interface Projectile extends GameObject {
   damage: number;
-  type: 'bullet' | 'bomb' | 'laser' | 'fireball' | 'fire';
+  type: 'bullet' | 'bomb' | 'laser' | 'fireball' | 'fire' | 'spread' | 'player_laser' | 'missile';
 }
 
 export interface TerrainPoint {
@@ -101,12 +103,12 @@ export interface Tree {
 }
 
 export interface PowerUp extends GameObject {
-  powerUpType: 'speed' | 'fireRate' | 'shield';
+  powerUpType: 'speed' | 'fireRate' | 'shield' | 'spread' | 'laser' | 'missile';
   expiresAt?: number; // Timestamp when the power-up effect expires (for active effects)
 }
 
 export interface ActivePowerUp {
-  type: 'speed' | 'fireRate' | 'shield';
+  type: 'speed' | 'fireRate' | 'shield' | 'spread' | 'laser' | 'missile';
   expiresAt: number;
 }
 

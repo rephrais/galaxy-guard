@@ -74,10 +74,11 @@ const generateInitialTerrain = (): TerrainLayers => {
   return generateTerrainSegment(0, 3600); // Start with 3 segments
 };
 
-// Spawn power-up with 20% chance
+// Spawn power-up with 25% chance (increased for weapon variety)
 const maybeSpawnPowerUp = (x: number, y: number, powerUps: PowerUp[]) => {
-  if (Math.random() < 0.2) { // 20% chance
-    const types: ('speed' | 'fireRate' | 'shield')[] = ['speed', 'fireRate', 'shield'];
+  if (Math.random() < 0.25) { // 25% chance
+    const types: ('speed' | 'fireRate' | 'shield' | 'spread' | 'laser' | 'missile')[] = 
+      ['speed', 'fireRate', 'shield', 'spread', 'laser', 'missile'];
     const type = types[Math.floor(Math.random() * types.length)];
     
     powerUps.push({
@@ -355,22 +356,78 @@ export const useGameEngine = () => {
       // Check for fire rate boost
       const hasFireRateBoost = newState.activePowerUps.some(p => p.type === 'fireRate');
       
+      // Check for weapon upgrades
+      const hasSpreadShot = newState.activePowerUps.some(p => p.type === 'spread');
+      const hasLaserBeam = newState.activePowerUps.some(p => p.type === 'laser');
+      const hasMissile = newState.activePowerUps.some(p => p.type === 'missile');
+      
+      // Determine active weapon type (priority: missile > laser > spread > normal)
+      let activeWeapon: 'normal' | 'spread' | 'laser' | 'missile' = 'normal';
+      if (hasMissile) activeWeapon = 'missile';
+      else if (hasLaserBeam) activeWeapon = 'laser';
+      else if (hasSpreadShot) activeWeapon = 'spread';
+      
       // Handle shooting (with fire rate boost allowing rapid fire)
       if (keysRef.current.has('Space') && newState.spaceship.ammunition > 0) {
-        const bulletId = `bullet-${Date.now()}-${Math.random()}`;
-        newState.projectiles.push({
-          id: bulletId,
-          position: { 
-            x: newState.spaceship.position.x + newState.spaceship.size.x, 
-            y: newState.spaceship.position.y + newState.spaceship.size.y / 2 
-          },
-          velocity: { x: settings.bulletSpeed, y: 0 },
-          size: { x: 8, y: 2 },
-          active: true,
-          damage: 25,
-          type: 'bullet',
-        });
-        newState.spaceship.ammunition--;
+        const shipX = newState.spaceship.position.x + newState.spaceship.size.x;
+        const shipY = newState.spaceship.position.y + newState.spaceship.size.y / 2;
+        
+        if (activeWeapon === 'spread') {
+          // Spread shot - 5 bullets in a fan pattern
+          const angles = [-0.3, -0.15, 0, 0.15, 0.3];
+          angles.forEach((angle, i) => {
+            newState.projectiles.push({
+              id: `spread-${Date.now()}-${i}-${Math.random()}`,
+              position: { x: shipX, y: shipY },
+              velocity: { 
+                x: settings.bulletSpeed * Math.cos(angle), 
+                y: settings.bulletSpeed * Math.sin(angle) 
+              },
+              size: { x: 6, y: 2 },
+              active: true,
+              damage: 15,
+              type: 'spread',
+            });
+          });
+          newState.spaceship.ammunition -= 3;
+        } else if (activeWeapon === 'laser') {
+          // Laser beam - long continuous beam
+          newState.projectiles.push({
+            id: `player-laser-${Date.now()}-${Math.random()}`,
+            position: { x: shipX, y: shipY - 2 },
+            velocity: { x: settings.bulletSpeed * 1.5, y: 0 },
+            size: { x: 60, y: 4 },
+            active: true,
+            damage: 40,
+            type: 'player_laser',
+          });
+          newState.spaceship.ammunition -= 2;
+        } else if (activeWeapon === 'missile') {
+          // Homing missile
+          newState.projectiles.push({
+            id: `missile-${Date.now()}-${Math.random()}`,
+            position: { x: shipX, y: shipY },
+            velocity: { x: settings.bulletSpeed * 0.8, y: 0 },
+            size: { x: 16, y: 6 },
+            active: true,
+            damage: 60,
+            type: 'missile',
+          });
+          newState.spaceship.ammunition -= 4;
+        } else {
+          // Normal bullet
+          newState.projectiles.push({
+            id: `bullet-${Date.now()}-${Math.random()}`,
+            position: { x: shipX, y: shipY },
+            velocity: { x: settings.bulletSpeed, y: 0 },
+            size: { x: 8, y: 2 },
+            active: true,
+            damage: 25,
+            type: 'bullet',
+          });
+          newState.spaceship.ammunition--;
+        }
+        
         if (!hasFireRateBoost) {
           keysRef.current.delete('Space'); // Prevent auto-fire unless boosted
         }
@@ -615,13 +672,36 @@ export const useGameEngine = () => {
 
       // Generate trail particles from player projectiles
       newState.projectiles.forEach(proj => {
-        if (proj.active && (proj.type === 'bullet' || proj.type === 'bomb')) {
-          const trailColor = proj.type === 'bullet' ? '#00ffff' : '#ff6600';
-          for (let i = 0; i < 2; i++) {
+        if (proj.active) {
+          let trailColor = '#00ffff';
+          let trailCount = 2;
+          let trailSize = 2;
+          
+          if (proj.type === 'bullet') {
+            trailColor = '#00ffff';
+          } else if (proj.type === 'bomb') {
+            trailColor = '#ff6600';
+            trailSize = 3;
+          } else if (proj.type === 'spread') {
+            trailColor = '#ffff00';
+            trailCount = 1;
+          } else if (proj.type === 'player_laser') {
+            trailColor = '#00ff88';
+            trailCount = 3;
+            trailSize = 1;
+          } else if (proj.type === 'missile') {
+            trailColor = '#ff4400';
+            trailCount = 4;
+            trailSize = 4;
+          } else {
+            return; // Skip enemy projectiles
+          }
+          
+          for (let i = 0; i < trailCount; i++) {
             newState.trailParticles.push({
               x: proj.position.x - Math.random() * 5,
               y: proj.position.y + (Math.random() - 0.5) * 4,
-              size: proj.type === 'bomb' ? 3 + Math.random() * 2 : 2 + Math.random(),
+              size: trailSize + Math.random(),
               alpha: 0.8,
               color: trailColor,
               life: 1.0,
@@ -644,6 +724,71 @@ export const useGameEngine = () => {
       // Update projectiles
       newState.projectiles = newState.projectiles.filter(projectile => {
         if (!projectile.active) return false;
+        
+        // Missile homing logic - find nearest enemy
+        if (projectile.type === 'missile') {
+          let nearestEnemy: { x: number; y: number } | null = null;
+          let nearestDist = Infinity;
+          
+          // Check saucers
+          newState.saucers.forEach(s => {
+            if (!s.active) return;
+            const screenX = s.position.x - newState.scrollOffset;
+            const dx = screenX - projectile.position.x;
+            const dy = s.position.y - projectile.position.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < nearestDist && dx > 0) {
+              nearestDist = dist;
+              nearestEnemy = { x: screenX, y: s.position.y };
+            }
+          });
+          
+          // Check boss rockets
+          newState.bossRockets.forEach(b => {
+            if (!b.active) return;
+            const screenX = b.position.x - newState.scrollOffset;
+            const dx = screenX - projectile.position.x;
+            const dy = b.position.y - projectile.position.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < nearestDist && dx > 0) {
+              nearestDist = dist;
+              nearestEnemy = { x: screenX, y: b.position.y };
+            }
+          });
+          
+          // Check mega boss
+          if (newState.boss?.active) {
+            const screenX = newState.boss.position.x - newState.scrollOffset;
+            const dx = screenX - projectile.position.x;
+            const dy = newState.boss.position.y - projectile.position.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < nearestDist && dx > 0) {
+              nearestDist = dist;
+              nearestEnemy = { x: screenX, y: newState.boss.position.y + newState.boss.size.y / 2 };
+            }
+          }
+          
+          // Home towards nearest enemy
+          if (nearestEnemy && nearestDist < 400) {
+            const dx = nearestEnemy.x - projectile.position.x;
+            const dy = nearestEnemy.y - projectile.position.y;
+            const angle = Math.atan2(dy, dx);
+            const speed = Math.sqrt(projectile.velocity.x ** 2 + projectile.velocity.y ** 2);
+            
+            // Gradually adjust velocity towards target
+            const turnSpeed = 0.08;
+            const currentAngle = Math.atan2(projectile.velocity.y, projectile.velocity.x);
+            let angleDiff = angle - currentAngle;
+            
+            // Normalize angle difference
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            
+            const newAngle = currentAngle + angleDiff * turnSpeed;
+            projectile.velocity.x = Math.cos(newAngle) * speed;
+            projectile.velocity.y = Math.sin(newAngle) * speed;
+          }
+        }
         
         projectile.position.x += projectile.velocity.x;
         projectile.position.y += projectile.velocity.y;
@@ -1565,13 +1710,23 @@ export const useGameEngine = () => {
             const flashColors: Record<string, string> = {
               speed: '#00ffff',
               fireRate: '#ff6600', 
-              shield: '#00ff00'
+              shield: '#00ff00',
+              spread: '#ffff00',
+              laser: '#00ff88',
+              missile: '#ff4400'
             };
             triggerScreenFlash(flashColors[powerUp.powerUpType] || '#ffffff', 0.4, 200);
             
             if (powerUp.powerUpType === 'shield') {
               // Shield restores and boosts max health temporarily
               newState.spaceship.health = Math.min(newState.spaceship.health + 50, newState.spaceship.maxHealth + 50);
+            }
+            
+            // Weapon upgrades: remove other weapon types when collecting a new one
+            if (['spread', 'laser', 'missile'].includes(powerUp.powerUpType)) {
+              newState.activePowerUps = newState.activePowerUps.filter(
+                p => !['spread', 'laser', 'missile'].includes(p.type) || p.type === powerUp.powerUpType
+              );
             }
           }
         }
