@@ -101,19 +101,89 @@ export const GameHUD: React.FC<GameHUDProps> = ({ gameState, onPause, onRestart,
 
       {/* Status Bars */}
       <div className="flex flex-wrap gap-2 sm:gap-4">
-        {/* Active Power-Ups */}
-        {gameState.activePowerUps.length > 0 && (
+        {/* Active Weapon */}
+        {(() => {
+          const weaponPowerUp = gameState.activePowerUps.find(p => 
+            p.type === 'spread' || p.type === 'laser' || p.type === 'missile'
+          );
+          const weaponConfig = {
+            spread: { bg: '#ffff00', name: 'SPREAD', icon: '⟨⟩' },
+            laser: { bg: '#00ffcc', name: 'LASER', icon: '═' },
+            missile: { bg: '#ff4400', name: 'MISSILE', icon: '◈' },
+            normal: { bg: '#4488ff', name: 'NORMAL', icon: '•' }
+          };
+          const activeWeapon = weaponPowerUp?.type as 'spread' | 'laser' | 'missile' | undefined;
+          const config = activeWeapon ? weaponConfig[activeWeapon] : weaponConfig.normal;
+          const remaining = weaponPowerUp ? Math.ceil((weaponPowerUp.expiresAt - Date.now()) / 1000) : null;
+          
+          return (
+            <div className="hud-panel p-1 sm:p-2">
+              <div className="pixel-text text-[10px] sm:text-xs text-neon-purple mb-1">WEAPON</div>
+              <div 
+                className="flex items-center gap-2 px-2 py-1 rounded"
+                style={{ 
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                  border: `2px solid ${config.bg}`,
+                  boxShadow: `0 0 8px ${config.bg}40, inset 0 0 8px ${config.bg}20`
+                }}
+              >
+                <span 
+                  className="pixel-text text-sm sm:text-base font-bold"
+                  style={{ color: config.bg, textShadow: `0 0 6px ${config.bg}` }}
+                >
+                  {config.icon}
+                </span>
+                <span 
+                  className="pixel-text text-xs sm:text-sm font-bold"
+                  style={{ color: config.bg }}
+                >
+                  {config.name}
+                </span>
+                {remaining !== null && (
+                  <div className="flex items-center gap-1">
+                    <div 
+                      className="w-12 sm:w-16 h-2 bg-space-black rounded-full overflow-hidden"
+                      style={{ border: `1px solid ${config.bg}40` }}
+                    >
+                      <div 
+                        className="h-full transition-all duration-200"
+                        style={{ 
+                          width: `${Math.min(100, (remaining / 15) * 100)}%`,
+                          backgroundColor: config.bg,
+                          boxShadow: `0 0 4px ${config.bg}`
+                        }}
+                      />
+                    </div>
+                    <span 
+                      className="pixel-text text-[10px] sm:text-xs"
+                      style={{ color: config.bg }}
+                    >
+                      {remaining}s
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Active Power-Ups (non-weapon) */}
+        {gameState.activePowerUps.filter(p => 
+          p.type !== 'spread' && p.type !== 'laser' && p.type !== 'missile'
+        ).length > 0 && (
           <div className="hud-panel p-1 sm:p-2">
             <div className="pixel-text text-[10px] sm:text-xs text-neon-yellow mb-1">POWER-UPS</div>
             <div className="flex gap-1">
-              {gameState.activePowerUps.map((powerUp, index) => {
+              {gameState.activePowerUps
+                .filter(p => p.type !== 'spread' && p.type !== 'laser' && p.type !== 'missile')
+                .map((powerUp, index) => {
                 const remaining = Math.ceil((powerUp.expiresAt - Date.now()) / 1000);
-                const colors = {
+                const colors: Record<string, { bg: string; text: string }> = {
                   speed: { bg: '#00ffff', text: 'S' },
                   fireRate: { bg: '#ff6600', text: 'F' },
                   shield: { bg: '#00ff00', text: 'H' }
                 };
-                const color = colors[powerUp.type];
+                const color = colors[powerUp.type] || { bg: '#ffffff', text: '?' };
                 
                 return (
                   <div 
