@@ -1452,11 +1452,12 @@ export const useGameEngine = () => {
             projectile.active = false;
             rocket.active = false;
             
-            // Screen shake based on rocket type
+            // Screen shake based on rocket type and projectile type
+            const isBomb = projectile.type === 'bomb';
             if (rocket.type === 'heavy') {
-              triggerScreenShake(0.25, 150);
+              triggerScreenShake(isBomb ? 0.5 : 0.25, isBomb ? 250 : 150);
             } else {
-              triggerScreenShake(0.15, 100);
+              triggerScreenShake(isBomb ? 0.4 : 0.15, isBomb ? 200 : 100);
             }
             
             // Add score and level progression
@@ -1505,7 +1506,7 @@ export const useGameEngine = () => {
             projectile.active = false;
             saucer.active = false;
             
-            triggerScreenShake(0.3, 150); // Saucer destroyed
+            triggerScreenShake(projectile.type === 'bomb' ? 0.55 : 0.3, projectile.type === 'bomb' ? 280 : 150); // Saucer destroyed
             
             // Add score and ammo rewards
             const baseScore = projectile.type === 'bomb' ? 300 : 200;
@@ -1543,7 +1544,7 @@ export const useGameEngine = () => {
                 particles: generateExplosionParticles(alien.position.x, alien.position.y, 8)
               });
               
-              triggerScreenShake(0.25, 150); // Alien destroyed
+              triggerScreenShake(projectile.type === 'bomb' ? 0.5 : 0.25, projectile.type === 'bomb' ? 250 : 150); // Alien destroyed
               
               alien.active = false;
               const baseScore = projectile.type === 'bomb' ? 400 : 250;
@@ -1579,7 +1580,7 @@ export const useGameEngine = () => {
                 particles: generateExplosionParticles(crawlingAlien.position.x, crawlingAlien.position.y, 8)
               });
               
-              triggerScreenShake(0.3, 150); // Crawling alien destroyed
+              triggerScreenShake(projectile.type === 'bomb' ? 0.55 : 0.3, projectile.type === 'bomb' ? 280 : 150); // Crawling alien destroyed
               
               crawlingAlien.active = false;
               const baseScore = projectile.type === 'bomb' ? 450 : 300;
@@ -1615,7 +1616,7 @@ export const useGameEngine = () => {
                 particles: generateExplosionParticles(bomber.position.x, bomber.position.y, 10)
               });
               
-              triggerScreenShake(0.3, 150);
+              triggerScreenShake(projectile.type === 'bomb' ? 0.55 : 0.3, projectile.type === 'bomb' ? 280 : 150);
               bomber.active = false;
               const baseScore = projectile.type === 'bomb' ? 500 : 350;
               newState.score += registerKill(baseScore, bomber.position.x, bomber.position.y);
@@ -1649,7 +1650,7 @@ export const useGameEngine = () => {
                 particles: generateExplosionParticles(zigzag.position.x, zigzag.position.y, 8)
               });
               
-              triggerScreenShake(0.25, 120);
+              triggerScreenShake(projectile.type === 'bomb' ? 0.5 : 0.25, projectile.type === 'bomb' ? 250 : 120);
               zigzag.active = false;
               const baseScore = projectile.type === 'bomb' ? 400 : 280;
               newState.score += registerKill(baseScore, zigzag.position.x, zigzag.position.y);
@@ -1685,7 +1686,7 @@ export const useGameEngine = () => {
                 particles: generateExplosionParticles(splitter.position.x, splitter.position.y, 12)
               });
               
-              triggerScreenShake(0.35, 180);
+              triggerScreenShake(projectile.type === 'bomb' ? 0.6 : 0.35, projectile.type === 'bomb' ? 300 : 180);
               splitter.active = false;
               
               // Split into smaller splitters if not at max generation
@@ -1764,7 +1765,7 @@ export const useGameEngine = () => {
                 particles: generateExplosionParticles(boss.position.x, boss.position.y, 15)
               });
               
-              triggerScreenShake(0.5, 250); // Boss rocket destroyed
+              triggerScreenShake(projectile.type === 'bomb' ? 0.75 : 0.5, projectile.type === 'bomb' ? 400 : 250); // Boss rocket destroyed
               
               boss.active = false;
               newState.score += registerKill(1000, boss.position.x, boss.position.y);
@@ -1793,7 +1794,7 @@ export const useGameEngine = () => {
             newState.boss!.health -= 1;
             projectile.active = false;
             
-            triggerScreenShake(0.3, 150); // Hit on mega boss
+            triggerScreenShake(projectile.type === 'bomb' ? 0.55 : 0.3, projectile.type === 'bomb' ? 250 : 150); // Hit on mega boss
             
             // Hit explosion
             newState.explosions.push({
