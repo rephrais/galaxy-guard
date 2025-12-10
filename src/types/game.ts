@@ -167,6 +167,12 @@ export interface ScreenZoom {
   centerY: number; // Zoom focus point Y
 }
 
+export interface SlowMotion {
+  timeScale: number; // 0.0-1.0, where 0.5 = half speed
+  startTime: number;
+  duration: number;
+}
+
 export interface ComboState {
   count: number;
   multiplier: number;
@@ -211,6 +217,7 @@ export interface GameState {
   screenShake: ScreenShake | null;
   screenFlash: ScreenFlash | null;
   screenZoom: ScreenZoom | null;
+  slowMotion: SlowMotion | null;
   combo: ComboState;
   scorePopups: ScorePopup[];
 }
