@@ -159,6 +159,14 @@ export interface ScreenFlash {
   duration: number;
 }
 
+export interface ScreenZoom {
+  scale: number; // Target zoom scale (e.g., 1.1 for 10% zoom)
+  startTime: number;
+  duration: number;
+  centerX: number; // Zoom focus point X
+  centerY: number; // Zoom focus point Y
+}
+
 export interface ComboState {
   count: number;
   multiplier: number;
@@ -202,6 +210,7 @@ export interface GameState {
   trailParticles: TrailParticle[];
   screenShake: ScreenShake | null;
   screenFlash: ScreenFlash | null;
+  screenZoom: ScreenZoom | null;
   combo: ComboState;
   scorePopups: ScorePopup[];
 }

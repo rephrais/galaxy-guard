@@ -82,15 +82,48 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       }
     }
     
+    // Calculate screen zoom effect
+    let zoomScale = 1;
+    let zoomCenterX = settings.width / 2;
+    let zoomCenterY = settings.height / 2;
+    
+    if (gameState.screenZoom) {
+      const zoom = gameState.screenZoom;
+      const elapsed = Date.now() - zoom.startTime;
+      
+      if (elapsed <= zoom.duration) {
+        // Ease-out curve for smooth zoom in, then quick zoom out
+        const progress = elapsed / zoom.duration;
+        const easeOut = 1 - Math.pow(1 - progress, 3); // Cubic ease-out for zoom-in
+        const easeBack = progress < 0.3 
+          ? easeOut  // Zoom in for first 30%
+          : 1 - ((progress - 0.3) / 0.7); // Zoom out for remaining 70%
+        
+        zoomScale = 1 + (zoom.scale - 1) * Math.max(0, easeBack);
+        zoomCenterX = zoom.centerX;
+        zoomCenterY = zoom.centerY;
+      }
+    }
+    
     // Reset any existing transforms, clear and paint full canvas background (including letterbox areas)
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#000003';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Save context state and apply world transform with shake
+    // Save context state and apply world transform with shake and zoom
     ctx.save();
-    ctx.setTransform(scale, 0, 0, scale, offsetX + shakeOffsetX, offsetY + shakeOffsetY);
+    
+    // Apply combined transform: first translate to center, then scale, then translate back, then apply shake
+    const finalScale = scale * zoomScale;
+    const zoomOffsetX = (1 - zoomScale) * zoomCenterX * scale;
+    const zoomOffsetY = (1 - zoomScale) * zoomCenterY * scale;
+    
+    ctx.setTransform(
+      finalScale, 0, 0, finalScale, 
+      offsetX + shakeOffsetX + zoomOffsetX, 
+      offsetY + shakeOffsetY + zoomOffsetY
+    );
 
     // Fill game world background
     ctx.fillStyle = '#000003';

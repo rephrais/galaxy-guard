@@ -131,6 +131,7 @@ export const useGameEngine = () => {
     trailParticles: [],
     screenShake: null,
     screenFlash: null,
+    screenZoom: null,
     combo: { count: 0, multiplier: 1, lastKillTime: 0, comboTimeout: 2000 },
     scorePopups: [],
   });
@@ -201,6 +202,14 @@ export const useGameEngine = () => {
         newState.screenFlash = { color, intensity, startTime: now, duration };
       };
 
+      // Helper to trigger screen zoom (for big explosions)
+      const triggerScreenZoom = (scale: number, duration: number, centerX: number, centerY: number) => {
+        // Only trigger if no existing zoom or new zoom is larger
+        if (!newState.screenZoom || scale > newState.screenZoom.scale) {
+          newState.screenZoom = { scale, startTime: now, duration, centerX, centerY };
+        }
+      };
+
       // Clean up expired screen shake
       if (newState.screenShake && now - newState.screenShake.startTime > newState.screenShake.duration) {
         newState.screenShake = null;
@@ -209,6 +218,11 @@ export const useGameEngine = () => {
       // Clean up expired screen flash
       if (newState.screenFlash && now - newState.screenFlash.startTime > newState.screenFlash.duration) {
         newState.screenFlash = null;
+      }
+
+      // Clean up expired screen zoom
+      if (newState.screenZoom && now - newState.screenZoom.startTime > newState.screenZoom.duration) {
+        newState.screenZoom = null;
       }
 
       // Combo system - reset if too much time passed since last kill
@@ -1507,6 +1521,9 @@ export const useGameEngine = () => {
             saucer.active = false;
             
             triggerScreenShake(projectile.type === 'bomb' ? 0.55 : 0.3, projectile.type === 'bomb' ? 280 : 150); // Saucer destroyed
+            if (projectile.type === 'bomb') {
+              triggerScreenZoom(1.05, 200, saucer.position.x, saucer.position.y); // Zoom on saucer bomb kill
+            }
             
             // Add score and ammo rewards
             const baseScore = projectile.type === 'bomb' ? 300 : 200;
@@ -1687,6 +1704,9 @@ export const useGameEngine = () => {
               });
               
               triggerScreenShake(projectile.type === 'bomb' ? 0.6 : 0.35, projectile.type === 'bomb' ? 300 : 180);
+              if (projectile.type === 'bomb' && splitter.generation === 0) {
+                triggerScreenZoom(1.06, 250, splitter.position.x, splitter.position.y); // Zoom on big splitter bomb kill
+              }
               splitter.active = false;
               
               // Split into smaller splitters if not at max generation
@@ -1766,6 +1786,9 @@ export const useGameEngine = () => {
               });
               
               triggerScreenShake(projectile.type === 'bomb' ? 0.75 : 0.5, projectile.type === 'bomb' ? 400 : 250); // Boss rocket destroyed
+              if (projectile.type === 'bomb') {
+                triggerScreenZoom(1.08, 300, boss.position.x, boss.position.y); // Zoom on boss rocket bomb kill
+              }
               
               boss.active = false;
               newState.score += registerKill(1000, boss.position.x, boss.position.y);
@@ -1858,6 +1881,7 @@ export const useGameEngine = () => {
               newState.boss = null;
               
               triggerScreenShake(1.0, 600); // MEGA BOSS DESTROYED - EPIC SHAKE!
+              triggerScreenZoom(1.15, 500, bossCenter.x, bossCenter.y); // Epic zoom on boss death!
               
               newState.score += registerKill(5000, bossCenter.x, bossCenter.y);
               newState.spaceship.ammunition += 200; // 200 ammo bonus for destroying mega boss (big kill)
@@ -2253,6 +2277,7 @@ export const useGameEngine = () => {
       trailParticles: [],
       screenShake: null,
       screenFlash: null,
+      screenZoom: null,
       combo: { count: 0, multiplier: 1, lastKillTime: 0, comboTimeout: 2000 },
       scorePopups: [],
     });
