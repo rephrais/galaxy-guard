@@ -132,6 +132,7 @@ export const useGameEngine = () => {
     screenShake: null,
     screenFlash: null,
     screenZoom: null,
+    slowMotion: null,
     combo: { count: 0, multiplier: 1, lastKillTime: 0, comboTimeout: 2000 },
     scorePopups: [],
   });
@@ -210,6 +211,14 @@ export const useGameEngine = () => {
         }
       };
 
+      // Helper to trigger slow motion (for critical hits and boss kills)
+      const triggerSlowMotion = (timeScale: number, duration: number) => {
+        // Only trigger if no existing slow motion or new one is slower
+        if (!newState.slowMotion || timeScale < newState.slowMotion.timeScale) {
+          newState.slowMotion = { timeScale, startTime: now, duration };
+        }
+      };
+
       // Clean up expired screen shake
       if (newState.screenShake && now - newState.screenShake.startTime > newState.screenShake.duration) {
         newState.screenShake = null;
@@ -223,6 +232,11 @@ export const useGameEngine = () => {
       // Clean up expired screen zoom
       if (newState.screenZoom && now - newState.screenZoom.startTime > newState.screenZoom.duration) {
         newState.screenZoom = null;
+      }
+
+      // Clean up expired slow motion
+      if (newState.slowMotion && now - newState.slowMotion.startTime > newState.slowMotion.duration) {
+        newState.slowMotion = null;
       }
 
       // Combo system - reset if too much time passed since last kill
@@ -252,6 +266,11 @@ export const useGameEngine = () => {
         // Calculate final score with multiplier
         const finalScore = Math.floor(baseScore * newState.combo.multiplier);
         
+        // Trigger slow-mo for high combos (5+ kills)
+        if (newState.combo.count >= 5 && newState.combo.count % 5 === 0) {
+          triggerSlowMotion(0.5, 250); // Brief slow-mo for combo milestone
+        }
+        
         // Create score popup at kill location
         newState.scorePopups.push({
           id: `popup-${now}-${Math.random()}`,
@@ -264,8 +283,25 @@ export const useGameEngine = () => {
         return finalScore;
       };
 
+      // Calculate time scale for slow motion effect
+      let timeScale = 1;
+      if (newState.slowMotion) {
+        const elapsed = now - newState.slowMotion.startTime;
+        if (elapsed <= newState.slowMotion.duration) {
+          // Smooth ease-in-out for time scale
+          const progress = elapsed / newState.slowMotion.duration;
+          const easeInOut = progress < 0.3 
+            ? progress / 0.3  // Ease into slow-mo
+            : progress > 0.7 
+              ? 1 - ((progress - 0.7) / 0.3)  // Ease out of slow-mo
+              : 1;  // Full slow-mo in middle
+          timeScale = 1 - (1 - newState.slowMotion.timeScale) * easeInOut;
+        }
+      }
+
       // Update world scroll - speed increases with level (reduced for better pacing)
-      const currentScrollSpeed = settings.scrollSpeed + (newState.level - 1) * 0.2;
+      // Apply time scale for slow motion effect
+      const currentScrollSpeed = (settings.scrollSpeed + (newState.level - 1) * 0.2) * timeScale;
       newState.scrollOffset += currentScrollSpeed;
       
       // Generate new terrain if needed (infinite scrolling)
@@ -892,8 +928,8 @@ export const useGameEngine = () => {
           }
         }
         
-        projectile.position.x += projectile.velocity.x;
-        projectile.position.y += projectile.velocity.y;
+        projectile.position.x += projectile.velocity.x * timeScale;
+        projectile.position.y += projectile.velocity.y * timeScale;
         
         // Remove if off screen (all edges for boss fireballs)
         if (projectile.position.x < -100 || projectile.position.x > settings.width + 100 || 
@@ -908,7 +944,7 @@ export const useGameEngine = () => {
       newState.rockets = newState.rockets.filter(rocket => {
         if (!rocket.active) return false;
         
-        rocket.position.y += rocket.velocity.y;
+        rocket.position.y += rocket.velocity.y * timeScale;
         
         // Remove if rocket goes above the screen or far below
         if (rocket.position.y + rocket.size.y < 0 || rocket.position.y > settings.height + 200) {
@@ -922,12 +958,12 @@ export const useGameEngine = () => {
       newState.saucers = newState.saucers.filter(saucer => {
         if (!saucer.active) return false;
         
-        saucer.position.x += saucer.velocity.x;
+        saucer.position.x += saucer.velocity.x * timeScale;
         
         // Drift towards target Y position
         const yDiff = saucer.targetY - saucer.position.y;
         if (Math.abs(yDiff) > 5) {
-          saucer.position.y += Math.sign(yDiff) * saucer.driftSpeed;
+          saucer.position.y += Math.sign(yDiff) * saucer.driftSpeed * timeScale;
         }
         
         // Fire at spaceship
@@ -1038,7 +1074,7 @@ export const useGameEngine = () => {
         // Move towards spaceship (crawl on terrain)
         const dx = crawlingAlien.targetX - crawlingAlien.position.x;
         if (Math.abs(dx) > 10) {
-          crawlingAlien.position.x += Math.sign(dx) * crawlingAlien.moveSpeed;
+          crawlingAlien.position.x += Math.sign(dx) * crawlingAlien.moveSpeed * timeScale;
         }
         
         // Keep alien on terrain
@@ -1097,15 +1133,15 @@ export const useGameEngine = () => {
         
         // Phase-based movement
         if (bomber.phase === 'approach') {
-          bomber.position.x += bomber.velocity.x;
+          bomber.position.x += bomber.velocity.x * timeScale;
           // Start dive when close to player X position
           if (bomberScreenX < newState.spaceship.position.x + 200) {
             bomber.phase = 'dive';
             bomber.diveTargetY = newState.spaceship.position.y;
           }
         } else if (bomber.phase === 'dive') {
-          bomber.position.x += bomber.velocity.x * 0.5;
-          const diveSpeed = 4;
+          bomber.position.x += bomber.velocity.x * 0.5 * timeScale;
+          const diveSpeed = 4 * timeScale;
           const yDiff = bomber.diveTargetY - bomber.position.y;
           bomber.position.y += Math.sign(yDiff) * diveSpeed;
           
@@ -1114,8 +1150,8 @@ export const useGameEngine = () => {
             bomber.phase = 'retreat';
           }
         } else if (bomber.phase === 'retreat') {
-          bomber.position.x += bomber.velocity.x * 1.5;
-          bomber.position.y -= 2; // Move up while retreating
+          bomber.position.x += bomber.velocity.x * 1.5 * timeScale;
+          bomber.position.y -= 2 * timeScale; // Move up while retreating
         }
         
         // Fire at player during dive
@@ -1151,9 +1187,9 @@ export const useGameEngine = () => {
         const zigzagScreenX = zigzag.position.x - newState.scrollOffset;
         
         // Zigzag movement
-        zigzag.zigzagPhase += zigzag.zigzagSpeed;
-        zigzag.position.x += zigzag.velocity.x;
-        zigzag.position.y += Math.sin(zigzag.zigzagPhase) * 3;
+        zigzag.zigzagPhase += zigzag.zigzagSpeed * timeScale;
+        zigzag.position.x += zigzag.velocity.x * timeScale;
+        zigzag.position.y += Math.sin(zigzag.zigzagPhase) * 3 * timeScale;
         
         // Keep within screen bounds
         if (zigzag.position.y < 50) zigzag.position.y = 50;
@@ -1198,8 +1234,8 @@ export const useGameEngine = () => {
         const splitterScreenX = splitter.position.x - newState.scrollOffset;
         
         // Move and bounce off screen edges
-        splitter.position.x += splitter.velocity.x;
-        splitter.position.y += splitter.velocity.y;
+        splitter.position.x += splitter.velocity.x * timeScale;
+        splitter.position.y += splitter.velocity.y * timeScale;
         
         if (splitter.position.y < 50 || splitter.position.y > settings.height - 100) {
           splitter.velocity.y *= -1;
@@ -1236,7 +1272,7 @@ export const useGameEngine = () => {
       newState.bossRockets = newState.bossRockets.filter(boss => {
         if (!boss.active) return false;
         
-        boss.position.x += boss.velocity.x;
+        boss.position.x += boss.velocity.x * timeScale;
         
         // Fire 3 streams of photons
         if (now - boss.lastFireTime > boss.fireRate) {
@@ -1292,7 +1328,7 @@ export const useGameEngine = () => {
         
         if (bossScreenX > targetScreenX) {
           // Move boss leftward until it reaches target position
-          newState.boss.position.x += newState.boss.velocity.x;
+          newState.boss.position.x += newState.boss.velocity.x * timeScale;
         } else {
           // Boss has reached position, match scroll speed to stay in place
           newState.boss.position.x += currentScrollSpeed;
@@ -1788,6 +1824,9 @@ export const useGameEngine = () => {
               triggerScreenShake(projectile.type === 'bomb' ? 0.75 : 0.5, projectile.type === 'bomb' ? 400 : 250); // Boss rocket destroyed
               if (projectile.type === 'bomb') {
                 triggerScreenZoom(1.08, 300, boss.position.x, boss.position.y); // Zoom on boss rocket bomb kill
+                triggerSlowMotion(0.4, 400); // Slow-mo for boss rocket bomb kill
+              } else {
+                triggerSlowMotion(0.5, 300); // Lighter slow-mo for regular boss rocket kill
               }
               
               boss.active = false;
@@ -1882,6 +1921,7 @@ export const useGameEngine = () => {
               
               triggerScreenShake(1.0, 600); // MEGA BOSS DESTROYED - EPIC SHAKE!
               triggerScreenZoom(1.15, 500, bossCenter.x, bossCenter.y); // Epic zoom on boss death!
+              triggerSlowMotion(0.25, 800); // Dramatic slow-mo for mega boss kill!
               
               newState.score += registerKill(5000, bossCenter.x, bossCenter.y);
               newState.spaceship.ammunition += 200; // 200 ammo bonus for destroying mega boss (big kill)
@@ -2056,10 +2096,10 @@ export const useGameEngine = () => {
         
         // Update particles
         explosion.particles = explosion.particles.filter(particle => {
-          particle.position.x += particle.velocity.x;
-          particle.position.y += particle.velocity.y;
-          particle.velocity.y += 0.1; // Gravity effect on particles
-          particle.life -= 0.02; // Fade particles
+          particle.position.x += particle.velocity.x * timeScale;
+          particle.position.y += particle.velocity.y * timeScale;
+          particle.velocity.y += 0.1 * timeScale; // Gravity effect on particles
+          particle.life -= 0.02 * timeScale; // Fade particles
           return particle.life > 0;
         });
         
@@ -2068,8 +2108,8 @@ export const useGameEngine = () => {
 
       // Update power-ups (falling)
       newState.powerUps.forEach(powerUp => {
-        powerUp.position.x += powerUp.velocity.x;
-        powerUp.position.y += powerUp.velocity.y;
+        powerUp.position.x += powerUp.velocity.x * timeScale;
+        powerUp.position.y += powerUp.velocity.y * timeScale;
         
         // Check collision with spaceship
         const powerUpScreen = {
@@ -2174,9 +2214,9 @@ export const useGameEngine = () => {
       
       // Update and fade trail particles
       newState.trailParticles = newState.trailParticles.filter(particle => {
-        particle.life -= 0.03; // Fade out
+        particle.life -= 0.03 * timeScale; // Fade out
         particle.alpha = particle.life;
-        particle.x -= 1; // Slight drift backwards
+        particle.x -= 1 * timeScale; // Slight drift backwards
         return particle.life > 0;
       });
       
@@ -2278,6 +2318,7 @@ export const useGameEngine = () => {
       screenShake: null,
       screenFlash: null,
       screenZoom: null,
+      slowMotion: null,
       combo: { count: 0, multiplier: 1, lastKillTime: 0, comboTimeout: 2000 },
       scorePopups: [],
     });
