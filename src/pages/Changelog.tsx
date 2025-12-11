@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Rss } from 'lucide-react';
 
 const Changelog = () => {
   return (
@@ -18,19 +18,35 @@ const Changelog = () => {
       <div className="absolute bottom-0 right-0 w-32 h-32 border-r-4 border-b-4 border-neon-green opacity-50" />
       
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-12">
-        {/* Back to Home Button */}
-        <Link 
-          to="/" 
-          className="arcade-button mb-8 inline-flex items-center gap-2 border-neon-cyan text-neon-cyan hover:bg-neon-cyan hover:text-black"
-        >
-          <ArrowLeft size={20} />
-          BACK TO HOME
-        </Link>
+        {/* Header with Back Button and RSS Badge */}
+        <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+          <Link 
+            to="/" 
+            className="arcade-button inline-flex items-center gap-2 border-neon-cyan text-neon-cyan hover:bg-neon-cyan hover:text-black"
+          >
+            <ArrowLeft size={20} />
+            BACK TO HOME
+          </Link>
+          
+          <a 
+            href="/changelog/rss"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="arcade-button inline-flex items-center gap-2 border-neon-orange text-neon-orange hover:bg-neon-orange hover:text-black text-sm px-3 py-2"
+            style={{
+              boxShadow: '0 0 15px hsl(var(--neon-orange))',
+            }}
+          >
+            <Rss size={16} />
+            Subscribe to RSS Feed
+          </a>
+        </div>
 
         {/* Title */}
         <div className="text-center mb-12">
-          <div 
-            className="pixel-text text-6xl mb-4"
+          <Link 
+            to="/changelog"
+            className="pixel-text text-6xl mb-4 inline-block cursor-pointer hover:scale-105 transition-transform"
             style={{
               background: 'linear-gradient(180deg, hsl(120, 100%, 50%) 0%, hsl(51, 100%, 50%) 50%, hsl(120, 100%, 50%) 100%)',
               WebkitBackgroundClip: 'text',
@@ -42,14 +58,57 @@ const Changelog = () => {
             }}
           >
             CHANGELOG
-          </div>
+          </Link>
           <div className="pixel-text text-xl text-neon-cyan">
-            Version History & Updates
+            Version History &amp; Updates
           </div>
         </div>
 
         {/* Changelog Entries */}
         <div className="space-y-8">
+          {/* Version 1.2.0 */}
+          <div className="hud-panel p-6 border-4 border-neon-green">
+            <div className="flex items-center justify-between mb-4">
+              <div className="pixel-text text-3xl text-neon-green">
+                v1.2.0
+              </div>
+              <div className="pixel-text text-sm text-muted-foreground">
+                December 2025
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <div className="pixel-text text-lg text-neon-cyan mb-2">✨ NEW FEATURES</div>
+                <ul className="pixel-text text-sm text-foreground space-y-1 list-disc list-inside">
+                  <li>Screen shake effects with intensity based on explosion type</li>
+                  <li>Camera zoom effect on big explosions and boss kills</li>
+                  <li>Slow-motion effect for critical hits and boss destruction</li>
+                  <li>Combo kill slow-motion triggers every 5th consecutive kill</li>
+                </ul>
+              </div>
+
+              <div>
+                <div className="pixel-text text-lg text-neon-purple mb-2">✨ IMPROVEMENTS</div>
+                <ul className="pixel-text text-sm text-foreground space-y-1 list-disc list-inside">
+                  <li>Bomb explosions now trigger stronger visual feedback than regular hits</li>
+                  <li>Smooth easing curves for natural visual transitions</li>
+                  <li>Effects combine properly for maximum cinematic impact</li>
+                </ul>
+              </div>
+
+              <div>
+                <div className="pixel-text text-lg text-neon-orange mb-2">🎬 VISUAL EXPERIENCE</div>
+                <ul className="pixel-text text-sm text-foreground space-y-1 list-disc list-inside">
+                  <li>Dramatic slow-motion on Mega Boss destruction</li>
+                  <li>Camera zooms into explosion epicenters</li>
+                  <li>Enhanced screen shake makes combat feel powerful</li>
+                  <li>More immersive gameplay feedback overall</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
           {/* Version 1.1.0 */}
           <div className="hud-panel p-6 border-4 border-neon-cyan">
             <div className="flex items-center justify-between mb-4">

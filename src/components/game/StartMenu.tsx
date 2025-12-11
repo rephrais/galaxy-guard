@@ -432,7 +432,7 @@ export const StartMenu: React.FC<StartMenuProps> = ({
              style={{
                textShadow: '0 0 10px rgba(255,255,255,0.3)'
              }}>
-          Created with ❤️ by AJ Batac (@ajbatac) - <Link to="/changelog" className="text-neon-yellow hover:text-neon-cyan transition-colors" style={{ textShadow: '0 0 10px hsl(var(--neon-yellow))' }}>v1.1.0</Link> (<Link to="/changelog" className="text-neon-cyan hover:text-neon-yellow transition-colors" style={{ textShadow: '0 0 10px hsl(var(--neon-cyan))' }}>changelog</Link>)
+          Created with ❤️ by AJ Batac (@ajbatac) - <Link to="/changelog" className="text-neon-yellow hover:text-neon-cyan transition-colors" style={{ textShadow: '0 0 10px hsl(var(--neon-yellow))' }}>v1.2.0</Link> (<Link to="/changelog" className="text-neon-cyan hover:text-neon-yellow transition-colors" style={{ textShadow: '0 0 10px hsl(var(--neon-cyan))' }}>changelog</Link>)
         </div>
       </div>
     </div>

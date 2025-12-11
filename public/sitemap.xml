@@ -7,7 +7,7 @@
   <!-- Home Page -->
   <url>
     <loc>https://lovable.dev/projects/9dbf25c6-9d71-4891-91e3-53cf0610622f/</loc>
-    <lastmod>2025-11-07</lastmod>
+    <lastmod>2025-12-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -15,9 +15,17 @@
   <!-- Changelog Page -->
   <url>
     <loc>https://lovable.dev/projects/9dbf25c6-9d71-4891-91e3-53cf0610622f/changelog</loc>
-    <lastmod>2025-11-07</lastmod>
+    <lastmod>2025-12-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+
+  <!-- RSS Feed -->
+  <url>
+    <loc>https://lovable.dev/projects/9dbf25c6-9d71-4891-91e3-53cf0610622f/changelog/rss</loc>
+    <lastmod>2025-12-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
 
 </urlset>

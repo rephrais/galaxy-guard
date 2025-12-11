@@ -1,15 +1,16 @@
 # Galaxy Guard - Epic Arcade Space Shooter
 
-An immersive retro arcade-style space shooter game featuring vibrant neon graphics, intense boss battles, and infinite gameplay progression.
+An immersive retro arcade-style space shooter game featuring vibrant neon graphics, intense boss battles, cinematic visual effects, and infinite gameplay progression.
 
 ## Overview
 
-Galaxy Guard is a modern take on classic arcade space shooters, built with React and TypeScript. Pilot your spaceship through endless waves of enemies, face challenging bosses every minute, and climb the leaderboard while enjoying a nostalgic pixel-perfect aesthetic.
+Galaxy Guard is a modern take on classic arcade space shooters, built with React and TypeScript. Pilot your spaceship through endless waves of enemies, face challenging bosses every minute, experience cinematic slow-motion and screen shake effects, and climb the leaderboard while enjoying a nostalgic pixel-perfect aesthetic.
 
 ## Key Features
 
 - **Infinite Gameplay**: 100 progressively challenging levels with endless replayability
 - **Boss Battles**: Face unique boss encounters every minute with distinct visual themes
+- **Cinematic Effects**: Screen shake, camera zoom, and slow-motion on critical hits
 - **Ammo System**: Strategic resource management with ammo rewards for defeating enemies
 - **Leaderboard**: Compete globally with integrated high score tracking
 - **Save/Load**: Continue your progress anytime with local game saves
@@ -75,7 +76,7 @@ Connect your own domain via Project > Settings > Domains. [Learn more](https://d
 
 ## Version
 
-Current version: **v1.1.0**
+Current version: **v1.2.0**
 
 See [CHANGELOG.md](CHANGELOG.md) for version history and technical details.
 
