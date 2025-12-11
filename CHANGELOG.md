@@ -4,6 +4,83 @@ Internal technical documentation of all changes, updates, and fixes.
 
 ---
 
+## [v1.2.0] - December 10, 2025
+
+### Cinematic Visual Effects System
+
+**Summary**: Added immersive screen shake, camera zoom, and slow-motion effects to enhance gameplay impact during explosions and critical hits.
+
+#### Technical Changes
+
+**1. Screen Shake System - Differentiated Intensity**
+- **File**: `src/hooks/useGameEngine.ts`
+- **Lines**: Collision detection blocks (multiple locations)
+- **Changes**:
+  - Modified `triggerScreenShake` calls to differentiate bomb explosions from regular hits
+  - Bomb-induced shakes: 0.4-0.75 intensity, 200-400ms duration
+  - Regular projectile shakes: 0.15-0.5 intensity, 100-250ms duration
+  - Applied to: rockets, saucers, aliens, crawling aliens, trees, boss rockets, mega boss
+
+**2. Camera Zoom Effect**
+- **File**: `src/types/game.ts`
+- **Lines**: New `ScreenZoom` interface added
+- **Interface**: `{ scale: number, startTime: number, duration: number, centerX: number, centerY: number }`
+- **File**: `src/hooks/useGameEngine.ts`
+- **Lines**: `triggerScreenZoom` helper function
+- **Changes**:
+  - Added `screenZoom: ScreenZoom | null` to `GameState`
+  - Implemented `triggerScreenZoom(scale, duration, centerX, centerY)` function
+  - Priority system: only triggers if no existing zoom or new zoom is larger
+  - Auto-cleanup when duration expires
+- **Zoom triggers**:
+  - Mega Boss destruction: 1.15 scale, 500ms
+  - Boss Rocket (bomb): 1.08 scale, 300ms
+  - Splitter Gen-0 (bomb): 1.06 scale, 250ms
+  - Saucer (bomb): 1.05 scale, 200ms
+- **File**: `src/components/game/GameCanvas.tsx`
+- **Lines**: Rendering loop transformation
+- **Changes**:
+  - Calculate `zoomScale` with ease-out curve for zoom-in, quick zoom-out
+  - Apply `ctx.setTransform` with zoom scale and offset adjustments
+  - Combines with existing shake offsets
+
+**3. Slow-Motion Effect**
+- **File**: `src/types/game.ts`
+- **Lines**: New `SlowMotion` interface added
+- **Interface**: `{ timeScale: number, startTime: number, duration: number }`
+- **File**: `src/hooks/useGameEngine.ts`
+- **Lines**: `triggerSlowMotion` helper and physics scaling
+- **Changes**:
+  - Added `slowMotion: SlowMotion | null` to `GameState`
+  - Implemented `triggerSlowMotion(timeScale, duration)` function
+  - Priority: new slower effects override existing
+  - Applied `timeScale` to all physics:
+    - World scroll speed
+    - Player projectiles
+    - Enemy rockets
+    - Saucer movement/drift
+    - DiveBomber phases
+    - ZigzagFighter patterns
+    - Splitter movement/bounce
+    - Boss/Mega Boss movement
+    - Explosion particles (gravity, fade)
+    - Power-up movement
+    - CrawlingAlien horizontal movement
+    - TrailParticle fading/drift
+- **Slow-motion triggers**:
+  - Mega Boss destruction: 0.25 timeScale, 800ms
+  - Boss Rocket (bomb): 0.4 timeScale, 400ms
+  - Boss Rocket (regular): 0.5 timeScale, 300ms
+  - Every 5th combo kill: 0.5 timeScale, 250ms
+
+#### Architecture Improvements
+- Unified effect system with priority handling
+- Smooth easing curves for natural visual transitions
+- Effects combine properly (shake + zoom + slow-mo)
+- Minimal performance impact through efficient state checks
+
+---
+
 ## [v1.1.0] - November 7, 2025
 
 ### Mobile & Tablet Responsive Improvements
@@ -181,4 +258,4 @@ src/
 ---
 
 **Maintained by**: AJ Batac (@ajbatac)  
-**Last Updated**: November 7, 2025
+**Last Updated**: December 10, 2025
