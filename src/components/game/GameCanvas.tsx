@@ -551,15 +551,22 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
         ctx.restore();
       }
       
-      // Draw ship image (flipped horizontally since image faces left but ship should face right)
+      // Draw ship image maintaining original aspect ratio
       if (shipImageRef.current) {
+        const img = shipImageRef.current;
+        const aspectRatio = img.naturalWidth / img.naturalHeight;
+        
+        // Scale based on height to maintain proportions, use size.y as reference
+        const drawHeight = size.y;
+        const drawWidth = drawHeight * aspectRatio;
+        
         ctx.save();
         ctx.translate(position.x + size.x / 2, position.y + size.y / 2);
-        ctx.scale(-1, 1); // Flip horizontally
+        ctx.scale(-1, 1); // Flip horizontally since image faces left
         ctx.drawImage(
-          shipImageRef.current,
-          -size.x / 2, -size.y / 2,
-          size.x, size.y
+          img,
+          -drawWidth / 2, -drawHeight / 2,
+          drawWidth, drawHeight
         );
         ctx.restore();
       }
