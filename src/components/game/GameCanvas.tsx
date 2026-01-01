@@ -21,6 +21,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
   const shipImageRef = useRef<HTMLImageElement | null>(null);
   const critterImageRef = useRef<HTMLImageElement | null>(null);
   const bossImageRef = useRef<HTMLImageElement | null>(null);
+  const boss2ImageRef = useRef<HTMLImageElement | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: settings.width, height: settings.height });
   const [stars] = useState<Star[]>(() => {
     // Initialize 200 random stars
@@ -56,12 +57,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
     };
   }, []);
 
-  // Load boss image
+  // Load boss images
   useEffect(() => {
-    const img = new Image();
-    img.src = '/images/boss1.png';
-    img.onload = () => {
-      bossImageRef.current = img;
+    const img1 = new Image();
+    img1.src = '/images/boss1.png';
+    img1.onload = () => {
+      bossImageRef.current = img1;
+    };
+    
+    const img2 = new Image();
+    img2.src = '/images/boss2.png';
+    img2.onload = () => {
+      boss2ImageRef.current = img2;
     };
   }, []);
 
@@ -1164,20 +1171,23 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       const screenX = gameState.boss.position.x - gameState.scrollOffset;
       
       if (screenX > -500 && screenX < settings.width + 100) {
-        const { position, size, health, maxHealth } = gameState.boss;
+        const { position, size, health, maxHealth, id } = gameState.boss;
         
         ctx.save();
         
+        // Alternate boss sprite based on boss number (extracted from id)
+        const bossNumber = parseInt(id.split('-').pop() || '1');
+        const bossImage = bossNumber % 2 === 0 ? boss2ImageRef.current : bossImageRef.current;
+        
         // Draw boss sprite maintaining aspect ratio
-        if (bossImageRef.current) {
-          const img = bossImageRef.current;
-          const aspectRatio = img.naturalWidth / img.naturalHeight;
+        if (bossImage) {
+          const aspectRatio = bossImage.naturalWidth / bossImage.naturalHeight;
           const drawHeight = size.y * 1.2;
           const drawWidth = drawHeight * aspectRatio;
           
           ctx.imageSmoothingEnabled = false;
           ctx.drawImage(
-            img,
+            bossImage,
             screenX + size.x / 2 - drawWidth / 2,
             position.y + size.y - drawHeight,
             drawWidth,
