@@ -106,7 +106,7 @@ export const useGameEngine = () => {
       id: 'player',
       position: { x: 100, y: 300 },
       velocity: { x: 0, y: 0 },
-      size: { x: 80, y: 40 },
+      size: { x: 120, y: 60 },
       active: true,
       health: 100,
       maxHealth: 100,

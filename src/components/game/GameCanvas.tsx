@@ -39,7 +39,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
   // Load ship image
   useEffect(() => {
     const img = new Image();
-    img.src = '/images/ship.png';
+    // Cache-bust to ensure the latest uploaded sprite is used
+    img.src = '/images/ship.png?v=2';
     img.onload = () => {
       shipImageRef.current = img;
     };
@@ -555,19 +556,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       if (shipImageRef.current) {
         const img = shipImageRef.current;
         const aspectRatio = img.naturalWidth / img.naturalHeight;
-        
-        // Scale based on height to maintain proportions, use size.y as reference
-        const drawHeight = size.y;
+
+        // Scale based on height to maintain proportions (larger for visibility)
+        const drawHeight = size.y * 2.2;
         const drawWidth = drawHeight * aspectRatio;
-        
+
         ctx.save();
+        ctx.imageSmoothingEnabled = false;
         ctx.translate(position.x + size.x / 2, position.y + size.y / 2);
-        ctx.scale(-1, 1); // Flip horizontally since image faces left
-        ctx.drawImage(
-          img,
-          -drawWidth / 2, -drawHeight / 2,
-          drawWidth, drawHeight
-        );
+        ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
         ctx.restore();
       }
       
