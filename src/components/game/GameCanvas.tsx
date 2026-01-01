@@ -19,6 +19,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const shipImageRef = useRef<HTMLImageElement | null>(null);
+  const critterImageRef = useRef<HTMLImageElement | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: settings.width, height: settings.height });
   const [stars] = useState<Star[]>(() => {
     // Initialize 200 random stars
@@ -39,10 +40,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
   // Load ship image
   useEffect(() => {
     const img = new Image();
-    // Cache-bust to ensure the latest uploaded sprite is used
     img.src = '/images/ship.png?v=2';
     img.onload = () => {
       shipImageRef.current = img;
+    };
+  }, []);
+
+  // Load critter image
+  useEffect(() => {
+    const img = new Image();
+    img.src = '/images/critter1.png';
+    img.onload = () => {
+      critterImageRef.current = img;
     };
   }, []);
 
@@ -863,39 +872,24 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       
       const { position, size, health } = crawlingAlien;
       
-      // Draw spider-like crawling alien body
-      ctx.fillStyle = '#cc4400';
-      ctx.fillRect(screenX + 5, position.y + 5, size.x - 10, size.y - 10);
-      
-      // Draw head with mandibles
-      ctx.fillStyle = '#ff5500';
-      ctx.fillRect(screenX, position.y, 10, 8);
-      
-      // Draw eyes (glowing red)
-      ctx.fillStyle = '#ff0000';
-      ctx.fillRect(screenX + 2, position.y + 2, 2, 2);
-      ctx.fillRect(screenX + 6, position.y + 2, 2, 2);
-      
-      // Draw multiple legs (spider-like)
-      ctx.fillStyle = '#883300';
-      for (let i = 0; i < 6; i++) {
-        const legX = screenX + 5 + i * 4;
-        const legYOffset = i % 2 === 0 ? 0 : 3;
-        // Upper leg
-        ctx.fillRect(legX, position.y + size.y - 5 + legYOffset, 2, 5);
-        // Lower leg
-        ctx.fillRect(legX - 1, position.y + size.y + legYOffset, 1, 4);
+      // Draw critter sprite maintaining aspect ratio
+      if (critterImageRef.current) {
+        const img = critterImageRef.current;
+        const aspectRatio = img.naturalWidth / img.naturalHeight;
+        const drawHeight = size.y * 2;
+        const drawWidth = drawHeight * aspectRatio;
+        
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(
+          img,
+          screenX + size.x / 2 - drawWidth / 2,
+          position.y + size.y - drawHeight,
+          drawWidth,
+          drawHeight
+        );
+        ctx.restore();
       }
-      
-      // Draw fire cannon on back
-      ctx.fillStyle = '#666666';
-      ctx.fillRect(screenX + size.x / 2 - 3, position.y, 6, 8);
-      
-      // Flame tip
-      const time = Date.now() * 0.01;
-      const flameSize = 2 + Math.sin(time * 3) * 1;
-      ctx.fillStyle = '#ff6600';
-      ctx.fillRect(screenX + size.x / 2 - 1, position.y - flameSize, 2, flameSize);
       
       // Health bar above crawling alien
       if (health < 60 + gameState.level * 15) {
