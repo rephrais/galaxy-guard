@@ -18,6 +18,7 @@ interface Star {
 export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const shipImageRef = useRef<HTMLImageElement | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: settings.width, height: settings.height });
   const [stars] = useState<Star[]>(() => {
     // Initialize 200 random stars
@@ -34,6 +35,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
     }
     return starArray;
   });
+
+  // Load ship image
+  useEffect(() => {
+    const img = new Image();
+    img.src = '/images/ship.png';
+    img.onload = () => {
+      shipImageRef.current = img;
+    };
+  }, []);
 
   // Handle responsive canvas sizing
   useEffect(() => {
@@ -541,49 +551,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
         ctx.restore();
       }
       
-      const pixelSize = 2; // Scale up the pixel art
-      
-      // Define the pixel art pattern matching the reference image
-      const spaceshipPattern = [
-        // Detailed pixel art spaceship (32x16)
-        '                                ',
-        '                                ',
-        '                    RRRR        ',
-        '                 RRROOOO        ',
-        '               RRROOOOOOO       ',
-        '             RRROOOOOOOOOO      ',
-        '           GRRROOOGGGOOOOOOB    ',
-        '         GRRROOOOGGGGOOOOOOBB   ',
-        '       GGRRROOOOGGGGGOOOOOOBBBB ',
-        '     GGRRRROOOOGGGGGGOOOOOOBBBBB',
-        '   GGRRRROOOOGGGGGGGGOOOOOOBBBB ',
-        ' GGRRRROOOOGGGGGGGGGGOOOOOOOBB  ',
-        'GRRROOOOGGGGGGGGGGGGGOOOOOOB    ',
-        '  RROOGGGGGGGGGGGGGGOOOOOO      ',
-        '    GGGGGGGGGGGGGGOOOO          ',
-        '      GGGGGGGGGGOO              '
-      ];
-      
-      // Color mapping for realistic spaceship colors
-      const colors: { [key: string]: string } = {
-        'G': '#666666', // Dark gray for cockpit/body
-        'O': '#ff8800', // Orange for main body
-        'R': '#ff4400', // Red-orange for wing tips  
-        'B': '#0099ff', // Blue for engines
-        ' ': 'transparent'
-      };
-      
-      // Draw the pixel art spaceship
-      for (let row = 0; row < spaceshipPattern.length; row++) {
-        for (let col = 0; col < spaceshipPattern[row].length; col++) {
-          const pixel = spaceshipPattern[row][col];
-          if (pixel !== ' ') {
-            ctx.fillStyle = colors[pixel];
-            const x = position.x + col * pixelSize;
-            const y = position.y + row * pixelSize;
-            ctx.fillRect(x, y, pixelSize, pixelSize);
-          }
-        }
+      // Draw ship image (flipped horizontally since image faces left but ship should face right)
+      if (shipImageRef.current) {
+        ctx.save();
+        ctx.translate(position.x + size.x / 2, position.y + size.y / 2);
+        ctx.scale(-1, 1); // Flip horizontally
+        ctx.drawImage(
+          shipImageRef.current,
+          -size.x / 2, -size.y / 2,
+          size.x, size.y
+        );
+        ctx.restore();
       }
       
       // Health indicator
