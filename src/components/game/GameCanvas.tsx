@@ -20,6 +20,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
   const containerRef = useRef<HTMLDivElement>(null);
   const shipImageRef = useRef<HTMLImageElement | null>(null);
   const critterImageRef = useRef<HTMLImageElement | null>(null);
+  const bossImageRef = useRef<HTMLImageElement | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: settings.width, height: settings.height });
   const [stars] = useState<Star[]>(() => {
     // Initialize 200 random stars
@@ -52,6 +53,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
     img.src = '/images/critter1.png';
     img.onload = () => {
       critterImageRef.current = img;
+    };
+  }, []);
+
+  // Load boss image
+  useEffect(() => {
+    const img = new Image();
+    img.src = '/images/boss1.png';
+    img.onload = () => {
+      bossImageRef.current = img;
     };
   }, []);
 
@@ -1154,124 +1164,25 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       const screenX = gameState.boss.position.x - gameState.scrollOffset;
       
       if (screenX > -500 && screenX < settings.width + 100) {
-        const { position, size, health, maxHealth, tentacles, id } = gameState.boss;
+        const { position, size, health, maxHealth } = gameState.boss;
         
         ctx.save();
         
-        // Determine boss color based on ID (different color each minute)
-        const bossNumber = parseInt(id.split('-').pop() || '1');
-        const bossColors = [
-          { body: '#333333', tentacle: '#2d5a2d', tentacleDark: '#1a3a1a', accent: '#00ff00' }, // Green
-          { body: '#442222', tentacle: '#5a2d2d', tentacleDark: '#3a1a1a', accent: '#ff0000' }, // Red
-          { body: '#222244', tentacle: '#2d2d5a', tentacleDark: '#1a1a3a', accent: '#0000ff' }, // Blue
-          { body: '#443322', tentacle: '#5a4d2d', tentacleDark: '#3a2a1a', accent: '#ffaa00' }, // Orange
-          { body: '#442244', tentacle: '#5a2d5a', tentacleDark: '#3a1a3a', accent: '#ff00ff' }, // Purple
-          { body: '#224444', tentacle: '#2d5a5a', tentacleDark: '#1a3a3a', accent: '#00ffff' }, // Cyan
-        ];
-        const colorScheme = bossColors[(bossNumber - 1) % bossColors.length];
-        
-        // Draw tentacles first (behind body)
-        tentacles.forEach((tentacle, i) => {
-          const baseX = screenX + size.x / 2;
-          const baseY = position.y + size.y / 2;
-          const endX = baseX + Math.cos(tentacle.angle) * tentacle.length;
-          const endY = baseY + Math.sin(tentacle.angle) * tentacle.length;
+        // Draw boss sprite maintaining aspect ratio
+        if (bossImageRef.current) {
+          const img = bossImageRef.current;
+          const aspectRatio = img.naturalWidth / img.naturalHeight;
+          const drawHeight = size.y * 1.2;
+          const drawWidth = drawHeight * aspectRatio;
           
-          // Tentacle gradient
-          const gradient = ctx.createLinearGradient(baseX, baseY, endX, endY);
-          gradient.addColorStop(0, colorScheme.tentacle);
-          gradient.addColorStop(1, colorScheme.tentacleDark);
-          
-          ctx.strokeStyle = gradient;
-          ctx.lineWidth = 15 - i * 1.5;
-          ctx.lineCap = 'round';
-          
-          // Draw wavy tentacle
-          ctx.beginPath();
-          ctx.moveTo(baseX, baseY);
-          
-          const segments = 5;
-          for (let j = 1; j <= segments; j++) {
-            const t = j / segments;
-            const x = baseX + (endX - baseX) * t;
-            const y = baseY + (endY - baseY) * t + Math.sin(Date.now() * 0.005 + i + j) * 10;
-            ctx.lineTo(x, y);
-          }
-          
-          ctx.stroke();
-          
-          // Tentacle tip
-          ctx.fillStyle = '#ff4400';
-          ctx.beginPath();
-          ctx.arc(endX, endY + Math.sin(Date.now() * 0.005 + i + segments) * 10, 8, 0, Math.PI * 2);
-          ctx.fill();
-        });
-        
-        // Main robot body - massive mechanical structure
-        ctx.fillStyle = colorScheme.body;
-        ctx.fillRect(screenX, position.y, size.x, size.y);
-        
-        // Robot head/cockpit
-        ctx.fillStyle = '#555555';
-        ctx.fillRect(screenX + size.x * 0.3, position.y + 20, size.x * 0.4, size.y * 0.25);
-        
-        // Eyes - glowing red
-        const eyeGlow = ctx.createRadialGradient(screenX + size.x * 0.4, position.y + 80, 0, screenX + size.x * 0.4, position.y + 80, 20);
-        eyeGlow.addColorStop(0, '#ff0000');
-        eyeGlow.addColorStop(1, 'transparent');
-        ctx.fillStyle = eyeGlow;
-        ctx.beginPath();
-        ctx.arc(screenX + size.x * 0.4, position.y + 80, 20, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.fillStyle = eyeGlow;
-        ctx.beginPath();
-        ctx.arc(screenX + size.x * 0.6, position.y + 80, 20, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Core eyes
-        ctx.fillStyle = '#ff0000';
-        ctx.fillRect(screenX + size.x * 0.4 - 5, position.y + 75, 10, 10);
-        ctx.fillRect(screenX + size.x * 0.6 - 5, position.y + 75, 10, 10);
-        
-        // Armor plates
-        ctx.fillStyle = '#444444';
-        for (let i = 0; i < 4; i++) {
-          ctx.fillRect(screenX + 15, position.y + 150 + i * 60, size.x - 30, 40);
-        }
-        
-        // Weapon systems - multiple cannons
-        ctx.fillStyle = '#222222';
-        for (let i = 0; i < 5; i++) {
-          const cannonY = position.y + 150 + i * 50;
-          ctx.fillRect(screenX + 30, cannonY, 40, 15);
-          
-          // Cannon glow
-          ctx.fillStyle = '#ff6600';
-          ctx.fillRect(screenX + 70, cannonY + 5, 10, 5);
-        }
-        ctx.fillStyle = '#222222';
-        
-        // Energy core with boss color
-        const coreGradient = ctx.createRadialGradient(
-          screenX + size.x / 2, position.y + size.y * 0.6, 0,
-          screenX + size.x / 2, position.y + size.y * 0.6, 40
-        );
-        coreGradient.addColorStop(0, colorScheme.accent);
-        coreGradient.addColorStop(0.5, colorScheme.tentacle);
-        coreGradient.addColorStop(1, colorScheme.tentacleDark);
-        
-        ctx.fillStyle = coreGradient;
-        ctx.beginPath();
-        ctx.arc(screenX + size.x / 2, position.y + size.y * 0.6, 30 + Math.sin(Date.now() * 0.01) * 5, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Rivets and details
-        ctx.fillStyle = '#666666';
-        for (let i = 0; i < 20; i++) {
-          for (let j = 0; j < 8; j++) {
-            ctx.fillRect(screenX + 10 + i * 12, position.y + 10 + j * 50, 3, 3);
-          }
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(
+            img,
+            screenX + size.x / 2 - drawWidth / 2,
+            position.y + size.y - drawHeight,
+            drawWidth,
+            drawHeight
+          );
         }
         
         // Health bar above boss
