@@ -22,6 +22,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
   const critterImageRef = useRef<HTMLImageElement | null>(null);
   const bossImageRef = useRef<HTMLImageElement | null>(null);
   const boss2ImageRef = useRef<HTMLImageElement | null>(null);
+  const boss3ImageRef = useRef<HTMLImageElement | null>(null);
   const [canvasSize, setCanvasSize] = useState({ width: settings.width, height: settings.height });
   const [stars] = useState<Star[]>(() => {
     // Initialize 200 random stars
@@ -69,6 +70,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
     img2.src = '/images/boss2.png';
     img2.onload = () => {
       boss2ImageRef.current = img2;
+    };
+    
+    const img3 = new Image();
+    img3.src = '/images/boss3.png';
+    img3.onload = () => {
+      boss3ImageRef.current = img3;
     };
   }, []);
 
@@ -1175,9 +1182,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
         
         ctx.save();
         
-        // Alternate boss sprite based on boss number (extracted from id)
+        // Rotate through 3 boss sprites based on boss number
         const bossNumber = parseInt(id.split('-').pop() || '1');
-        const bossImage = bossNumber % 2 === 0 ? boss2ImageRef.current : bossImageRef.current;
+        const bossSprites = [bossImageRef.current, boss2ImageRef.current, boss3ImageRef.current];
+        const bossImage = bossSprites[(bossNumber - 1) % 3];
         
         // Draw boss sprite maintaining aspect ratio
         if (bossImage) {
