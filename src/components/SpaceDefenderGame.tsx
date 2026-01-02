@@ -270,14 +270,17 @@ export const SpaceDefenderGame: React.FC = () => {
       country: selectedCountry,
     };
     addToLeaderboard(entry);
-    
+
     // Clear saved game
     deleteSavedGame();
-    
+
+    // Reset game state so we don't re-trigger GAME OVER flow
+    resetGame();
+
     // Close dialog and show menu
     setShowCountrySelect(false);
     setShowStartMenu(true);
-  }, [playerName, gameState.score, gameState.level, selectedCountry, addToLeaderboard, deleteSavedGame]);
+  }, [playerName, gameState.score, gameState.level, selectedCountry, addToLeaderboard, deleteSavedGame, resetGame]);
 
   // Handle load game
   const handleLoadGame = useCallback(() => {
@@ -393,8 +396,11 @@ export const SpaceDefenderGame: React.FC = () => {
           <div className="aurora-layer-3" />
         </div>
         <div className="hud-panel max-w-2xl w-full mx-4 relative z-10">
-          <div className="pixel-text text-4xl text-center color-splash mb-6">
+          <div className="pixel-text text-4xl text-center color-splash mb-2">
             GAME OVER!
+          </div>
+          <div className="pixel-text text-lg text-center text-neon-cyan mb-4">
+            Player: {playerName}
           </div>
           <div className="pixel-text text-2xl text-center text-score-text mb-8">
             Score: {gameState.score.toLocaleString()}
@@ -468,6 +474,7 @@ export const SpaceDefenderGame: React.FC = () => {
       {/* Game HUD Overlay */}
       <GameHUD 
         gameState={gameState}
+        playerName={playerName}
         onPause={pauseGame}
         onRestart={handleRestart}
         gameAreaDimensions={gameAreaDimensions}

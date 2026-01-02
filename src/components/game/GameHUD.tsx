@@ -3,6 +3,7 @@ import { GameState } from '@/types/game';
 
 interface GameHUDProps {
   gameState: GameState;
+  playerName?: string;
   onPause: () => void;
   onRestart: () => void;
   gameAreaDimensions: {
@@ -14,7 +15,7 @@ interface GameHUDProps {
   };
 }
 
-export const GameHUD: React.FC<GameHUDProps> = ({ gameState, onPause, onRestart, gameAreaDimensions }) => {
+export const GameHUD: React.FC<GameHUDProps> = ({ gameState, playerName, onPause, onRestart, gameAreaDimensions }) => {
   const healthPercent = (gameState.spaceship.health / gameState.spaceship.maxHealth) * 100;
   const [elapsedTime, setElapsedTime] = useState(0);
   
@@ -246,6 +247,11 @@ export const GameHUD: React.FC<GameHUDProps> = ({ gameState, onPause, onRestart,
             <div className="pixel-text text-2xl sm:text-4xl text-danger-red mb-3 sm:mb-4 danger-pulse">
               GAME OVER
             </div>
+            {playerName && (
+              <div className="pixel-text text-sm sm:text-base text-neon-cyan mb-2">
+                PLAYER: {playerName}
+              </div>
+            )}
             <div className="pixel-text text-lg sm:text-xl text-score-text mb-3 sm:mb-4">
               FINAL SCORE: {gameState.score.toLocaleString()}
             </div>
