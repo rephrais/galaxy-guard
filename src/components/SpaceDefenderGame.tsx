@@ -147,7 +147,7 @@ export const SpaceDefenderGame: React.FC = () => {
   const [showStartMenu, setShowStartMenu] = useState(true);
   const [showCountrySelect, setShowCountrySelect] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState('US');
-  const [playerName, setPlayerName] = useState('PLAYER');
+  const [playerName, setPlayerName] = useState('');
   const [currentTaunt, setCurrentTaunt] = useState(TAUNTS[Math.floor(Math.random() * TAUNTS.length)]);
   const [gameAreaDimensions, setGameAreaDimensions] = useState({ scale: 1, offsetX: 0, offsetY: 0, width: 800, height: 600 });
   
@@ -379,8 +379,6 @@ export const SpaceDefenderGame: React.FC = () => {
         onStartGame={handleStartGame}
         onLoadGame={handleLoadGame}
         hasSavedGame={hasSavedGame}
-        playerName={playerName}
-        onPlayerNameChange={setPlayerName}
       />
     );
   }
@@ -396,21 +394,49 @@ export const SpaceDefenderGame: React.FC = () => {
           <div className="aurora-layer-3" />
         </div>
         <div className="hud-panel max-w-2xl w-full mx-4 relative z-10">
-          <div className="pixel-text text-4xl text-center color-splash mb-2">
+          <div className="pixel-text text-4xl text-center color-splash mb-4">
             GAME OVER!
           </div>
-          <div className="pixel-text text-lg text-center text-neon-cyan mb-4">
-            Player: {playerName}
-          </div>
-          <div className="pixel-text text-2xl text-center text-score-text mb-8">
+          <div className="pixel-text text-2xl text-center text-score-text mb-6">
             Score: {gameState.score.toLocaleString()}
           </div>
           
+          {/* Player Name Input */}
+          <div className="mb-6">
+            <label className="pixel-text text-lg text-center text-neon-yellow block mb-2 font-black tracking-wider"
+                   style={{
+                     textShadow: '0 0 15px hsl(var(--neon-yellow)), 1px 1px 0 black'
+                   }}>
+              ✦ ENTER YOUR NAME ✦
+            </label>
+            <input
+              type="text"
+              value={playerName}
+              onChange={(e) => {
+                const value = e.target.value.slice(0, 20).toUpperCase().replace(/[^A-Z0-9 ]/g, '');
+                setPlayerName(value);
+              }}
+              placeholder="YOUR NAME"
+              maxLength={20}
+              className="w-full px-4 py-3 bg-background border-3 border-neon-yellow text-neon-yellow pixel-text text-xl hover:bg-neon-yellow hover:text-black transition-all font-black text-center"
+              style={{
+                boxShadow: '0 0 20px hsl(var(--neon-yellow)), inset 0 0 8px rgba(255,255,0,0.2)',
+                textShadow: '0 0 8px hsl(var(--neon-yellow))'
+              }}
+            />
+            <div className="pixel-text text-xs text-neon-cyan mt-1 text-right"
+                 style={{
+                   textShadow: '0 0 8px hsl(var(--neon-cyan))'
+                 }}>
+              {20 - playerName.length} characters remaining
+            </div>
+          </div>
+          
           <div className="space-y-4 mb-6">
-            <div className="pixel-text text-xl text-center text-neon-cyan">
+            <div className="pixel-text text-lg text-center text-neon-cyan">
               Select Your Country:
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto p-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2">
               {COUNTRIES.map((country) => (
                 <button
                   key={country.code}
@@ -436,10 +462,15 @@ export const SpaceDefenderGame: React.FC = () => {
           <div className="text-center">
             <button
               onClick={handleSubmitScore}
-              className="arcade-button text-xl px-8 py-4 border-3 border-neon-green text-neon-green hover:bg-neon-green hover:text-black"
+              disabled={!playerName.trim()}
+              className={`arcade-button text-xl px-8 py-4 border-3 ${
+                playerName.trim()
+                  ? 'border-neon-green text-neon-green hover:bg-neon-green hover:text-black'
+                  : 'border-muted-foreground text-muted-foreground cursor-not-allowed opacity-50'
+              }`}
               style={{
-                boxShadow: '0 0 30px hsl(var(--neon-green))',
-                animation: 'pulse 1.5s ease-in-out infinite'
+                boxShadow: playerName.trim() ? '0 0 30px hsl(var(--neon-green))' : 'none',
+                animation: playerName.trim() ? 'pulse 1.5s ease-in-out infinite' : 'none'
               }}
             >
               SUBMIT SCORE

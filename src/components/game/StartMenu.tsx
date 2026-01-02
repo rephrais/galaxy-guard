@@ -16,16 +16,12 @@ interface StartMenuProps {
   onStartGame: () => void;
   onLoadGame?: () => void;
   hasSavedGame: boolean;
-  playerName: string;
-  onPlayerNameChange: (name: string) => void;
 }
 
 export const StartMenu: React.FC<StartMenuProps> = ({ 
   onStartGame, 
   onLoadGame, 
-  hasSavedGame,
-  playerName,
-  onPlayerNameChange
+  hasSavedGame
 }) => {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
@@ -329,37 +325,6 @@ export const StartMenu: React.FC<StartMenuProps> = ({
               >
                 ★★ HIGH SCORES ★★
               </button>
-
-              {/* Player Name Input */}
-              <div className="pt-1 sm:pt-2">
-                <label className="pixel-text text-base sm:text-lg md:text-xl text-neon-yellow block mb-1 sm:mb-2 font-black tracking-wider"
-                       style={{
-                         textShadow: '0 0 15px hsl(var(--neon-yellow)), 1px 1px 0 black'
-                       }}>
-                  ✦ PLAYER NAME ✦
-                </label>
-              <input
-                  type="text"
-                  value={playerName}
-                  onChange={(e) => {
-                    const value = e.target.value.slice(0, 20).toUpperCase().replace(/[^A-Z0-9 ]/g, '');
-                    onPlayerNameChange(value || 'PLAYER');
-                  }}
-                  placeholder="PLAYER"
-                  maxLength={20}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-background border-3 sm:border-4 border-neon-yellow text-neon-yellow pixel-text text-base sm:text-lg md:text-xl hover:bg-neon-yellow hover:text-black transition-all font-black text-center"
-                  style={{
-                    boxShadow: '0 0 20px hsl(var(--neon-yellow)), inset 0 0 8px rgba(255,255,0,0.2)',
-                    textShadow: '0 0 8px hsl(var(--neon-yellow))'
-                  }}
-                />
-                <div className="pixel-text text-xs sm:text-sm text-neon-cyan mt-1 text-right"
-                     style={{
-                       textShadow: '0 0 8px hsl(var(--neon-cyan))'
-                     }}>
-                  {20 - playerName.length} characters remaining
-                </div>
-              </div>
 
               {/* Level Dropdown - 80s style */}
               <div className="pt-1 sm:pt-2">
