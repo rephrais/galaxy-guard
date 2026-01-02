@@ -20,6 +20,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
   const containerRef = useRef<HTMLDivElement>(null);
   const shipImageRef = useRef<HTMLImageElement | null>(null);
   const critterImageRef = useRef<HTMLImageElement | null>(null);
+  const saucerImageRef = useRef<HTMLImageElement | null>(null);
   const bossImageRef = useRef<HTMLImageElement | null>(null);
   const boss2ImageRef = useRef<HTMLImageElement | null>(null);
   const boss3ImageRef = useRef<HTMLImageElement | null>(null);
@@ -55,6 +56,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
     img.src = '/images/critter1.png';
     img.onload = () => {
       critterImageRef.current = img;
+    };
+  }, []);
+
+  // Load saucer image
+  useEffect(() => {
+    const img = new Image();
+    img.src = '/images/saucer.png';
+    img.onload = () => {
+      saucerImageRef.current = img;
     };
   }, []);
 
@@ -663,37 +673,23 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       
       const { position, size } = saucer;
       
-      // Draw ellipse saucer
+      // Draw saucer sprite
       ctx.save();
+      ctx.imageSmoothingEnabled = false;
       
-      // Main saucer body (ellipse)
-      ctx.beginPath();
-      ctx.ellipse(screenX + size.x / 2, position.y + size.y / 2, size.x / 2, size.y / 2, 0, 0, Math.PI * 2);
-      ctx.fillStyle = '#cccccc';
-      ctx.fill();
-      ctx.strokeStyle = '#888888';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      
-      // Saucer dome (smaller ellipse on top)
-      ctx.beginPath();
-      ctx.ellipse(screenX + size.x / 2, position.y + size.y / 3, size.x / 3, size.y / 3, 0, 0, Math.PI * 2);
-      ctx.fillStyle = '#eeeeee';
-      ctx.fill();
-      ctx.strokeStyle = '#aaaaaa';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      
-      // Lights around the saucer
-      const time = Date.now() * 0.005;
-      for (let i = 0; i < 6; i++) {
-        const angle = (Math.PI * 2 * i) / 6 + time;
-        const lightX = screenX + size.x / 2 + Math.cos(angle) * (size.x / 2.5);
-        const lightY = position.y + size.y / 2 + Math.sin(angle) * (size.y / 2.5);
+      const saucerImage = saucerImageRef.current;
+      if (saucerImage) {
+        const aspectRatio = saucerImage.width / saucerImage.height;
+        const drawWidth = size.x * 1.3;
+        const drawHeight = drawWidth / aspectRatio;
+        const offsetY = (size.y - drawHeight) / 2;
         
+        ctx.drawImage(saucerImage, screenX, position.y + offsetY, drawWidth, drawHeight);
+      } else {
+        // Fallback ellipse if image not loaded
         ctx.beginPath();
-        ctx.arc(lightX, lightY, 2, 0, Math.PI * 2);
-        ctx.fillStyle = i % 2 === 0 ? '#00ff00' : '#ff00ff';
+        ctx.ellipse(screenX + size.x / 2, position.y + size.y / 2, size.x / 2, size.y / 2, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#cccccc';
         ctx.fill();
       }
       
