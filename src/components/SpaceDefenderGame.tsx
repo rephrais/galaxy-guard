@@ -3,9 +3,11 @@ import { useGameEngine } from '@/hooks/useGameEngine';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useSound } from '@/hooks/useSound';
 import { useBackgroundMusic } from '@/hooks/useBackgroundMusic';
+import { useOrientation } from '@/hooks/useOrientation';
 import { GameCanvas } from '@/components/game/GameCanvas';
 import { GameHUD } from '@/components/game/GameHUD';
 import { StartMenu } from '@/components/game/StartMenu';
+import OrientationPrompt from '@/components/game/OrientationPrompt';
 import { SaveData } from '@/types/game';
 
 const TAUNTS = [
@@ -163,6 +165,12 @@ export const SpaceDefenderGame: React.FC = () => {
   } = useLocalStorage();
   const sounds = useSound();
   const music = useBackgroundMusic();
+  const { isPortrait, isMobile } = useOrientation();
+
+  // Show orientation prompt for mobile users in portrait mode
+  if (isPortrait && isMobile) {
+    return <OrientationPrompt />;
+  }
 
   // Calculate game area dimensions for HUD positioning
   useEffect(() => {
