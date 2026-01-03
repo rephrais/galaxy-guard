@@ -342,3 +342,167 @@ All colors MUST be HSL for perfect arcade aesthetic.
     will-change: transform, opacity;
   }
 }
+
+/* Orientation Prompt Overlay */
+.orientation-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, 
+    hsl(var(--space-black)) 0%,
+    hsl(280 80% 8%) 50%,
+    hsl(var(--space-black)) 100%);
+  backdrop-filter: blur(10px);
+}
+
+.orientation-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.phone-icon-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin-bottom: 2rem;
+}
+
+.phone-icon {
+  width: 60px;
+  height: 100px;
+  border: 4px solid hsl(var(--neon-cyan));
+  border-radius: 8px;
+  background: hsl(var(--space-black));
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  animation: rotate-phone 2s ease-in-out infinite;
+  box-shadow: 
+    0 0 20px hsl(var(--neon-cyan) / 0.5),
+    inset 0 0 15px hsl(var(--neon-cyan) / 0.2);
+}
+
+.phone-screen {
+  position: absolute;
+  inset: 6px;
+  background: linear-gradient(180deg, 
+    hsl(var(--neon-purple) / 0.3) 0%,
+    hsl(var(--neon-cyan) / 0.2) 100%);
+  border-radius: 2px;
+}
+
+.phone-notch {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 3px;
+  background: hsl(var(--neon-cyan));
+  border-radius: 2px;
+}
+
+.rotation-arrow {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  color: hsl(var(--neon-yellow));
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+.rotation-arrow svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 10px hsl(var(--neon-yellow)));
+}
+
+@keyframes rotate-phone {
+  0%, 20% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  40%, 60% {
+    transform: translate(-50%, -50%) rotate(-90deg);
+  }
+  80%, 100% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 10px hsl(var(--neon-yellow)));
+  }
+  50% {
+    opacity: 0.6;
+    filter: drop-shadow(0 0 20px hsl(var(--neon-yellow)));
+  }
+}
+
+.orientation-title {
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: hsl(var(--neon-cyan));
+  text-shadow: 
+    0 0 20px hsl(var(--neon-cyan)),
+    0 0 40px hsl(var(--neon-cyan) / 0.5);
+  margin-bottom: 1rem;
+  animation: text-flicker 3s ease-in-out infinite;
+}
+
+.orientation-subtitle {
+  font-family: 'Courier New', monospace;
+  font-size: 1rem;
+  color: hsl(var(--star-white) / 0.8);
+  max-width: 280px;
+  line-height: 1.5;
+  text-shadow: 0 0 10px hsl(var(--star-white) / 0.3);
+}
+
+@keyframes text-flicker {
+  0%, 100% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  93% {
+    opacity: 0.8;
+  }
+  94% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 0.9;
+  }
+  96% {
+    opacity: 1;
+  }
+}
+
+.orientation-scanlines {
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    hsl(0 0% 0% / 0.03) 2px,
+    hsl(0 0% 0% / 0.03) 4px
+  );
+  pointer-events: none;
+}
