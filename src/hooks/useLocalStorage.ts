@@ -43,14 +43,24 @@ export const useLocalStorage = () => {
 
   const addToLeaderboard = useCallback((entry: LeaderboardEntry) => {
     try {
-      setLeaderboard(prevLeaderboard => {
-        const newLeaderboard = [...prevLeaderboard, entry]
-          .sort((a, b) => b.score - a.score)
-          .slice(0, 10); // Keep top 10
-        
-        localStorage.setItem('spaceship-leaderboard', JSON.stringify(newLeaderboard));
-        return newLeaderboard;
-      });
+      // Ensure name is not empty - use default if needed
+      const sanitizedEntry = {
+        ...entry,
+        name: entry.name?.trim() || 'ANONYMOUS'
+      };
+      
+      // Get current leaderboard directly from localStorage to avoid stale state issues
+      const currentLeaderboard = localStorage.getItem('spaceship-leaderboard');
+      const existingLeaderboard: LeaderboardEntry[] = currentLeaderboard 
+        ? JSON.parse(currentLeaderboard) 
+        : [];
+      
+      const newLeaderboard = [...existingLeaderboard, sanitizedEntry]
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10); // Keep top 10
+      
+      localStorage.setItem('spaceship-leaderboard', JSON.stringify(newLeaderboard));
+      setLeaderboard(newLeaderboard);
     } catch (error) {
       console.error('Failed to save to leaderboard:', error);
     }
