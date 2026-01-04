@@ -299,9 +299,11 @@ export const useGameEngine = () => {
         }
       }
 
-      // Update world scroll - speed increases with level (reduced for better pacing)
+      // Update world scroll - speed increases with level (very gradual for playability)
       // Apply time scale for slow motion effect
-      const currentScrollSpeed = (settings.scrollSpeed + (newState.level - 1) * 0.2) * timeScale;
+      // Level 1: base speed, increases very slowly after
+      const levelSpeedBonus = newState.level <= 3 ? 0 : (newState.level - 3) * 0.1;
+      const currentScrollSpeed = (settings.scrollSpeed + levelSpeedBonus) * timeScale;
       newState.scrollOffset += currentScrollSpeed;
       
       // Generate new terrain if needed (infinite scrolling)
@@ -508,9 +510,12 @@ export const useGameEngine = () => {
         keysRef.current.delete('KeyB'); // Prevent auto-bomb
       }
 
-      // Launch rockets from terrain (adjusted for scroll and difficulty) - capped for performance
-      const rocketFreq = Math.max(800, settings.rocketLaunchFrequency - (newState.level - 1) * 40);
-      const maxRockets = Math.min(5, 3 + Math.floor(newState.level / 2));
+      // Launch rockets from terrain - very gentle scaling for playability
+      // Level 1: 3000ms (very slow), gradually decreases
+      const baseRocketFreq = 3000; // Start slow for level 1
+      const rocketFreq = Math.max(1000, baseRocketFreq - (newState.level - 1) * 150);
+      // Level 1: max 2 rockets, increases slowly
+      const maxRockets = Math.min(6, 1 + Math.floor(newState.level / 2));
       
       if (now - lastRocketLaunchRef.current > rocketFreq && newState.rockets.length < maxRockets) {
         // Find visible terrain points to launch from - broader search range
@@ -565,9 +570,11 @@ export const useGameEngine = () => {
         lastRocketLaunchRef.current = now;
       }
 
-      // Spawn saucers from the right side - capped for performance
-      const saucerFreq = Math.max(4000, 6000 - (newState.level - 1) * 80);
-      const maxSaucers = Math.min(3, 2 + Math.floor(newState.level / 3));
+      // Spawn saucers - start slow, increase gradually
+      // Level 1-2: no saucers! They appear at level 3+
+      const baseSaucerFreq = 10000; // Very slow spawn initially
+      const saucerFreq = Math.max(4000, baseSaucerFreq - (newState.level - 1) * 400);
+      const maxSaucers = Math.min(4, Math.floor(newState.level / 2));
       
       if (now - lastSaucerSpawnRef.current > saucerFreq && newState.saucers.length < maxSaucers) {
         const saucerId = `saucer-${Date.now()}-${Math.random()}`;
@@ -592,9 +599,10 @@ export const useGameEngine = () => {
         lastSaucerSpawnRef.current = now;
       }
 
-      // Spawn aliens on terrain - capped for performance
-      const alienSpawnFreq = 12000;
-      const maxAliens = Math.min(4, 3 + Math.floor(newState.level / 2));
+      // Spawn aliens on terrain - appear at level 2+, capped for performance
+      const baseAlienFreq = 15000; // Very slow at first
+      const alienSpawnFreq = Math.max(6000, baseAlienFreq - (newState.level - 1) * 600);
+      const maxAliens = newState.level < 2 ? 0 : Math.min(4, 1 + Math.floor(newState.level / 3));
       
       if (now - lastAlienSpawnRef.current > alienSpawnFreq && newState.aliens.length < maxAliens) {
         // Find a terrain point to spawn alien on
@@ -625,9 +633,10 @@ export const useGameEngine = () => {
         }
       }
 
-      // Spawn crawling aliens on foreground terrain - capped for performance
-      const crawlingAlienSpawnFreq = 10000;
-      const maxCrawlingAliens = Math.min(3, 2 + Math.floor(newState.level / 3));
+      // Spawn crawling aliens - appear at level 3+, capped for performance
+      const baseCrawlingFreq = 15000;
+      const crawlingAlienSpawnFreq = Math.max(6000, baseCrawlingFreq - (newState.level - 1) * 500);
+      const maxCrawlingAliens = newState.level < 3 ? 0 : Math.min(3, 1 + Math.floor((newState.level - 2) / 3));
       
       if (now - lastCrawlingAlienSpawnRef.current > crawlingAlienSpawnFreq && newState.crawlingAliens.length < maxCrawlingAliens) {
         // Find a foreground terrain point to spawn crawling alien on
@@ -660,10 +669,12 @@ export const useGameEngine = () => {
         }
       }
 
-      const bossSpawnFreq = 10000; // 10 seconds
-      const maxBosses = 1; // Only one boss at a time
+      // Boss rockets appear at level 4+, spawn less frequently at lower levels
+      const baseBossFreq = 25000; // 25 seconds base
+      const bossSpawnFreq = Math.max(10000, baseBossFreq - (newState.level - 4) * 2000);
+      const maxBosses = newState.level < 4 ? 0 : 1; // Only one boss at a time, level 4+
       
-      if (now - lastBossSpawnRef.current > bossSpawnFreq && newState.bossRockets.length < maxBosses) {
+      if (newState.level >= 4 && now - lastBossSpawnRef.current > bossSpawnFreq && newState.bossRockets.length < maxBosses) {
         const bossId = `boss-${Date.now()}-${Math.random()}`;
         const spawnY = settings.height / 2 + (Math.random() - 0.5) * 200; // Center-ish vertical position
         
@@ -685,11 +696,12 @@ export const useGameEngine = () => {
         lastBossSpawnRef.current = now;
       }
 
-      // Spawn Dive Bombers (appear after level 2)
-      const diveBomberSpawnFreq = Math.max(6000, 8000 - (newState.level - 1) * 100);
-      const maxDiveBombers = Math.min(2, 1 + Math.floor(newState.level / 4));
+      // Spawn Dive Bombers (appear at level 5+)
+      const baseDiveFreq = 12000;
+      const diveBomberSpawnFreq = Math.max(5000, baseDiveFreq - (newState.level - 5) * 500);
+      const maxDiveBombers = newState.level < 5 ? 0 : Math.min(2, 1 + Math.floor((newState.level - 4) / 3));
       
-      if (newState.level >= 2 && now - lastDiveBomberSpawnRef.current > diveBomberSpawnFreq && newState.diveBombers.length < maxDiveBombers) {
+      if (newState.level >= 5 && now - lastDiveBomberSpawnRef.current > diveBomberSpawnFreq && newState.diveBombers.length < maxDiveBombers) {
         const diveBomberId = `divebomber-${Date.now()}-${Math.random()}`;
         const spawnY = 50 + Math.random() * 100; // Spawn high
         
@@ -713,11 +725,12 @@ export const useGameEngine = () => {
         lastDiveBomberSpawnRef.current = now;
       }
 
-      // Spawn Zigzag Fighters (appear after level 3)
-      const zigzagSpawnFreq = Math.max(5000, 7000 - (newState.level - 1) * 80);
-      const maxZigzags = Math.min(3, 1 + Math.floor(newState.level / 3));
+      // Spawn Zigzag Fighters (appear at level 6+)
+      const baseZigzagFreq = 10000;
+      const zigzagSpawnFreq = Math.max(4000, baseZigzagFreq - (newState.level - 6) * 400);
+      const maxZigzags = newState.level < 6 ? 0 : Math.min(3, 1 + Math.floor((newState.level - 5) / 3));
       
-      if (newState.level >= 3 && now - lastZigzagFighterSpawnRef.current > zigzagSpawnFreq && newState.zigzagFighters.length < maxZigzags) {
+      if (newState.level >= 6 && now - lastZigzagFighterSpawnRef.current > zigzagSpawnFreq && newState.zigzagFighters.length < maxZigzags) {
         const zigzagId = `zigzag-${Date.now()}-${Math.random()}`;
         const spawnY = 100 + Math.random() * (settings.height - 300);
         
@@ -741,11 +754,12 @@ export const useGameEngine = () => {
         lastZigzagFighterSpawnRef.current = now;
       }
 
-      // Spawn Splitters (appear after level 4)
-      const splitterSpawnFreq = Math.max(8000, 12000 - (newState.level - 1) * 150);
-      const maxSplitters = Math.min(2, 1 + Math.floor(newState.level / 5));
+      // Spawn Splitters (appear at level 7+)
+      const baseSplitterFreq = 15000;
+      const splitterSpawnFreq = Math.max(6000, baseSplitterFreq - (newState.level - 7) * 600);
+      const maxSplitters = newState.level < 7 ? 0 : Math.min(2, 1 + Math.floor((newState.level - 6) / 4));
       
-      if (newState.level >= 4 && now - lastSplitterSpawnRef.current > splitterSpawnFreq && newState.splitters.filter(s => s.generation === 0).length < maxSplitters) {
+      if (newState.level >= 7 && now - lastSplitterSpawnRef.current > splitterSpawnFreq && newState.splitters.filter(s => s.generation === 0).length < maxSplitters) {
         const splitterId = `splitter-${Date.now()}-${Math.random()}`;
         const spawnY = 150 + Math.random() * (settings.height - 400);
         
