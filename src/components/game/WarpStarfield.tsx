@@ -376,13 +376,19 @@ export const WarpStarfield: React.FC = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed z-0 pointer-events-none"
+      className="pointer-events-none"
       style={{ 
-        background: '#000003',
+        position: 'fixed',
         top: 0,
         left: 0,
+        right: 0,
+        bottom: 0,
         width: '100vw',
         height: '100vh',
+        margin: 0,
+        padding: 0,
+        background: '#000003',
+        zIndex: 0,
       }}
     />
   );
