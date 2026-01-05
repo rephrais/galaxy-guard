@@ -598,11 +598,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({ gameState, settings }) =
       // Draw ship image maintaining original aspect ratio
       if (shipImageRef.current) {
         const img = shipImageRef.current;
-        const aspectRatio = img.naturalWidth / img.naturalHeight;
-
-        // Scale based on height to maintain proportions (larger for visibility)
-        const drawHeight = size.y * 2.2;
-        const drawWidth = drawHeight * aspectRatio;
+        
+        // Use the image's natural dimensions exactly as uploaded
+        const drawWidth = img.naturalWidth;
+        const drawHeight = img.naturalHeight;
 
         ctx.save();
         ctx.imageSmoothingEnabled = false;
