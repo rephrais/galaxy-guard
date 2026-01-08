@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Boss, Tree, CrawlingAlien, PowerUp, TrailParticle, ScreenShake, ScreenFlash, ComboState, ScorePopup, DiveBomber, ZigzagFighter, Splitter } from '@/types/game';
+import { GameState, GameSettings, Vector2, Rocket, Projectile, TerrainPoint, TerrainLayers, Explosion, ExplosionParticle, Saucer, Alien, BossRocket, Boss, Tree, CrawlingAlien, PowerUp, TrailParticle, ScreenShake, ScreenFlash, ComboState, ScorePopup, DiveBomber, ZigzagFighter, Splitter, Difficulty, DIFFICULTY_PRESETS } from '@/types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
   width: 1200,
@@ -10,6 +10,10 @@ const DEFAULT_SETTINGS: GameSettings = {
   rocketLaunchFrequency: 1200, // milliseconds - more frequent
   rocketSpeed: 4,
 };
+
+interface UseGameEngineOptions {
+  difficulty?: Difficulty;
+}
 
 // Generate infinite terrain segments with improved detail
 const generateTerrainSegment = (startX: number, segmentWidth: number = 1200): TerrainLayers => {
@@ -92,7 +96,13 @@ const maybeSpawnPowerUp = (x: number, y: number, powerUps: PowerUp[]) => {
   }
 };
 
-export const useGameEngine = () => {
+export const useGameEngine = (options: UseGameEngineOptions = {}) => {
+  const { difficulty = 'normal' } = options;
+  const difficultySettings = DIFFICULTY_PRESETS[difficulty];
+  
+  // Apply difficulty to initial health
+  const initialHealth = Math.floor(100 * difficultySettings.healthMultiplier);
+  
   const [gameState, setGameState] = useState<GameState>({
     isPlaying: false,
     isPaused: false,
@@ -108,8 +118,8 @@ export const useGameEngine = () => {
       velocity: { x: 0, y: 0 },
       size: { x: 120, y: 60 },
       active: true,
-      health: 100,
-      maxHealth: 100,
+      health: initialHealth,
+      maxHealth: initialHealth,
       ammunition: 1000,
       bombs: 5,
     },
@@ -136,6 +146,10 @@ export const useGameEngine = () => {
     combo: { count: 0, multiplier: 1, lastKillTime: 0, comboTimeout: 2000 },
     scorePopups: [],
   });
+  
+  // Store difficulty settings in a ref for use in game loop
+  const difficultyRef = useRef(difficultySettings);
+  difficultyRef.current = difficultySettings;
 
   const [settings] = useState<GameSettings>(DEFAULT_SETTINGS);
   const gameLoopRef = useRef<number>();
@@ -375,8 +389,9 @@ export const useGameEngine = () => {
       const hitBottomEdge = newState.spaceship.position.y >= settings.height - newState.spaceship.size.y;
       
       if (hitLeftEdge || hitRightEdge || hitTopEdge || hitBottomEdge) {
-        // Damage spaceship for hitting edges
-        newState.spaceship.health -= 50;
+        // Damage spaceship for hitting edges (apply difficulty damage multiplier)
+        const edgeDamage = Math.floor(50 * difficultyRef.current.damageMultiplier);
+        newState.spaceship.health -= edgeDamage;
         triggerScreenShake(0.3, 150);
         triggerScreenFlash('#ff0000', 0.4, 150);
         
@@ -512,8 +527,9 @@ export const useGameEngine = () => {
 
       // Launch rockets from terrain - very gentle scaling for playability
       // Level 1: 3000ms (very slow), gradually decreases
+      // Apply difficulty spawn rate multiplier (higher = faster spawns = harder)
       const baseRocketFreq = 3000; // Start slow for level 1
-      const rocketFreq = Math.max(1000, baseRocketFreq - (newState.level - 1) * 150);
+      const rocketFreq = Math.max(1000, (baseRocketFreq - (newState.level - 1) * 150) / difficultyRef.current.spawnRateMultiplier);
       // Level 1: max 2 rockets, increases slowly
       const maxRockets = Math.min(6, 1 + Math.floor(newState.level / 2));
       
@@ -573,7 +589,7 @@ export const useGameEngine = () => {
       // Spawn saucers - start slow, increase gradually
       // Level 1-2: no saucers! They appear at level 3+
       const baseSaucerFreq = 10000; // Very slow spawn initially
-      const saucerFreq = Math.max(4000, baseSaucerFreq - (newState.level - 1) * 400);
+      const saucerFreq = Math.max(4000, (baseSaucerFreq - (newState.level - 1) * 400) / difficultyRef.current.spawnRateMultiplier);
       const maxSaucers = Math.min(4, Math.floor(newState.level / 2));
       
       if (now - lastSaucerSpawnRef.current > saucerFreq && newState.saucers.length < maxSaucers) {
@@ -601,7 +617,7 @@ export const useGameEngine = () => {
 
       // Spawn aliens on terrain - appear at level 2+, capped for performance
       const baseAlienFreq = 15000; // Very slow at first
-      const alienSpawnFreq = Math.max(6000, baseAlienFreq - (newState.level - 1) * 600);
+      const alienSpawnFreq = Math.max(6000, (baseAlienFreq - (newState.level - 1) * 600) / difficultyRef.current.spawnRateMultiplier);
       const maxAliens = newState.level < 2 ? 0 : Math.min(4, 1 + Math.floor(newState.level / 3));
       
       if (now - lastAlienSpawnRef.current > alienSpawnFreq && newState.aliens.length < maxAliens) {
@@ -635,7 +651,7 @@ export const useGameEngine = () => {
 
       // Spawn crawling aliens - appear at level 3+, capped for performance
       const baseCrawlingFreq = 15000;
-      const crawlingAlienSpawnFreq = Math.max(6000, baseCrawlingFreq - (newState.level - 1) * 500);
+      const crawlingAlienSpawnFreq = Math.max(6000, (baseCrawlingFreq - (newState.level - 1) * 500) / difficultyRef.current.spawnRateMultiplier);
       const maxCrawlingAliens = newState.level < 3 ? 0 : Math.min(3, 1 + Math.floor((newState.level - 2) / 3));
       
       if (now - lastCrawlingAlienSpawnRef.current > crawlingAlienSpawnFreq && newState.crawlingAliens.length < maxCrawlingAliens) {
@@ -671,7 +687,7 @@ export const useGameEngine = () => {
 
       // Boss rockets appear at level 4+, spawn less frequently at lower levels
       const baseBossFreq = 25000; // 25 seconds base
-      const bossSpawnFreq = Math.max(10000, baseBossFreq - (newState.level - 4) * 2000);
+      const bossSpawnFreq = Math.max(10000, (baseBossFreq - (newState.level - 4) * 2000) / difficultyRef.current.spawnRateMultiplier);
       const maxBosses = newState.level < 4 ? 0 : 1; // Only one boss at a time, level 4+
       
       if (newState.level >= 4 && now - lastBossSpawnRef.current > bossSpawnFreq && newState.bossRockets.length < maxBosses) {
@@ -698,7 +714,7 @@ export const useGameEngine = () => {
 
       // Spawn Dive Bombers (appear at level 5+)
       const baseDiveFreq = 12000;
-      const diveBomberSpawnFreq = Math.max(5000, baseDiveFreq - (newState.level - 5) * 500);
+      const diveBomberSpawnFreq = Math.max(5000, (baseDiveFreq - (newState.level - 5) * 500) / difficultyRef.current.spawnRateMultiplier);
       const maxDiveBombers = newState.level < 5 ? 0 : Math.min(2, 1 + Math.floor((newState.level - 4) / 3));
       
       if (newState.level >= 5 && now - lastDiveBomberSpawnRef.current > diveBomberSpawnFreq && newState.diveBombers.length < maxDiveBombers) {
@@ -727,7 +743,7 @@ export const useGameEngine = () => {
 
       // Spawn Zigzag Fighters (appear at level 6+)
       const baseZigzagFreq = 10000;
-      const zigzagSpawnFreq = Math.max(4000, baseZigzagFreq - (newState.level - 6) * 400);
+      const zigzagSpawnFreq = Math.max(4000, (baseZigzagFreq - (newState.level - 6) * 400) / difficultyRef.current.spawnRateMultiplier);
       const maxZigzags = newState.level < 6 ? 0 : Math.min(3, 1 + Math.floor((newState.level - 5) / 3));
       
       if (newState.level >= 6 && now - lastZigzagFighterSpawnRef.current > zigzagSpawnFreq && newState.zigzagFighters.length < maxZigzags) {
@@ -756,7 +772,7 @@ export const useGameEngine = () => {
 
       // Spawn Splitters (appear at level 7+)
       const baseSplitterFreq = 15000;
-      const splitterSpawnFreq = Math.max(6000, baseSplitterFreq - (newState.level - 7) * 600);
+      const splitterSpawnFreq = Math.max(6000, (baseSplitterFreq - (newState.level - 7) * 600) / difficultyRef.current.spawnRateMultiplier);
       const maxSplitters = newState.level < 7 ? 0 : Math.min(2, 1 + Math.floor((newState.level - 6) / 4));
       
       if (newState.level >= 7 && now - lastSplitterSpawnRef.current > splitterSpawnFreq && newState.splitters.filter(s => s.generation === 0).length < maxSplitters) {
@@ -1960,8 +1976,9 @@ export const useGameEngine = () => {
         if (projectile.type !== 'laser' && projectile.type !== 'fireball' && projectile.type !== 'fire') return;
         
         if (projectile.active && checkCollision(projectile, newState.spaceship)) {
-          // Damage spaceship
-          newState.spaceship.health -= projectile.damage;
+          // Damage spaceship (apply difficulty damage multiplier)
+          const damage = Math.floor(projectile.damage * difficultyRef.current.damageMultiplier);
+          newState.spaceship.health -= damage;
           projectile.active = false;
           
           triggerScreenShake(0.4, 200); // Hit by laser/fireball/fire
@@ -2004,8 +2021,9 @@ export const useGameEngine = () => {
           position: { ...rocket.position, x: rocket.position.x - newState.scrollOffset },
         };
         if (rocket.active && checkCollision(newState.spaceship, rocketScreen)) {
-          // Damage spaceship - heavy rockets do more damage
-          const damage = rocket.type === 'heavy' ? 50 : 25;
+          // Damage spaceship - heavy rockets do more damage (apply difficulty damage multiplier)
+          const baseDamage = rocket.type === 'heavy' ? 50 : 25;
+          const damage = Math.floor(baseDamage * difficultyRef.current.damageMultiplier);
           newState.spaceship.health -= damage;
           rocket.active = false;
           
@@ -2042,8 +2060,9 @@ export const useGameEngine = () => {
           position: { ...saucer.position, x: saucer.position.x - newState.scrollOffset },
         };
         if (saucer.active && checkCollision(newState.spaceship, saucerScreen)) {
-          // Damage spaceship
-          newState.spaceship.health -= 30;
+          // Damage spaceship (apply difficulty damage multiplier)
+          const damage = Math.floor(30 * difficultyRef.current.damageMultiplier);
+          newState.spaceship.health -= damage;
           saucer.active = false;
           
           triggerScreenShake(0.4, 200); // Saucer collision
@@ -2293,6 +2312,7 @@ export const useGameEngine = () => {
   }, []);
 
   const resetGame = useCallback(() => {
+    const resetHealth = Math.floor(100 * difficultyRef.current.healthMultiplier);
     setGameState({
       isPlaying: false,
       isPaused: false,
@@ -2308,8 +2328,8 @@ export const useGameEngine = () => {
         velocity: { x: 0, y: 0 },
         size: { x: 40, y: 20 },
         active: true,
-        health: 100,
-        maxHealth: 100,
+        health: resetHealth,
+        maxHealth: resetHealth,
         ammunition: 1000,
         bombs: 5,
       },
