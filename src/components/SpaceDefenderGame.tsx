@@ -152,6 +152,10 @@ export const SpaceDefenderGame: React.FC = () => {
   const [playerName, setPlayerName] = useState('');
   const [currentTaunt, setCurrentTaunt] = useState(TAUNTS[Math.floor(Math.random() * TAUNTS.length)]);
   const [gameAreaDimensions, setGameAreaDimensions] = useState({ scale: 1, offsetX: 0, offsetY: 0, width: 800, height: 600 });
+  const [safeAreaEnabled, setSafeAreaEnabled] = useState(() => {
+    const saved = localStorage.getItem('galaxy-guard-safe-area');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   
   const containerRef = React.useRef<HTMLDivElement>(null);
   const { gameState, settings, startGame, pauseGame, resetGame } = useGameEngine();
@@ -387,6 +391,11 @@ export const SpaceDefenderGame: React.FC = () => {
         onStartGame={handleStartGame}
         onLoadGame={handleLoadGame}
         hasSavedGame={hasSavedGame}
+        safeAreaEnabled={safeAreaEnabled}
+        onSafeAreaToggle={(enabled) => {
+          setSafeAreaEnabled(enabled);
+          localStorage.setItem('galaxy-guard-safe-area', JSON.stringify(enabled));
+        }}
       />
     );
   }
@@ -517,6 +526,7 @@ export const SpaceDefenderGame: React.FC = () => {
         onPause={pauseGame}
         onRestart={handleRestart}
         gameAreaDimensions={gameAreaDimensions}
+        safeAreaEnabled={safeAreaEnabled}
       />
       
       {/* Controls Help Footer - smaller on mobile */}
