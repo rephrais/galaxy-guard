@@ -8,7 +8,7 @@ import { GameCanvas } from '@/components/game/GameCanvas';
 import { GameHUD } from '@/components/game/GameHUD';
 import { StartMenu } from '@/components/game/StartMenu';
 import OrientationPrompt from '@/components/game/OrientationPrompt';
-import { SaveData } from '@/types/game';
+import { SaveData, Difficulty } from '@/types/game';
 
 const TAUNTS = [
   "It's a good day to die!",
@@ -156,9 +156,13 @@ export const SpaceDefenderGame: React.FC = () => {
     const saved = localStorage.getItem('galaxy-guard-safe-area');
     return saved !== null ? JSON.parse(saved) : true;
   });
+  const [difficulty, setDifficulty] = useState<Difficulty>(() => {
+    const saved = localStorage.getItem('galaxy-guard-difficulty');
+    return (saved as Difficulty) || 'normal';
+  });
   
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const { gameState, settings, startGame, pauseGame, resetGame } = useGameEngine();
+  const { gameState, settings, startGame, pauseGame, resetGame } = useGameEngine({ difficulty });
   const { 
     savedGame, 
     leaderboard, 
@@ -395,6 +399,11 @@ export const SpaceDefenderGame: React.FC = () => {
         onSafeAreaToggle={(enabled) => {
           setSafeAreaEnabled(enabled);
           localStorage.setItem('galaxy-guard-safe-area', JSON.stringify(enabled));
+        }}
+        difficulty={difficulty}
+        onDifficultyChange={(diff) => {
+          setDifficulty(diff);
+          localStorage.setItem('galaxy-guard-difficulty', diff);
         }}
       />
     );

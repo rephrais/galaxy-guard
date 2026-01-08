@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { LeaderboardEntry, SaveData } from '@/types/game';
-import { Volume2, VolumeX, Music } from 'lucide-react';
+import { LeaderboardEntry, SaveData, Difficulty } from '@/types/game';
+import { Volume2, VolumeX, Music } from 'lucide-react'
 import { WarpStarfield } from './WarpStarfield';
 
 const getCountryFlag = (countryCode: string): string => {
@@ -18,14 +18,24 @@ interface StartMenuProps {
   hasSavedGame: boolean;
   safeAreaEnabled: boolean;
   onSafeAreaToggle: (enabled: boolean) => void;
+  difficulty: Difficulty;
+  onDifficultyChange: (difficulty: Difficulty) => void;
 }
+
+const DIFFICULTY_CONFIG: Record<Difficulty, { label: string; color: string; description: string }> = {
+  easy: { label: 'EASY', color: 'neon-green', description: '1.5x Health • Slower Spawns' },
+  normal: { label: 'NORMAL', color: 'neon-yellow', description: 'Balanced Experience' },
+  hard: { label: 'HARD', color: 'neon-red', description: '0.7x Health • Faster Spawns • 1.5x Score' },
+};
 
 export const StartMenu: React.FC<StartMenuProps> = ({ 
   onStartGame, 
   onLoadGame, 
   hasSavedGame,
   safeAreaEnabled,
-  onSafeAreaToggle
+  onSafeAreaToggle,
+  difficulty,
+  onDifficultyChange
 }) => {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
@@ -353,6 +363,45 @@ export const StartMenu: React.FC<StartMenuProps> = ({
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Difficulty Selector - 80s style */}
+              <div className="pt-1 sm:pt-2">
+                <label className="pixel-text text-base sm:text-lg md:text-xl text-neon-cyan block mb-1 sm:mb-2 font-black tracking-wider"
+                       style={{
+                         textShadow: '0 0 15px hsl(var(--neon-cyan)), 1px 1px 0 black'
+                       }}>
+                  ⚔ DIFFICULTY ⚔
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['easy', 'normal', 'hard'] as Difficulty[]).map((diff) => {
+                    const config = DIFFICULTY_CONFIG[diff];
+                    const isSelected = difficulty === diff;
+                    return (
+                      <button
+                        key={diff}
+                        onClick={() => onDifficultyChange(diff)}
+                        className={`arcade-button text-sm sm:text-base py-2 sm:py-3 border-2 sm:border-3 font-black tracking-wider transition-all ${
+                          isSelected 
+                            ? `border-${config.color} bg-${config.color} text-black` 
+                            : `border-${config.color} text-${config.color} hover:bg-${config.color} hover:text-black`
+                        }`}
+                        style={{
+                          boxShadow: isSelected 
+                            ? `0 0 25px hsl(var(--${config.color})), inset 0 0 10px rgba(0,0,0,0.3)` 
+                            : `0 0 10px hsl(var(--${config.color}))`,
+                          textShadow: isSelected ? 'none' : `0 0 8px hsl(var(--${config.color}))`
+                        }}
+                      >
+                        {config.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="pixel-text text-xs sm:text-sm text-muted-foreground mt-1 text-center"
+                     style={{ textShadow: '0 0 5px rgba(255,255,255,0.3)' }}>
+                  {DIFFICULTY_CONFIG[difficulty].description}
+                </div>
               </div>
 
               {/* HUGE HOW TO PLAY BUTTON */}

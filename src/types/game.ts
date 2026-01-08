@@ -222,6 +222,36 @@ export interface GameState {
   scorePopups: ScorePopup[];
 }
 
+export type Difficulty = 'easy' | 'normal' | 'hard';
+
+export interface DifficultySettings {
+  spawnRateMultiplier: number; // Higher = faster spawns (harder)
+  healthMultiplier: number; // Higher = more player health (easier)
+  damageMultiplier: number; // Higher = more damage to player (harder)
+  scoreMultiplier: number; // Bonus/penalty for difficulty
+}
+
+export const DIFFICULTY_PRESETS: Record<Difficulty, DifficultySettings> = {
+  easy: {
+    spawnRateMultiplier: 0.6,
+    healthMultiplier: 1.5,
+    damageMultiplier: 0.7,
+    scoreMultiplier: 0.75,
+  },
+  normal: {
+    spawnRateMultiplier: 1.0,
+    healthMultiplier: 1.0,
+    damageMultiplier: 1.0,
+    scoreMultiplier: 1.0,
+  },
+  hard: {
+    spawnRateMultiplier: 1.5,
+    healthMultiplier: 0.7,
+    damageMultiplier: 1.5,
+    scoreMultiplier: 1.5,
+  },
+};
+
 export interface GameSettings {
   width: number;
   height: number;
