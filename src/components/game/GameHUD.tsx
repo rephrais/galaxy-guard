@@ -13,9 +13,10 @@ interface GameHUDProps {
     width: number;
     height: number;
   };
+  safeAreaEnabled?: boolean;
 }
 
-export const GameHUD: React.FC<GameHUDProps> = ({ gameState, playerName, onPause, onRestart, gameAreaDimensions }) => {
+export const GameHUD: React.FC<GameHUDProps> = ({ gameState, playerName, onPause, onRestart, gameAreaDimensions, safeAreaEnabled = true }) => {
   const healthPercent = (gameState.spaceship.health / gameState.spaceship.maxHealth) * 100;
   const [elapsedTime, setElapsedTime] = useState(0);
   
@@ -48,10 +49,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({ gameState, playerName, onPause
         top: `${gameAreaDimensions.offsetY}px`,
         width: `${gameAreaDimensions.width}px`,
         height: `${gameAreaDimensions.height}px`,
-        paddingTop: 'max(0.5rem, env(safe-area-inset-top))',
-        paddingRight: 'max(0.5rem, env(safe-area-inset-right))',
-        paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))',
-        paddingLeft: 'max(0.5rem, env(safe-area-inset-left))',
+        paddingTop: safeAreaEnabled ? 'max(0.5rem, env(safe-area-inset-top))' : '0.5rem',
+        paddingRight: safeAreaEnabled ? 'max(0.5rem, env(safe-area-inset-right))' : '0.5rem',
+        paddingBottom: safeAreaEnabled ? 'max(0.5rem, env(safe-area-inset-bottom))' : '0.5rem',
+        paddingLeft: safeAreaEnabled ? 'max(0.5rem, env(safe-area-inset-left))' : '0.5rem',
       }}
     >
       {/* Top HUD Bar */}

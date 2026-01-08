@@ -16,12 +16,16 @@ interface StartMenuProps {
   onStartGame: () => void;
   onLoadGame?: () => void;
   hasSavedGame: boolean;
+  safeAreaEnabled: boolean;
+  onSafeAreaToggle: (enabled: boolean) => void;
 }
 
 export const StartMenu: React.FC<StartMenuProps> = ({ 
   onStartGame, 
   onLoadGame, 
-  hasSavedGame
+  hasSavedGame,
+  safeAreaEnabled,
+  onSafeAreaToggle
 }) => {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
@@ -366,8 +370,8 @@ export const StartMenu: React.FC<StartMenuProps> = ({
           </div>
         </div>
 
-        {/* Audio Controls - 80s style */}
-        <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+        {/* Audio Controls & Safe Area Toggle - 80s style */}
+        <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 mb-3 sm:mb-4 flex-wrap">
           <button
             onClick={() => setMusicEnabled(!musicEnabled)}
             className="arcade-button text-sm sm:text-base px-3 sm:px-4 py-2 border-2 sm:border-3 border-neon-cyan text-neon-cyan hover:bg-neon-cyan hover:text-black flex items-center justify-center gap-2 font-black transform hover:scale-105 transition-all"
@@ -389,6 +393,20 @@ export const StartMenu: React.FC<StartMenuProps> = ({
           >
             {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
             SOUND: {soundEnabled ? 'ON' : 'OFF'}
+          </button>
+          <button
+            onClick={() => onSafeAreaToggle(!safeAreaEnabled)}
+            className={`arcade-button text-sm sm:text-base px-3 sm:px-4 py-2 border-2 sm:border-3 flex items-center justify-center gap-2 font-black transform hover:scale-105 transition-all ${
+              safeAreaEnabled 
+                ? 'border-neon-purple text-neon-purple hover:bg-neon-purple hover:text-black' 
+                : 'border-muted-foreground text-muted-foreground hover:bg-muted-foreground hover:text-black'
+            }`}
+            style={{
+              boxShadow: safeAreaEnabled ? '0 0 15px hsl(var(--neon-purple))' : '0 0 8px hsl(var(--muted-foreground))',
+              textShadow: safeAreaEnabled ? '0 0 8px hsl(var(--neon-purple))' : 'none'
+            }}
+          >
+            📱 SAFE AREA: {safeAreaEnabled ? 'ON' : 'OFF'}
           </button>
         </div>
 
