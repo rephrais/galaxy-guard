@@ -160,6 +160,14 @@ export const SpaceDefenderGame: React.FC = () => {
     const saved = localStorage.getItem('galaxy-guard-difficulty');
     return (saved as Difficulty) || 'normal';
   });
+  const [musicEnabled, setMusicEnabled] = useState(() => {
+    const saved = localStorage.getItem('galaxy-guard-music');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    const saved = localStorage.getItem('galaxy-guard-sound');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   
   const containerRef = React.useRef<HTMLDivElement>(null);
   const { gameState, settings, startGame, pauseGame, resetGame } = useGameEngine({ difficulty });
@@ -203,8 +211,10 @@ export const SpaceDefenderGame: React.FC = () => {
   const handleStartGame = useCallback(() => {
     setShowStartMenu(false);
     startGame();
-    music.startMusic();
-  }, [startGame, music]);
+    if (musicEnabled) {
+      music.startMusic();
+    }
+  }, [startGame, music, musicEnabled]);
 
   // Handle game restart
   const handleRestart = useCallback(() => {
@@ -239,14 +249,16 @@ export const SpaceDefenderGame: React.FC = () => {
 
   // Handle music pause/resume
   useEffect(() => {
-    if (gameState.isPlaying) {
+    if (gameState.isPlaying && musicEnabled) {
       if (gameState.isPaused) {
         music.stopMusic();
       } else if (!music.isPlaying()) {
         music.startMusic();
       }
+    } else if (!musicEnabled && music.isPlaying()) {
+      music.stopMusic();
     }
-  }, [gameState.isPaused, gameState.isPlaying, music]);
+  }, [gameState.isPaused, gameState.isPlaying, music, musicEnabled]);
 
   // Auto-save game progress
   useEffect(() => {
@@ -272,9 +284,11 @@ export const SpaceDefenderGame: React.FC = () => {
       setShowCountrySelect(true);
       
       // Play game over sound
-      sounds.gameOver();
+      if (soundEnabled) {
+        sounds.gameOver();
+      }
     }
-  }, [gameState.gameOver, gameState.score, sounds, music]);
+  }, [gameState.gameOver, gameState.score, sounds, music, soundEnabled]);
 
   // Submit score with country
   const handleSubmitScore = useCallback(() => {
@@ -305,9 +319,11 @@ export const SpaceDefenderGame: React.FC = () => {
       // For now, just start a new game
       setShowStartMenu(false);
       startGame();
-      music.startMusic();
+      if (musicEnabled) {
+        music.startMusic();
+      }
     }
-  }, [savedGame, startGame, music]);
+  }, [savedGame, startGame, music, musicEnabled]);
 
   // Sound effects based on game state changes
   const [prevRockets, setPrevRockets] = useState(gameState.rockets.length);
@@ -320,7 +336,7 @@ export const SpaceDefenderGame: React.FC = () => {
 
   useEffect(() => {
     // Play shoot sound when projectiles are added
-    if (gameState.projectiles.length > prevProjectiles) {
+    if (soundEnabled && gameState.projectiles.length > prevProjectiles) {
       const newProjectile = gameState.projectiles[gameState.projectiles.length - 1];
       if (newProjectile.type === 'bullet') {
         sounds.shoot();
@@ -335,11 +351,11 @@ export const SpaceDefenderGame: React.FC = () => {
       }
     }
     setPrevProjectiles(gameState.projectiles.length);
-  }, [gameState.projectiles.length, prevProjectiles, sounds]);
+  }, [gameState.projectiles.length, prevProjectiles, sounds, soundEnabled]);
 
   useEffect(() => {
     // Play explosion sound when explosions are added
-    if (gameState.explosions.length > prevExplosions) {
+    if (soundEnabled && gameState.explosions.length > prevExplosions) {
       // Check if it's a mega boss explosion
       const latestExplosion = gameState.explosions[gameState.explosions.length - 1];
       if (latestExplosion?.isMegaExplosion) {
@@ -353,41 +369,41 @@ export const SpaceDefenderGame: React.FC = () => {
       }
     }
     setPrevExplosions(gameState.explosions.length);
-  }, [gameState.explosions, prevExplosions, sounds]);
+  }, [gameState.explosions, prevExplosions, sounds, soundEnabled]);
 
   useEffect(() => {
     // Play hit sound when ship takes damage
-    if (gameState.spaceship.health < prevHealth) {
+    if (soundEnabled && gameState.spaceship.health < prevHealth) {
       sounds.hit();
     }
     setPrevHealth(gameState.spaceship.health);
-  }, [gameState.spaceship.health, prevHealth, sounds]);
+  }, [gameState.spaceship.health, prevHealth, sounds, soundEnabled]);
 
   useEffect(() => {
     // Play crash sound when ship loses a life (dies and respawns)
-    if (gameState.lives < prevLives) {
+    if (soundEnabled && gameState.lives < prevLives) {
       // Play both collision and explosion sound for dramatic effect
       sounds.collision();
       setTimeout(() => sounds.explosion(), 100);
     }
     setPrevLives(gameState.lives);
-  }, [gameState.lives, prevLives, sounds]);
+  }, [gameState.lives, prevLives, sounds, soundEnabled]);
 
   useEffect(() => {
     // Play power-up sound when collecting a power-up
-    if (gameState.activePowerUps.length > prevActivePowerUps) {
+    if (soundEnabled && gameState.activePowerUps.length > prevActivePowerUps) {
       sounds.powerUp();
     }
     setPrevActivePowerUps(gameState.activePowerUps.length);
-  }, [gameState.activePowerUps.length, prevActivePowerUps, sounds]);
+  }, [gameState.activePowerUps.length, prevActivePowerUps, sounds, soundEnabled]);
 
   useEffect(() => {
     // Play level up sound when advancing to a new level
-    if (gameState.level > prevLevel && prevLevel > 0) {
+    if (soundEnabled && gameState.level > prevLevel && prevLevel > 0) {
       sounds.levelUp();
     }
     setPrevLevel(gameState.level);
-  }, [gameState.level, prevLevel, sounds]);
+  }, [gameState.level, prevLevel, sounds, soundEnabled]);
 
   if (showStartMenu) {
     return (
@@ -404,6 +420,16 @@ export const SpaceDefenderGame: React.FC = () => {
         onDifficultyChange={(diff) => {
           setDifficulty(diff);
           localStorage.setItem('galaxy-guard-difficulty', diff);
+        }}
+        musicEnabled={musicEnabled}
+        onMusicToggle={(enabled) => {
+          setMusicEnabled(enabled);
+          localStorage.setItem('galaxy-guard-music', JSON.stringify(enabled));
+        }}
+        soundEnabled={soundEnabled}
+        onSoundToggle={(enabled) => {
+          setSoundEnabled(enabled);
+          localStorage.setItem('galaxy-guard-sound', JSON.stringify(enabled));
         }}
       />
     );

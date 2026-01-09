@@ -20,6 +20,10 @@ interface StartMenuProps {
   onSafeAreaToggle: (enabled: boolean) => void;
   difficulty: Difficulty;
   onDifficultyChange: (difficulty: Difficulty) => void;
+  musicEnabled: boolean;
+  onMusicToggle: (enabled: boolean) => void;
+  soundEnabled: boolean;
+  onSoundToggle: (enabled: boolean) => void;
 }
 
 const DIFFICULTY_CONFIG: Record<Difficulty, { label: string; color: string; description: string }> = {
@@ -35,14 +39,16 @@ export const StartMenu: React.FC<StartMenuProps> = ({
   safeAreaEnabled,
   onSafeAreaToggle,
   difficulty,
-  onDifficultyChange
+  onDifficultyChange,
+  musicEnabled,
+  onMusicToggle,
+  soundEnabled,
+  onSoundToggle
 }) => {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [selectedLevel, setSelectedLevel] = useState(1);
-  const [musicEnabled, setMusicEnabled] = useState(true);
-  const [soundEnabled, setSoundEnabled] = useState(true);
 
   useEffect(() => {
     // Load leaderboard from localStorage
@@ -422,22 +428,30 @@ export const StartMenu: React.FC<StartMenuProps> = ({
         {/* Audio Controls & Safe Area Toggle - 80s style */}
         <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 mb-3 sm:mb-4 flex-wrap">
           <button
-            onClick={() => setMusicEnabled(!musicEnabled)}
-            className="arcade-button text-sm sm:text-base px-3 sm:px-4 py-2 border-2 sm:border-3 border-neon-cyan text-neon-cyan hover:bg-neon-cyan hover:text-black flex items-center justify-center gap-2 font-black transform hover:scale-105 transition-all"
+            onClick={() => onMusicToggle(!musicEnabled)}
+            className={`arcade-button text-sm sm:text-base px-3 sm:px-4 py-2 border-2 sm:border-3 flex items-center justify-center gap-2 font-black transform hover:scale-105 transition-all ${
+              musicEnabled 
+                ? 'border-neon-cyan text-neon-cyan hover:bg-neon-cyan hover:text-black' 
+                : 'border-muted-foreground text-muted-foreground hover:bg-muted-foreground hover:text-black'
+            }`}
             style={{
-              boxShadow: '0 0 15px hsl(var(--neon-cyan))',
-              textShadow: '0 0 8px hsl(var(--neon-cyan))'
+              boxShadow: musicEnabled ? '0 0 15px hsl(var(--neon-cyan))' : '0 0 8px hsl(var(--muted-foreground))',
+              textShadow: musicEnabled ? '0 0 8px hsl(var(--neon-cyan))' : 'none'
             }}
           >
             <Music size={16} className={!musicEnabled ? 'opacity-30' : ''} />
             MUSIC: {musicEnabled ? 'ON' : 'OFF'}
           </button>
           <button
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className="arcade-button text-sm sm:text-base px-3 sm:px-4 py-2 border-2 sm:border-3 border-neon-green text-neon-green hover:bg-neon-green hover:text-black flex items-center justify-center gap-2 font-black transform hover:scale-105 transition-all"
+            onClick={() => onSoundToggle(!soundEnabled)}
+            className={`arcade-button text-sm sm:text-base px-3 sm:px-4 py-2 border-2 sm:border-3 flex items-center justify-center gap-2 font-black transform hover:scale-105 transition-all ${
+              soundEnabled 
+                ? 'border-neon-green text-neon-green hover:bg-neon-green hover:text-black' 
+                : 'border-muted-foreground text-muted-foreground hover:bg-muted-foreground hover:text-black'
+            }`}
             style={{
-              boxShadow: '0 0 15px hsl(var(--neon-green))',
-              textShadow: '0 0 8px hsl(var(--neon-green))'
+              boxShadow: soundEnabled ? '0 0 15px hsl(var(--neon-green))' : '0 0 8px hsl(var(--muted-foreground))',
+              textShadow: soundEnabled ? '0 0 8px hsl(var(--neon-green))' : 'none'
             }}
           >
             {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
