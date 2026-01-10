@@ -984,22 +984,33 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
         return true;
       });
 
-      // Update saucers and make them shoot
+      // Update saucers and make them shoot - NOW WITH PLAYER TRACKING
       newState.saucers = newState.saucers.filter(saucer => {
         if (!saucer.active) return false;
         
-        saucer.position.x += saucer.velocity.x * timeScale;
+        const saucerScreenX = saucer.position.x - newState.scrollOffset;
         
-        // Drift towards target Y position
+        // Update target Y to track player position (with some prediction)
+        saucer.targetY = newState.spaceship.position.y + newState.spaceship.velocity.y * 10;
+        
+        // Move toward player horizontally when on screen, otherwise drift leftward
+        if (saucerScreenX > 100 && saucerScreenX < settings.width - 50) {
+          // On screen - actively pursue player
+          const targetX = newState.spaceship.position.x + 200; // Stay ahead of player
+          const xDiff = (targetX + newState.scrollOffset) - saucer.position.x;
+          saucer.position.x += Math.sign(xDiff) * Math.min(Math.abs(xDiff) * 0.02, 2) * timeScale;
+        } else {
+          saucer.position.x += saucer.velocity.x * timeScale;
+        }
+        
+        // Drift towards player Y position (more aggressive tracking)
         const yDiff = saucer.targetY - saucer.position.y;
         if (Math.abs(yDiff) > 5) {
-          saucer.position.y += Math.sign(yDiff) * saucer.driftSpeed * timeScale;
+          saucer.position.y += Math.sign(yDiff) * Math.min(Math.abs(yDiff) * 0.05, saucer.driftSpeed * 1.5) * timeScale;
         }
         
         // Fire at spaceship
         if (now - saucer.lastFireTime > saucer.fireRate) {
-          const saucerScreenX = saucer.position.x - newState.scrollOffset;
-          
           // Only fire if saucer is visible on screen
           if (saucerScreenX > -100 && saucerScreenX < settings.width + 100) {
             const dx = newState.spaceship.position.x + newState.spaceship.size.x / 2 - (saucerScreenX + saucer.size.x / 2);
@@ -1210,16 +1221,28 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
         return true;
       });
 
-      // Update Zigzag Fighters
+      // Update Zigzag Fighters - NOW WITH PLAYER TRACKING
       newState.zigzagFighters = newState.zigzagFighters.filter(zigzag => {
         if (!zigzag.active) return false;
         
         const zigzagScreenX = zigzag.position.x - newState.scrollOffset;
         
-        // Zigzag movement
+        // Zigzag movement with player tracking
         zigzag.zigzagPhase += zigzag.zigzagSpeed * timeScale;
-        zigzag.position.x += zigzag.velocity.x * timeScale;
-        zigzag.position.y += Math.sin(zigzag.zigzagPhase) * 3 * timeScale;
+        
+        // Move toward player X position when on screen
+        if (zigzagScreenX > 50 && zigzagScreenX < settings.width) {
+          const targetX = newState.spaceship.position.x + 150; // Stay ahead of player
+          const xDiff = (targetX + newState.scrollOffset) - zigzag.position.x;
+          zigzag.position.x += Math.sign(xDiff) * Math.min(Math.abs(xDiff) * 0.015, 1.5) * timeScale;
+        } else {
+          zigzag.position.x += zigzag.velocity.x * timeScale;
+        }
+        
+        // Track player Y with zigzag pattern overlay
+        const yDiff = newState.spaceship.position.y - zigzag.position.y;
+        const trackingSpeed = Math.sign(yDiff) * Math.min(Math.abs(yDiff) * 0.03, 1.5) * timeScale;
+        zigzag.position.y += trackingSpeed + Math.sin(zigzag.zigzagPhase) * 2.5 * timeScale;
         
         // Keep within screen bounds
         if (zigzag.position.y < 50) zigzag.position.y = 50;
@@ -1257,16 +1280,31 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
         return true;
       });
 
-      // Update Splitters
+      // Update Splitters - NOW WITH PLAYER TRACKING
       newState.splitters = newState.splitters.filter(splitter => {
         if (!splitter.active) return false;
         
         const splitterScreenX = splitter.position.x - newState.scrollOffset;
         
-        // Move and bounce off screen edges
-        splitter.position.x += splitter.velocity.x * timeScale;
+        // Actively pursue player when on screen
+        if (splitterScreenX > 0 && splitterScreenX < settings.width) {
+          const dx = newState.spaceship.position.x - splitterScreenX;
+          const dy = newState.spaceship.position.y - splitter.position.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          
+          // Move toward player with speed based on generation (smaller = faster)
+          const chaseSpeed = (1.5 + splitter.generation * 0.5) * timeScale;
+          if (dist > 50) {
+            splitter.position.x += (dx / dist) * chaseSpeed + currentScrollSpeed;
+            splitter.velocity.y = (dy / dist) * chaseSpeed;
+          }
+        } else {
+          splitter.position.x += splitter.velocity.x * timeScale;
+        }
+        
         splitter.position.y += splitter.velocity.y * timeScale;
         
+        // Bounce off screen edges
         if (splitter.position.y < 50 || splitter.position.y > settings.height - 100) {
           splitter.velocity.y *= -1;
         }
@@ -1298,37 +1336,54 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
         return true;
       });
 
-      // Update boss rockets and make them shoot photons
+      // Update boss rockets and make them shoot photons - NOW WITH PLAYER TRACKING
       newState.bossRockets = newState.bossRockets.filter(boss => {
         if (!boss.active) return false;
         
-        boss.position.x += boss.velocity.x * timeScale;
+        const bossScreenX = boss.position.x - newState.scrollOffset;
         
-        // Fire 3 streams of photons
+        // Track player Y position
+        const yDiff = newState.spaceship.position.y - boss.position.y;
+        boss.position.y += Math.sign(yDiff) * Math.min(Math.abs(yDiff) * 0.02, 1) * timeScale;
+        
+        // Move toward player X when on screen, otherwise drift leftward
+        if (bossScreenX > 100 && bossScreenX < settings.width) {
+          const targetX = newState.spaceship.position.x + 250;
+          const xDiff = (targetX + newState.scrollOffset) - boss.position.x;
+          boss.position.x += Math.sign(xDiff) * Math.min(Math.abs(xDiff) * 0.01, 0.8) * timeScale;
+        } else {
+          boss.position.x += boss.velocity.x * timeScale;
+        }
+        
+        // Keep within screen bounds
+        if (boss.position.y < 50) boss.position.y = 50;
+        if (boss.position.y > settings.height - boss.size.y - 50) boss.position.y = settings.height - boss.size.y - 50;
+        
+        // Fire 3 streams of photons aimed at player
         if (now - boss.lastFireTime > boss.fireRate) {
-          const bossScreenX = boss.position.x - newState.scrollOffset;
-          
           // Only fire if boss is visible on screen
           if (bossScreenX > -200 && bossScreenX < settings.width + 200) {
-            const photonSpeed = 3; // Slow photons
+            const photonSpeed = 4; // Slightly faster photons
             
-            // Fire 3 photons in slightly random directions
+            // Fire 3 photons aimed at player with spread
             for (let i = 0; i < 3; i++) {
-              const angleVariation = (Math.random() - 0.5) * 0.6; // Random spread
-              const dx = -1 + angleVariation; // Generally leftward
-              const dy = (Math.random() - 0.5) * 1.5; // Random vertical component
-              const magnitude = Math.sqrt(dx * dx + dy * dy);
+              const baseAngle = Math.atan2(
+                newState.spaceship.position.y - (boss.position.y + boss.size.y / 2),
+                newState.spaceship.position.x - bossScreenX
+              );
+              const angleVariation = (i - 1) * 0.25; // Spread pattern
+              const finalAngle = baseAngle + angleVariation;
               
               const photonId = `photon-${Date.now()}-${Math.random()}-${i}`;
               newState.projectiles.push({
                 id: photonId,
                 position: { 
                   x: bossScreenX + boss.size.x / 4, 
-                  y: boss.position.y + boss.size.y / 2 + (i - 1) * 20 // Spread vertically
+                  y: boss.position.y + boss.size.y / 2 + (i - 1) * 20
                 },
                 velocity: { 
-                  x: (dx / magnitude) * photonSpeed, 
-                  y: (dy / magnitude) * photonSpeed 
+                  x: Math.cos(finalAngle) * photonSpeed, 
+                  y: Math.sin(finalAngle) * photonSpeed 
                 },
                 size: { x: 6, y: 6 },
                 active: true,
@@ -1349,7 +1404,7 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
         return true;
       });
 
-      // Update MEGA BOSS
+      // Update MEGA BOSS - NOW WITH PLAYER TRACKING
       if (newState.boss && newState.boss.active) {
         const bossScreenX = newState.boss.position.x - newState.scrollOffset;
         
@@ -1362,6 +1417,17 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
         } else {
           // Boss has reached position, match scroll speed to stay in place
           newState.boss.position.x += currentScrollSpeed;
+        }
+        
+        // Track player Y position (slow, menacing pursuit)
+        const targetY = newState.spaceship.position.y - newState.boss.size.y / 3;
+        const yDiff = targetY - newState.boss.position.y;
+        newState.boss.position.y += Math.sign(yDiff) * Math.min(Math.abs(yDiff) * 0.015, 1.2) * timeScale;
+        
+        // Keep boss within screen bounds
+        if (newState.boss.position.y < 20) newState.boss.position.y = 20;
+        if (newState.boss.position.y > settings.height - newState.boss.size.y - 20) {
+          newState.boss.position.y = settings.height - newState.boss.size.y - 20;
         }
         
         // Animate tentacles
