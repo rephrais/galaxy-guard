@@ -164,6 +164,19 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
   const lastMegaBossIntervalRef = useRef<number>(0); // Track which 30s interval we spawned for
   const bossSpawnedRef = useRef<boolean>(false);
   const keysRef = useRef<Set<string>>(new Set());
+  
+  // Enemy coordination system - tracks attack events for coordinated behavior
+  const coordinationRef = useRef<{
+    lastAttackTime: number;
+    attackerPosition: { x: number; y: number } | null;
+    supportWindow: number;
+    aggroLevel: number;
+  }>({
+    lastAttackTime: 0,
+    attackerPosition: null,
+    supportWindow: 0,
+    aggroLevel: 0,
+  });
 
   // Input handling
   useEffect(() => {
@@ -232,6 +245,43 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
           newState.slowMotion = { timeScale, startTime: now, duration };
         }
       };
+
+      // === ENEMY COORDINATION SYSTEM ===
+      // Signal that an enemy is attacking - triggers support from nearby enemies
+      const signalAttack = (attackerX: number, attackerY: number) => {
+        coordinationRef.current.lastAttackTime = now;
+        coordinationRef.current.attackerPosition = { x: attackerX, y: attackerY };
+        coordinationRef.current.supportWindow = now + 800; // 800ms window for support attacks
+        coordinationRef.current.aggroLevel = Math.min(1, coordinationRef.current.aggroLevel + 0.15);
+      };
+
+      // Check if we're in a support attack window (another enemy just attacked)
+      const isInSupportWindow = (): boolean => {
+        return now < coordinationRef.current.supportWindow;
+      };
+
+      // Get fire rate modifier based on coordination (faster when supporting)
+      const getSupportedFireRate = (baseRate: number): number => {
+        if (isInSupportWindow()) {
+          return baseRate * 0.5; // Fire twice as fast when supporting
+        }
+        return baseRate * (1 - coordinationRef.current.aggroLevel * 0.3);
+      };
+
+      // Check if enemy should join attack based on proximity to attacker
+      const shouldJoinAttack = (enemyX: number, enemyY: number, chance: number = 0.6): boolean => {
+        if (!isInSupportWindow() || !coordinationRef.current.attackerPosition) return false;
+        const dx = enemyX - coordinationRef.current.attackerPosition.x;
+        const dy = enemyY - coordinationRef.current.attackerPosition.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const distanceFactor = Math.max(0, 1 - dist / 500);
+        return Math.random() < chance * distanceFactor;
+      };
+
+      // Decay aggro level over time
+      if (now - coordinationRef.current.lastAttackTime > 2000) {
+        coordinationRef.current.aggroLevel = Math.max(0, coordinationRef.current.aggroLevel - 0.01);
+      }
 
       // Clean up expired screen shake
       if (newState.screenShake && now - newState.screenShake.startTime > newState.screenShake.duration) {
@@ -1009,8 +1059,12 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
           saucer.position.y += Math.sign(yDiff) * Math.min(Math.abs(yDiff) * 0.05, saucer.driftSpeed * 1.5) * timeScale;
         }
         
-        // Fire at spaceship
-        if (now - saucer.lastFireTime > saucer.fireRate) {
+        // Fire at spaceship - with coordination support
+        const effectiveFireRate = getSupportedFireRate(saucer.fireRate);
+        const shouldFire = now - saucer.lastFireTime > effectiveFireRate || 
+                          (shouldJoinAttack(saucerScreenX, saucer.position.y, 0.7) && now - saucer.lastFireTime > effectiveFireRate * 0.5);
+        
+        if (shouldFire) {
           // Only fire if saucer is visible on screen
           if (saucerScreenX > -100 && saucerScreenX < settings.width + 100) {
             const dx = newState.spaceship.position.x + newState.spaceship.size.x / 2 - (saucerScreenX + saucer.size.x / 2);
@@ -1038,6 +1092,8 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
               type: 'laser'
             });
             
+            // Signal attack to coordinate with other enemies
+            signalAttack(saucerScreenX, saucer.position.y);
             saucer.lastFireTime = now;
           }
         }
@@ -1054,10 +1110,13 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
       newState.aliens = newState.aliens.filter(alien => {
         if (!alien.active) return false;
         
-        // Check if alien should fire at spaceship
-        if (now - alien.lastFireTime > alien.fireRate) {
-          // Calculate angle to spaceship (convert alien world position to screen position)
-          const alienScreenX = alien.position.x - newState.scrollOffset;
+        // Check if alien should fire at spaceship - with coordination
+        const effectiveFireRate = getSupportedFireRate(alien.fireRate);
+        const alienScreenX = alien.position.x - newState.scrollOffset;
+        const shouldFire = now - alien.lastFireTime > effectiveFireRate ||
+                          (shouldJoinAttack(alienScreenX, alien.position.y, 0.8) && now - alien.lastFireTime > effectiveFireRate * 0.4);
+        
+        if (shouldFire) {
           const dx = newState.spaceship.position.x + newState.spaceship.size.x / 2 - (alienScreenX + alien.size.x / 2);
           const dy = newState.spaceship.position.y + newState.spaceship.size.y / 2 - (alien.position.y + alien.size.y / 2);
           const distance = Math.sqrt(dx * dx + dy * dy);
@@ -1085,12 +1144,13 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
               type: 'laser'
             });
             
+            // Signal attack for coordination
+            signalAttack(alienScreenX, alien.position.y);
             alien.lastFireTime = now;
           }
         }
         
         // Remove aliens that are too far off screen
-        const alienScreenX = alien.position.x - newState.scrollOffset;
         if (alienScreenX < -300 || alienScreenX > settings.width + 300) {
           return false;
         }
@@ -1102,6 +1162,7 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
       newState.crawlingAliens = newState.crawlingAliens.filter(crawlingAlien => {
         if (!crawlingAlien.active) return false;
         
+        const crawlingAlienScreenX = crawlingAlien.position.x - newState.scrollOffset;
         // Find the terrain point beneath the alien
         const nearestTerrainPoint = newState.terrain.foreground.reduce((closest, point) => {
           const distToCurrent = Math.abs(point.x - crawlingAlien.position.x);
@@ -1123,9 +1184,12 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
           crawlingAlien.position.y = nearestTerrainPoint.y - 25;
         }
         
-        // Check if alien should fire at spaceship
-        if (now - crawlingAlien.lastFireTime > crawlingAlien.fireRate) {
-          const crawlingAlienScreenX = crawlingAlien.position.x - newState.scrollOffset;
+        // Check if alien should fire at spaceship - with coordination
+        const effectiveFireRate = getSupportedFireRate(crawlingAlien.fireRate);
+        const shouldFire = now - crawlingAlien.lastFireTime > effectiveFireRate ||
+                          (shouldJoinAttack(crawlingAlienScreenX, crawlingAlien.position.y, 0.75) && now - crawlingAlien.lastFireTime > effectiveFireRate * 0.5);
+        
+        if (shouldFire) {
           const dx = newState.spaceship.position.x + newState.spaceship.size.x / 2 - (crawlingAlienScreenX + crawlingAlien.size.x / 2);
           const dy = newState.spaceship.position.y + newState.spaceship.size.y / 2 - (crawlingAlien.position.y + crawlingAlien.size.y / 2);
           const distance = Math.sqrt(dx * dx + dy * dy);
@@ -1149,16 +1213,17 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
               },
               size: { x: 15, y: 15 },
               active: true,
-              damage: 50, // 50% of spaceship's life
+              damage: 50,
               type: 'fire'
             });
             
+            // Signal attack for coordination
+            signalAttack(crawlingAlienScreenX, crawlingAlien.position.y);
             crawlingAlien.lastFireTime = now;
           }
         }
         
         // Remove crawling aliens that are too far off screen
-        const crawlingAlienScreenX = crawlingAlien.position.x - newState.scrollOffset;
         if (crawlingAlienScreenX < -400 || crawlingAlienScreenX > settings.width + 400) {
           return false;
         }
@@ -1195,24 +1260,29 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
           bomber.position.y -= 2 * timeScale; // Move up while retreating
         }
         
-        // Fire at player during dive
-        if (bomber.phase === 'dive' && now - bomber.lastFireTime > bomber.fireRate) {
-          if (bomberScreenX > 0 && bomberScreenX < settings.width) {
-            const dx = newState.spaceship.position.x - bomberScreenX;
-            const dy = newState.spaceship.position.y - bomber.position.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            
-            newState.projectiles.push({
-              id: `divebomb-${Date.now()}-${Math.random()}`,
-              position: { x: bomberScreenX, y: bomber.position.y + bomber.size.y },
-              velocity: { x: (dx / dist) * 5, y: (dy / dist) * 5 },
-              size: { x: 8, y: 8 },
-              active: true,
-              damage: 30,
-              type: 'fire'
-            });
-            bomber.lastFireTime = now;
-          }
+        // Fire at player during dive - with coordination
+        const effectiveFireRate = getSupportedFireRate(bomber.fireRate);
+        const shouldFire = (bomber.phase === 'dive' && now - bomber.lastFireTime > effectiveFireRate) ||
+                          (shouldJoinAttack(bomberScreenX, bomber.position.y, 0.65) && now - bomber.lastFireTime > effectiveFireRate * 0.6);
+        
+        if (shouldFire && bomberScreenX > 0 && bomberScreenX < settings.width) {
+          const dx = newState.spaceship.position.x - bomberScreenX;
+          const dy = newState.spaceship.position.y - bomber.position.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          
+          newState.projectiles.push({
+            id: `divebomb-${Date.now()}-${Math.random()}`,
+            position: { x: bomberScreenX, y: bomber.position.y + bomber.size.y },
+            velocity: { x: (dx / dist) * 5, y: (dy / dist) * 5 },
+            size: { x: 8, y: 8 },
+            active: true,
+            damage: 30,
+            type: 'fire'
+          });
+          
+          // Signal attack for coordination
+          signalAttack(bomberScreenX, bomber.position.y);
+          bomber.lastFireTime = now;
         }
         
         // Remove if off screen
@@ -1248,30 +1318,35 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
         if (zigzag.position.y < 50) zigzag.position.y = 50;
         if (zigzag.position.y > settings.height - 100) zigzag.position.y = settings.height - 100;
         
-        // Fire bursts at player
-        if (now - zigzag.lastFireTime > zigzag.fireRate) {
-          if (zigzagScreenX > 0 && zigzagScreenX < settings.width) {
-            // Fire 3-shot burst
-            for (let i = 0; i < 3; i++) {
-              const angle = Math.atan2(
-                newState.spaceship.position.y - zigzag.position.y,
-                newState.spaceship.position.x - zigzagScreenX
-              ) + (i - 1) * 0.2;
-              
-              setTimeout(() => {
-                newState.projectiles.push({
-                  id: `zigzag-shot-${Date.now()}-${Math.random()}-${i}`,
-                  position: { x: zigzagScreenX, y: zigzag.position.y + zigzag.size.y / 2 },
-                  velocity: { x: Math.cos(angle) * 6, y: Math.sin(angle) * 6 },
-                  size: { x: 5, y: 5 },
-                  active: true,
-                  damage: 20,
-                  type: 'laser'
-                });
-              }, i * 80);
-            }
-            zigzag.lastFireTime = now;
+        // Fire bursts at player - with coordination
+        const effectiveFireRate = getSupportedFireRate(zigzag.fireRate);
+        const shouldFire = now - zigzag.lastFireTime > effectiveFireRate ||
+                          (shouldJoinAttack(zigzagScreenX, zigzag.position.y, 0.7) && now - zigzag.lastFireTime > effectiveFireRate * 0.4);
+        
+        if (shouldFire && zigzagScreenX > 0 && zigzagScreenX < settings.width) {
+          // Fire 3-shot burst
+          for (let i = 0; i < 3; i++) {
+            const angle = Math.atan2(
+              newState.spaceship.position.y - zigzag.position.y,
+              newState.spaceship.position.x - zigzagScreenX
+            ) + (i - 1) * 0.2;
+            
+            setTimeout(() => {
+              newState.projectiles.push({
+                id: `zigzag-shot-${Date.now()}-${Math.random()}-${i}`,
+                position: { x: zigzagScreenX, y: zigzag.position.y + zigzag.size.y / 2 },
+                velocity: { x: Math.cos(angle) * 6, y: Math.sin(angle) * 6 },
+                size: { x: 5, y: 5 },
+                active: true,
+                damage: 20,
+                type: 'laser'
+              });
+            }, i * 80);
           }
+          
+          // Signal attack for coordination
+          signalAttack(zigzagScreenX, zigzag.position.y);
+          zigzag.lastFireTime = now;
         }
         
         // Remove if off screen
@@ -1309,25 +1384,30 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
           splitter.velocity.y *= -1;
         }
         
-        // Fire occasionally
-        if (now - splitter.lastFireTime > splitter.fireRate) {
-          if (splitterScreenX > 0 && splitterScreenX < settings.width) {
-            const angle = Math.atan2(
-              newState.spaceship.position.y - splitter.position.y,
-              newState.spaceship.position.x - splitterScreenX
-            );
-            
-            newState.projectiles.push({
-              id: `splitter-shot-${Date.now()}-${Math.random()}`,
-              position: { x: splitterScreenX + splitter.size.x / 2, y: splitter.position.y + splitter.size.y / 2 },
-              velocity: { x: Math.cos(angle) * 4, y: Math.sin(angle) * 4 },
-              size: { x: 10, y: 10 },
-              active: true,
-              damage: 25 + splitter.generation * 5,
-              type: 'fireball'
-            });
-            splitter.lastFireTime = now;
-          }
+        // Fire occasionally - with coordination
+        const effectiveFireRate = getSupportedFireRate(splitter.fireRate);
+        const shouldFire = now - splitter.lastFireTime > effectiveFireRate ||
+                          (shouldJoinAttack(splitterScreenX, splitter.position.y, 0.6) && now - splitter.lastFireTime > effectiveFireRate * 0.5);
+        
+        if (shouldFire && splitterScreenX > 0 && splitterScreenX < settings.width) {
+          const angle = Math.atan2(
+            newState.spaceship.position.y - splitter.position.y,
+            newState.spaceship.position.x - splitterScreenX
+          );
+          
+          newState.projectiles.push({
+            id: `splitter-shot-${Date.now()}-${Math.random()}`,
+            position: { x: splitterScreenX + splitter.size.x / 2, y: splitter.position.y + splitter.size.y / 2 },
+            velocity: { x: Math.cos(angle) * 4, y: Math.sin(angle) * 4 },
+            size: { x: 10, y: 10 },
+            active: true,
+            damage: 25 + splitter.generation * 5,
+            type: 'fireball'
+          });
+          
+          // Signal attack for coordination
+          signalAttack(splitterScreenX, splitter.position.y);
+          splitter.lastFireTime = now;
         }
         
         // Remove if off screen
@@ -1359,41 +1439,44 @@ export const useGameEngine = (options: UseGameEngineOptions = {}) => {
         if (boss.position.y < 50) boss.position.y = 50;
         if (boss.position.y > settings.height - boss.size.y - 50) boss.position.y = settings.height - boss.size.y - 50;
         
-        // Fire 3 streams of photons aimed at player
-        if (now - boss.lastFireTime > boss.fireRate) {
-          // Only fire if boss is visible on screen
-          if (bossScreenX > -200 && bossScreenX < settings.width + 200) {
-            const photonSpeed = 4; // Slightly faster photons
+        // Fire 3 streams of photons aimed at player - with coordination
+        const effectiveFireRate = getSupportedFireRate(boss.fireRate);
+        const shouldFire = now - boss.lastFireTime > effectiveFireRate ||
+                          (isInSupportWindow() && now - boss.lastFireTime > effectiveFireRate * 0.6);
+        
+        if (shouldFire && bossScreenX > -200 && bossScreenX < settings.width + 200) {
+          const photonSpeed = 4;
+          
+          // Fire 3 photons aimed at player with spread
+          for (let i = 0; i < 3; i++) {
+            const baseAngle = Math.atan2(
+              newState.spaceship.position.y - (boss.position.y + boss.size.y / 2),
+              newState.spaceship.position.x - bossScreenX
+            );
+            const angleVariation = (i - 1) * 0.25;
+            const finalAngle = baseAngle + angleVariation;
             
-            // Fire 3 photons aimed at player with spread
-            for (let i = 0; i < 3; i++) {
-              const baseAngle = Math.atan2(
-                newState.spaceship.position.y - (boss.position.y + boss.size.y / 2),
-                newState.spaceship.position.x - bossScreenX
-              );
-              const angleVariation = (i - 1) * 0.25; // Spread pattern
-              const finalAngle = baseAngle + angleVariation;
-              
-              const photonId = `photon-${Date.now()}-${Math.random()}-${i}`;
-              newState.projectiles.push({
-                id: photonId,
-                position: { 
-                  x: bossScreenX + boss.size.x / 4, 
-                  y: boss.position.y + boss.size.y / 2 + (i - 1) * 20
-                },
-                velocity: { 
-                  x: Math.cos(finalAngle) * photonSpeed, 
-                  y: Math.sin(finalAngle) * photonSpeed 
-                },
-                size: { x: 6, y: 6 },
-                active: true,
-                damage: 30,
-                type: 'laser'
-              });
-            }
-            
-            boss.lastFireTime = now;
+            const photonId = `photon-${Date.now()}-${Math.random()}-${i}`;
+            newState.projectiles.push({
+              id: photonId,
+              position: { 
+                x: bossScreenX + boss.size.x / 4, 
+                y: boss.position.y + boss.size.y / 2 + (i - 1) * 20
+              },
+              velocity: { 
+                x: Math.cos(finalAngle) * photonSpeed, 
+                y: Math.sin(finalAngle) * photonSpeed 
+              },
+              size: { x: 6, y: 6 },
+              active: true,
+              damage: 30,
+              type: 'laser'
+            });
           }
+          
+          // Signal attack for massive coordination
+          signalAttack(bossScreenX, boss.position.y);
+          boss.lastFireTime = now;
         }
         
         // Remove if off screen (left edge)
